@@ -32,18 +32,20 @@ export default async function Register() {
   }
 
   return (
-    <div className="flex justify-center height-screen-helper">
-      <div className="flex flex-col justify-between p-3">
-        <Card className="w-[600px]">
-          <CardHeader>
-            <CardTitle>Membership Registration</CardTitle>
-            <CardDescription>Register to become a member</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RegisterForm redirectMethod={redirectMethod} user={user} />
-          </CardContent>
-        </Card>
+    <section className="my-8">
+      <div className="flex justify-center height-screen-helper">
+        <div className="flex flex-col justify-between p-3">
+          <Card className="md:w-[600px]">
+            <CardHeader>
+              <CardTitle>Membership Registration</CardTitle>
+              <CardDescription>Register to become a member</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RegisterForm redirectMethod={redirectMethod} user={user} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

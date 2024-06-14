@@ -30,9 +30,20 @@ export default async function Account() {
     return redirect('/signin');
   }
 
+  const { data: member } = await supabase
+    .from('members')
+    .select('*')
+    .eq('user_id', user?.id)
+    .maybeSingle();
+
+  if (member?.status === 'inactive') {
+    return redirect('/register');
+  }
+
+
   return (
-    <section className="mb-32">
-      <div className="p-4 space-y-4">
+    <section className="my-8">
+      <div className="space-y-4">
         <CustomerPortalForm subscription={subscription} />
         <NameForm userName={userDetails?.full_name ?? ''} />
         <EmailForm userEmail={user.email} />
