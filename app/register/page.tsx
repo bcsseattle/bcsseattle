@@ -20,7 +20,16 @@ export default async function Register() {
   if (!user) {
     return redirect('/signin');
   }
-  
+
+  const { data: member } = await supabase
+    .from('members')
+    .select('*')
+    .eq('user_id', user?.id)
+    .maybeSingle();
+
+  if (member?.status === 'active') {
+    return redirect('/account');
+  }
 
   return (
     <div className="flex justify-center height-screen-helper">
