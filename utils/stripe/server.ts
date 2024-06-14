@@ -3,7 +3,11 @@
 import Stripe from 'stripe';
 import { stripe } from '@/utils/stripe/config';
 import { createClient } from '@/utils/supabase/server';
-import { createOrRetrieveCustomer } from '@/utils/supabase/admin';
+import {
+  createOrRetrieveCustomer,
+  retrieveMember,
+  updateMember
+} from '@/utils/supabase/admin';
 import {
   getURL,
   getErrorRedirect,
@@ -20,7 +24,10 @@ type CheckoutResponse = {
 
 export async function checkoutWithStripe(
   price: Price,
-  redirectPath: string = '/account'
+  redirectPath: string = '/account',
+  cancelUrl?: string,
+  isMembership?: boolean,
+  isGenerous?: boolean
 ): Promise<CheckoutResponse> {
   try {
     // Get the user from Supabase auth
@@ -47,8 +54,18 @@ export async function checkoutWithStripe(
       throw new Error('Unable to access customer record.');
     }
 
+    let member: any;
+    try {
+      member = await retrieveMember({
+        user_id: user.id || ''
+      });
+    } catch (err) {
+      console.error(err);
+      throw new Error('Unable to access member record.');
+    }
+
     let params: Stripe.Checkout.SessionCreateParams = {
-      allow_promotion_codes: true,
+      allow_promotion_codes: false,
       billing_address_collection: 'required',
       customer,
       customer_update: {
@@ -57,10 +74,10 @@ export async function checkoutWithStripe(
       line_items: [
         {
           price: price.id,
-          quantity: 1
+          quantity: isMembership || isGenerous ? 1 : Math.min(member?.totalMembersInFamily, 5) ?? 1
         }
       ],
-      cancel_url: getURL(),
+      cancel_url: getURL(cancelUrl),
       success_url: getURL(redirectPath)
     };
 
@@ -94,6 +111,14 @@ export async function checkoutWithStripe(
 
     // Instead of returning a Response, just return the data or error.
     if (session) {
+      try {
+        await updateMember({
+          user_id: user.id || ''
+        });
+      } catch (err) {
+        console.error(err);
+        throw new Error('Unable to update member record.');
+      }
       return { sessionId: session.id };
     } else {
       throw new Error('Unable to create checkout session.');

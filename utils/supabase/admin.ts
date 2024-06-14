@@ -1,6 +1,6 @@
 import { toDateTime } from '@/utils/helpers';
 import { stripe } from '@/utils/stripe/config';
-import { createClient } from '@supabase/supabase-js';
+import { User, createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 import type { Database, Tables, TablesInsert } from 'types_db';
 
@@ -16,6 +16,31 @@ const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
+
+interface Member {
+  user_id: string;
+  // stripe_customer_id: string;
+  // subscription_id: string;
+  status: string;
+  fullName: string;
+  phone: string;
+  address: string;
+  address2?: string;
+  city: string;
+  state: string;
+  zip: string;
+  membershipType: string;
+  totalMembersInFamily: number;
+  terms: boolean;
+  metadata?: Record<string, any>;
+}
+export const createMember = async (member: Member) => {
+  const { error: upsertError } = await supabaseAdmin
+    .from('members')
+    .upsert([member]);
+  if (upsertError)
+    throw new Error(`Member insert/update failed: ${upsertError.message}`);
+};
 
 const upsertProductRecord = async (product: Stripe.Product) => {
   const productData: Product = {
@@ -88,7 +113,8 @@ const deletePriceRecord = async (price: Stripe.Price) => {
     .from('prices')
     .delete()
     .eq('id', price.id);
-  if (deletionError) throw new Error(`Price deletion failed: ${deletionError.message}`);
+  if (deletionError)
+    throw new Error(`Price deletion failed: ${deletionError.message}`);
   console.log(`Price deleted: ${price.id}`);
 };
 
@@ -98,7 +124,9 @@ const upsertCustomerToSupabase = async (uuid: string, customerId: string) => {
     .upsert([{ id: uuid, stripe_customer_id: customerId }]);
 
   if (upsertError)
-    throw new Error(`Supabase customer record creation failed: ${upsertError.message}`);
+    throw new Error(
+      `Supabase customer record creation failed: ${upsertError.message}`
+    );
 
   return customerId;
 };
@@ -185,6 +213,43 @@ const createOrRetrieveCustomer = async ({
   }
 };
 
+const updateMember = async ({ user_id }: { user_id: string }) => {
+  // Check if the member already exists in Supabase
+  const { data: existingMember, error: queryError } = await supabaseAdmin
+    .from('members')
+    .select('*')
+    .eq('user_id', user_id)
+    .maybeSingle();
+
+  if (queryError) {
+    throw new Error(`Supabase member lookup failed: ${queryError.message}`);
+  }
+
+  const { error: updateError } = await supabaseAdmin
+    .from('members')
+    .update({ status: 'active' })
+    .eq('user_id', user_id);
+
+  if (updateError)
+    throw new Error(
+      `Supabase member record update failed: ${updateError.message}`
+    );
+};
+
+const retrieveMember = async ({ user_id }: { user_id: string }) => {
+  // Check if the member already exists in Supabase
+  const { data: existingMember, error: queryError } = await supabaseAdmin
+    .from('members')
+    .select('*')
+    .eq('user_id', user_id)
+    .maybeSingle();
+
+  if (queryError) {
+    throw new Error(`Supabase member lookup failed: ${queryError.message}`);
+  }
+
+  return existingMember;
+};
 /**
  * Copies the billing details from the payment method to the customer object.
  */
@@ -205,7 +270,8 @@ const copyBillingDetailsToCustomer = async (
       payment_method: { ...payment_method[payment_method.type] }
     })
     .eq('id', uuid);
-  if (updateError) throw new Error(`Customer update failed: ${updateError.message}`);
+  if (updateError)
+    throw new Error(`Customer update failed: ${updateError.message}`);
 };
 
 const manageSubscriptionStatusChange = async (
@@ -267,7 +333,9 @@ const manageSubscriptionStatusChange = async (
     .from('subscriptions')
     .upsert([subscriptionData]);
   if (upsertError)
-    throw new Error(`Subscription insert/update failed: ${upsertError.message}`);
+    throw new Error(
+      `Subscription insert/update failed: ${upsertError.message}`
+    );
   console.log(
     `Inserted/updated subscription [${subscription.id}] for user [${uuid}]`
   );
@@ -288,5 +356,7 @@ export {
   deleteProductRecord,
   deletePriceRecord,
   createOrRetrieveCustomer,
+  updateMember,
+  retrieveMember,
   manageSubscriptionStatusChange
 };

@@ -1,10 +1,13 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getURL, getErrorRedirect, getStatusRedirect } from 'utils/helpers';
 import { getAuthTypes } from 'utils/auth-helpers/settings';
+import { createOrRetrieveCustomer } from '../supabase/admin';
+import { ContactFormSchema } from '@/types';
 
 function isValidEmail(email: string) {
   var regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
@@ -194,7 +197,11 @@ export async function signUp(formData: FormData) {
       error.message
     );
   } else if (data.session) {
-    redirectPath = getStatusRedirect('/', 'Success!', 'You are now signed in.');
+    redirectPath = getStatusRedirect(
+      '/register',
+      'Success!',
+      'You are now signed in.'
+    );
   } else if (
     data.user &&
     data.user.identities &&
@@ -207,7 +214,7 @@ export async function signUp(formData: FormData) {
     );
   } else if (data.user) {
     redirectPath = getStatusRedirect(
-      '/',
+      '/register',
       'Success!',
       'Please check your email for a confirmation link. You may now close this tab.'
     );
@@ -331,6 +338,63 @@ export async function updateName(formData: FormData) {
       '/account',
       'Hmm... Something went wrong.',
       'Your name could not be updated.'
+    );
+  }
+}
+
+// export async function registerMember(formData: FormData) {
+
+//   const name = String(formData.get('name')).trim();
+//   const phone = String(formData.get('phone')).trim();
+//   const address = String(formData.get('address')).trim();
+//   const address2 = String(formData.get('address2')).trim();
+//   const city = String(formData.get('city')).trim();
+//   const state = String(formData.get('state')).trim();
+//   const zip = String(formData.get('zip')).trim();
+
+//   const supabase = createClient();
+//   const {
+//     error,
+//     data: { user }
+//   } = await supabase.auth.getUser();
+
+//   if (error || !user) {
+//     console.error(error);
+//     throw new Error('Could not get user session.');
+//   }
+
+//   // Retrieve or create the customer in Stripe
+//   let customer: string;
+//   try {
+//     customer = await createOrRetrieveCustomer({
+//       uuid: user?.id || '',
+//       email: user?.email || ''
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     throw new Error('Unable to access customer record.');
+//   }
+
+//   return redirect('/register');
+// }
+
+export async function sendEmail(values: z.infer<typeof ContactFormSchema>) {
+  const { name, email, message } = values;
+
+  const api_url = process.env.NEXT_PUBLIC_SITE_URL + '/api/send-email';
+
+  try {
+    const response = fetch(api_url, {
+      method: 'POST',
+      body: JSON.stringify({ name, email, message })
+    });
+    return getStatusRedirect('/', 'Success!', 'Your message has been sent.');
+  } catch (error) {
+    console.error(error);
+    return getErrorRedirect(
+      '/contact-us',
+      'Hmm... Something went wrong.',
+      'Your message could not be sent.'
     );
   }
 }

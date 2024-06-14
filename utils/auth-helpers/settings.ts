@@ -27,7 +27,8 @@ export const getViewTypes = () => {
       'password_signin',
       'forgot_password',
       'update_password',
-      'signup'
+      'signup',
+      'register',
     ];
   }
 

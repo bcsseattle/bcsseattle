@@ -1,15 +1,23 @@
 import { Metadata } from 'next';
-import Footer from '@/components/ui/Footer';
 import Navbar from '@/components/ui/Navbar';
 import { Toaster } from '@/components/ui/Toasts/toaster';
 import { PropsWithChildren, Suspense } from 'react';
 import { getURL } from '@/utils/helpers';
-import 'styles/main.css';
+import { Inter as FontSans } from 'next/font/google';
+import { cn } from '@/utils/cn';
+import '@/styles/main.css';
+import Footer from '@/components/Footer';
+
+const fontSans = FontSans({
+  subsets: ['latin'],
+  variable: '--font-sans'
+});
 
 const meta = {
-  title: 'Next.js Subscription Starter',
-  description: 'Brought to you by Vercel, Stripe, and Supabase.',
-  cardImage: '/og.png',
+  title: 'Baloch Community Services of Seattle',
+  description:
+    'BCS Seattle is a nonprofit organization that provides services to the Baloch community in Seattle.',
+  // cardImage: '/og.png',
   robots: 'follow, index',
   favicon: '/favicon.ico',
   url: getURL()
@@ -20,10 +28,10 @@ export async function generateMetadata(): Promise<Metadata> {
     title: meta.title,
     description: meta.description,
     referrer: 'origin-when-cross-origin',
-    keywords: ['Vercel', 'Supabase', 'Next.js', 'Stripe', 'Subscription'],
-    authors: [{ name: 'Vercel', url: 'https://vercel.com/' }],
-    creator: 'Vercel',
-    publisher: 'Vercel',
+    keywords: ['Baloch', 'Baluch', 'Seattle'],
+    authors: [{ name: 'BCS Seattle', url: '' }],
+    creator: 'BCS Seattle',
+    publisher: 'BCS Seattle',
     robots: meta.robots,
     icons: { icon: meta.favicon },
     metadataBase: new URL(meta.url),
@@ -31,30 +39,32 @@ export async function generateMetadata(): Promise<Metadata> {
       url: meta.url,
       title: meta.title,
       description: meta.description,
-      images: [meta.cardImage],
+      // images: [meta.cardImage],
       type: 'website',
       siteName: meta.title
-    },
-    twitter: {
-      card: 'summary_large_image',
-      site: '@Vercel',
-      creator: '@Vercel',
-      title: meta.title,
-      description: meta.description,
-      images: [meta.cardImage]
     }
+    // twitter: {
+    //   card: 'summary_large_image',
+    //   site: '@Vercel',
+    //   creator: '@Vercel',
+    //   title: meta.title,
+    //   description: meta.description,
+    //   images: [meta.cardImage]
+    // }
   };
 }
 
 export default async function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en">
-      <body className="bg-black loading">
+      <body
+        className={cn(
+          'min-h-screen bg-background font-sans antialiased',
+          fontSans.variable
+        )}
+      >
         <Navbar />
-        <main
-          id="skip"
-          className="min-h-[calc(100dvh-4rem)] md:min-h[calc(100dvh-5rem)]"
-        >
+        <main id="skip" className="mx-auto p-12">
           {children}
         </main>
         <Footer />
