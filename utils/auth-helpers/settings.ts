@@ -1,5 +1,5 @@
 // Boolean toggles to determine which auth types are allowed
-const allowOauth = true;
+const allowOauth = false;
 const allowEmail = true;
 const allowPassword = true;
 

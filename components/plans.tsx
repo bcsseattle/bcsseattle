@@ -76,7 +76,7 @@ export default function Plans({ user, products, subscription }: Props) {
           <p className="text-4xl font-extrabold text-white sm:text-center sm:text-6xl">
             No contribution plans found. Create them in your{' '}
             <a
-              className="text-pink-500 underline"
+              className=""
               href="https://dashboard.stripe.com/products"
               rel="noopener noreferrer"
               target="_blank"
@@ -91,6 +91,7 @@ export default function Plans({ user, products, subscription }: Props) {
   } else {
     return (
       <section className="container mx-auto">
+        <h1 className="text-4xl font-extrabold text-center">Contribution Plans</h1>
         <div className="flex flex-wrap md:space-x-12">
           {products.map((product) => {
             const prices = product?.prices?.filter(

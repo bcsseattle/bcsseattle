@@ -1,5 +1,6 @@
 import Plans from '@/components/plans';
 import { createClient } from '@/utils/supabase/server';
+import { redirect } from 'next/navigation';
 
 export default async function Page() {
   const supabase = createClient();
@@ -18,6 +19,10 @@ export default async function Page() {
     console.log(error);
   }
 
+  if(subscription?.status === 'active') {
+    return redirect('/account');
+  }
+
   const { data: products } = await supabase
     .from('products')
     .select('*, prices(*)')
@@ -25,6 +30,7 @@ export default async function Page() {
     .eq('prices.active', true)
     .order('metadata->index')
     .order('unit_amount', { referencedTable: 'prices' });
+
 
   return (
     <section className="mb-32">

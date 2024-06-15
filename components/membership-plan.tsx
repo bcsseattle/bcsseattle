@@ -91,8 +91,6 @@ export default function MembershipPlan({ user, products }: Props) {
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   data-name="Layer 1"
-                  width="653.85194"
-                  height="247.58653"
                   viewBox="0 0 653.85194 247.58653"
                 >
                   <path

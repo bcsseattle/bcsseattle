@@ -68,7 +68,7 @@ export default function EmailSignIn({
             </Link>
           </p>
           <p>
-            <Link href="/signin/signup" className="font-light text-sm">
+            <Link href="/signin/signup" className="text-orange-900 font-light text-sm">
               Don't have an account? Sign up
             </Link>
           </p>
