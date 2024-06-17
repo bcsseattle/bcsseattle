@@ -7,6 +7,7 @@ import { Inter as FontSans } from 'next/font/google';
 import { cn } from '@/utils/cn';
 import '@/styles/main.css';
 import Footer from '@/components/Footer';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 
 const fontSans = FontSans({
   subsets: ['latin'],
@@ -57,6 +58,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en">
+      <GoogleAnalytics />
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased',
