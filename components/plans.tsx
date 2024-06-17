@@ -6,7 +6,12 @@ import { getErrorRedirect } from '@/utils/helpers';
 import { User } from '@supabase/supabase-js';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Price, ProductWithPrices, SubscriptionWithProduct } from '@/types';
+import {
+  Member,
+  Price,
+  ProductWithPrices,
+  SubscriptionWithProduct
+} from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -23,9 +28,10 @@ interface Props {
   user: User | null | undefined;
   products: ProductWithPrices[];
   subscription: SubscriptionWithProduct | null;
+  member: Member;
 }
 
-export default function Plans({ user, products, subscription }: Props) {
+export default function Plans({ user, products, subscription, member }: Props) {
   const router = useRouter();
   const [priceIdLoading, setPriceIdLoading] = useState<string>();
   const currentPath = usePathname();
@@ -91,7 +97,9 @@ export default function Plans({ user, products, subscription }: Props) {
   } else {
     return (
       <section className="container mx-auto">
-        <h1 className="text-4xl font-extrabold text-center">Contribution Plans</h1>
+        <h1 className="text-4xl font-extrabold text-center">
+          Contribution Plans
+        </h1>
         <div className="flex flex-wrap md:space-x-12">
           {products.map((product) => {
             const prices = product?.prices?.filter(
@@ -105,7 +113,10 @@ export default function Plans({ user, products, subscription }: Props) {
                 style: 'currency',
                 currency: price.currency!,
                 minimumFractionDigits: 0
-              }).format((price?.unit_amount || 10000) / 100);
+              }).format(
+                ((price?.unit_amount || 10000) * member?.totalMembersInFamily) /
+                  100
+              );
 
               const priceType =
                 product.name === 'Generous Contribution'

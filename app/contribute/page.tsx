@@ -19,7 +19,7 @@ export default async function Page() {
     console.log(error);
   }
 
-  if(subscription?.status === 'active') {
+  if (subscription?.status === 'active') {
     return redirect('/account');
   }
 
@@ -31,6 +31,11 @@ export default async function Page() {
     .order('metadata->index')
     .order('unit_amount', { referencedTable: 'prices' });
 
+  const { data: member } = await supabase
+    .from('members')
+    .select('*')
+    .eq('user_id', user?.id)
+    .maybeSingle();
 
   return (
     <section className="mb-32">
@@ -38,6 +43,7 @@ export default async function Page() {
         user={user}
         products={products ?? []}
         subscription={subscription}
+        member={member}
       />
     </section>
   );
