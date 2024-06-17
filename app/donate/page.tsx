@@ -10,7 +10,7 @@ export default function Page() {
           </h1>
           <Button variant="default" className="mt-10 w-60 self-center">
             <a
-              href="https://donate.stripe.com/test_6oEg12cbTgA5csE6oo"
+              href="https://buy.stripe.com/00gg2g57M3XxemQ4gi"
               target="_blank"
               rel="noreferrer"
             >
