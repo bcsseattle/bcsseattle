@@ -114,7 +114,7 @@ export default function Plans({ user, products, subscription, member }: Props) {
                 currency: price.currency!,
                 minimumFractionDigits: 0
               }).format(
-                ((price?.unit_amount || 10000) * member?.totalMembersInFamily) /
+                (price?.unit_amount || 10000) /
                   100
               );
 
