@@ -114,6 +114,7 @@ export default function Navlinks({ user }: NavlinksProps) {
                 <ListItem href="/account" title="Account"></ListItem>
                 <ListItem href="/contribute" title="Manage contribution"></ListItem>
                 <ListItem href="/members" title="Members"></ListItem>
+                <ListItem href="/community-funds" title="Community Funds"></ListItem>
                 <NavigationMenuLink asChild>
                   <li className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
                     <form onSubmit={(e) => handleRequest(e, SignOut, router)}>

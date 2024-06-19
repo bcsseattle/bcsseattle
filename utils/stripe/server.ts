@@ -113,7 +113,8 @@ export async function checkoutWithStripe(
     if (session) {
       try {
         await updateMember({
-          user_id: user.id || ''
+          user_id: user?.id || '',
+          email: user?.email || '',
         });
       } catch (err) {
         console.error(err);

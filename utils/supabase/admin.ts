@@ -213,7 +213,13 @@ const createOrRetrieveCustomer = async ({
   }
 };
 
-const updateMember = async ({ user_id }: { user_id: string }) => {
+const updateMember = async ({
+  user_id,
+  email
+}: {
+  user_id: string;
+  email: string;
+}) => {
   // Check if the member already exists in Supabase
   const { data: existingMember, error: queryError } = await supabaseAdmin
     .from('members')
@@ -225,9 +231,19 @@ const updateMember = async ({ user_id }: { user_id: string }) => {
     throw new Error(`Supabase member lookup failed: ${queryError.message}`);
   }
 
+  // Check if the customer already exists in Supabase
+  const { data: existingSupabaseCustomer } = await supabaseAdmin
+    .from('customers')
+    .select('*')
+    .eq('id', user_id)
+    .maybeSingle();
+
   const { error: updateError } = await supabaseAdmin
     .from('members')
-    .update({ status: 'active' })
+    .update({
+      status: 'active',
+      stripe_customer_id: existingSupabaseCustomer?.id
+    })
     .eq('user_id', user_id);
 
   if (updateError)
@@ -350,6 +366,56 @@ const manageSubscriptionStatusChange = async (
     );
 };
 
+const getStripeAvailableBalance = async () => {
+  const balance = await stripe.balance.retrieve();
+  return balance;
+};
+
+const getStripeRecentTransactions = async () => {
+  let allTransactions: any[] = [];
+  let hasMore = true;
+  let startingAfter = null;
+
+  while (hasMore) {
+    const params: any = {
+      limit: 100,
+      created: {
+        gte: 1718491540 // 2024-06-15
+      }
+    };
+    if (startingAfter) {
+      params.starting_after = startingAfter;
+    }
+
+    const balanceTransactions = await stripe.balanceTransactions.list(params);
+
+    allTransactions = allTransactions.concat(balanceTransactions.data);
+
+    hasMore = balanceTransactions.has_more;
+    if (hasMore) {
+      startingAfter =
+        balanceTransactions.data[balanceTransactions.data.length - 1].id;
+    }
+  }
+
+  return allTransactions;
+};
+
+const getStripePayments = async () => {
+  const payments = await stripe.paymentIntents.list({
+    limit: 30,
+    created: {
+      gte: 1718491540 // 2024-06-15
+    }
+  });
+  return payments;
+};
+
+const getStripeCustomers = async () => {
+  const customers = await stripe.customers.list();
+  return customers;
+};
+
 export {
   upsertProductRecord,
   upsertPriceRecord,
@@ -358,5 +424,9 @@ export {
   createOrRetrieveCustomer,
   updateMember,
   retrieveMember,
-  manageSubscriptionStatusChange
+  manageSubscriptionStatusChange,
+  getStripeAvailableBalance,
+  getStripeRecentTransactions,
+  getStripePayments,
+  getStripeCustomers
 };

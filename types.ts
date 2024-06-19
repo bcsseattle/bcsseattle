@@ -54,8 +54,8 @@ export type BillingInterval = 'lifetime' | 'year' | 'month';
 export interface Member {
   id: string;
   user_id: string;
-  // stripe_customer_id: string;
-  // subscription_id: string;
+  stripe_customer_id?: string;
+  subscription_id?: string;
   status: string;
   fullName: string;
   phone: string;
@@ -68,4 +68,5 @@ export interface Member {
   totalMembersInFamily: number;
   terms: boolean;
   metadata?: Record<string, any>;
+  customers: Record<string, any>;
 }
