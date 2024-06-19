@@ -14,7 +14,8 @@ export const MemberRegistrationFormSchema = z.object({
   address2: z
     .string()
     .min(1, 'Apartment, suite, unit, building, floor, etc.')
-    .optional(),
+    .optional()
+    .or(z.literal('')),
   city: z.string().min(1, 'City is required'),
   state: z.enum(['WA']),
   zip: z.string().min(5, 'Zip code is required'),

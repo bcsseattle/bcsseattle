@@ -17,15 +17,15 @@ export default async function Register() {
     data: { user }
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return redirect('/signin');
-  }
-
   const { data: member } = await supabase
     .from('members')
     .select('*')
     .eq('user_id', user?.id)
     .maybeSingle();
+
+  if (!user) {
+    return redirect('/signin');
+  }
 
   if (member?.status === 'active') {
     return redirect('/account');

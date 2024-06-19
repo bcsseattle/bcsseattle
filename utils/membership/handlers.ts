@@ -60,8 +60,8 @@ export async function registerMember(
     console.error(error);
     return getErrorRedirect(
       '/register',
-      'Hmm... Something went wrong.',
-      'Your membership account could not be created.'
+      'Something went wrong.',
+      'Your membership account could not be created. You may already be a member. Please contact support.'
     );
   }
 }

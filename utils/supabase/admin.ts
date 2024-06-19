@@ -37,7 +37,7 @@ interface Member {
 export const createMember = async (member: Member) => {
   const { error: upsertError } = await supabaseAdmin
     .from('members')
-    .upsert([member]);
+    .upsert(member, { onConflict: 'user_id' });
   if (upsertError)
     throw new Error(`Member insert/update failed: ${upsertError.message}`);
 };
