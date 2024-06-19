@@ -41,7 +41,7 @@ export default async function Register() {
               <CardDescription>Register to become a member</CardDescription>
             </CardHeader>
             <CardContent>
-              <RegisterForm redirectMethod={redirectMethod} user={user} />
+              <RegisterForm redirectMethod={redirectMethod} user={user} member={member}/>
             </CardContent>
           </Card>
         </div>

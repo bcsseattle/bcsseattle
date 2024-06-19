@@ -28,17 +28,19 @@ import {
 } from '@/components/ui/select';
 import { User } from '@supabase/supabase-js';
 import { registerMember } from '@/utils/membership/handlers';
-import { MemberRegistrationFormSchema } from '@/types';
+import { Member, MemberRegistrationFormSchema } from '@/types';
 
 // Define prop type with allowEmail boolean
 interface RegisterFormProps {
   redirectMethod: string;
   user: User | null | undefined;
+  member: Member | null | undefined;
 }
 
 export default function RegisterForm({
   redirectMethod,
-  user
+  user,
+  member
 }: RegisterFormProps) {
   const router = redirectMethod === 'client' ? useRouter() : null;
 
@@ -46,15 +48,15 @@ export default function RegisterForm({
     resolver: zodResolver(MemberRegistrationFormSchema),
     defaultValues: {
       fullName: user?.user_metadata.full_name || '',
-      membershipType: 'Individual',
-      totalMembersInFamily: 1,
-      phone: user?.phone ?? '',
-      address: '',
-      address2: '',
-      city: '',
-      state: 'WA',
-      zip: '',
-      terms: false
+      membershipType: (member?.membershipType as 'Individual') || 'Individual',
+      totalMembersInFamily: member?.totalMembersInFamily ?? 1,
+      phone: member?.phone ?? user?.phone ?? '',
+      address: member?.address ?? '',
+      address2: member?.address2 ?? '',
+      city: member?.city ?? '',
+      state: (member?.state as 'WA') ?? 'WA',
+      zip: member?.zip ?? '',
+      terms: member?.terms ?? false
     }
   });
 
