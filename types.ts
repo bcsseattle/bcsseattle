@@ -52,6 +52,7 @@ export interface Props {
 export type BillingInterval = 'lifetime' | 'year' | 'month';
 
 export interface Member {
+  id: string;
   user_id: string;
   // stripe_customer_id: string;
   // subscription_id: string;

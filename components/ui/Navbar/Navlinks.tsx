@@ -113,6 +113,7 @@ export default function Navlinks({ user }: NavlinksProps) {
               <ul className="grid w-[400px] gap-3 p-4 md:w-[200px] md:grid-cols-2 lg:w-[600px] ">
                 <ListItem href="/account" title="Account"></ListItem>
                 <ListItem href="/contribute" title="Manage contribution"></ListItem>
+                <ListItem href="/members" title="Members"></ListItem>
                 <NavigationMenuLink asChild>
                   <li className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
                     <form onSubmit={(e) => handleRequest(e, SignOut, router)}>
