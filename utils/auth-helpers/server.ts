@@ -154,7 +154,11 @@ export async function signInWithPassword(formData: FormData) {
     );
   } else if (data.user) {
     cookieStore.set('preferredSignInView', 'password_signin', { path: '/' });
-    redirectPath = getStatusRedirect('/register', 'Success!', 'You are now signed in.');
+    redirectPath = getStatusRedirect(
+      '/register',
+      'Success!',
+      'You are now signed in.'
+    );
   } else {
     redirectPath = getErrorRedirect(
       '/signin/password_signin',
@@ -315,6 +319,8 @@ export async function updateEmail(formData: FormData) {
 export async function updateName(formData: FormData) {
   // Get form data
   const fullName = String(formData.get('fullName')).trim();
+  console.log(formData);
+  console.log(fullName);
 
   const supabase = createClient();
   const { error, data } = await supabase.auth.updateUser({
@@ -328,6 +334,10 @@ export async function updateName(formData: FormData) {
       error.message
     );
   } else if (data.user) {
+    await supabase
+      .from('users')
+      .update({ full_name: fullName })
+      .eq('id', data.user.id);
     return getStatusRedirect(
       '/account',
       'Success!',

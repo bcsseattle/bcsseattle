@@ -19,7 +19,7 @@ export default async function Account() {
   const { data: subscription, error } = await supabase
     .from('subscriptions')
     .select('*, prices(*, products(*))')
-    .in('status', ['trialing', 'active'])
+    .eq('status', 'active')
     .maybeSingle();
 
   if (error) {
@@ -40,6 +40,7 @@ export default async function Account() {
     return redirect('/register');
   }
 
+  console.log(userDetails);
 
   return (
     <section className="my-8">
