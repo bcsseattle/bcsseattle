@@ -64,8 +64,8 @@ export default async function CommunityFunds() {
       0
     ) ?? 0;
 
-  const collectedAmount =
-    availableAmount > pendingAmount ? availableAmount : pendingAmount;
+  const collectedAmount = availableAmount + pendingAmount;
+    // availableAmount > pendingAmount ? availableAmount : pendingAmount;
 
   const collectedFunds = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -157,7 +157,7 @@ export default async function CommunityFunds() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stripeFeesString}</div>
+            <div className="text-2xl font-bold">-{stripeFeesString}</div>
           </CardContent>
         </Card>
 
