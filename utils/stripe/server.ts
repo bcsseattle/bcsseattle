@@ -74,7 +74,10 @@ export async function checkoutWithStripe(
       line_items: [
         {
           price: price.id,
-          quantity: isMembership || isGenerous ? 1 : Math.min(member?.totalMembersInFamily, 5) ?? 1
+          quantity:
+            isMembership || isGenerous
+              ? 1
+              : Math.min(member?.totalMembersInFamily, 5) ?? 1
         }
       ],
       cancel_url: getURL(cancelUrl),
@@ -114,7 +117,7 @@ export async function checkoutWithStripe(
       try {
         await updateMember({
           user_id: user?.id || '',
-          email: user?.email || '',
+          email: user?.email || ''
         });
       } catch (err) {
         console.error(err);

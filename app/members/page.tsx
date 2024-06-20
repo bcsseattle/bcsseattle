@@ -17,6 +17,12 @@ export default async function Members() {
     .eq('user_id', user?.id)
     .maybeSingle();
 
+  const { data: subscriptions } = await supabase
+    .from('subscriptions')
+    .select('*');
+
+  const { data: prices } = await supabase.from('prices').select('*');
+
   if (!user) {
     return redirect('/signin');
   }
@@ -27,7 +33,11 @@ export default async function Members() {
 
   return (
     <>
-      <MemberList members={members || []} />
+      <MemberList
+        members={members || []}
+        subscriptions={subscriptions || []}
+        prices={prices || []}
+      />
     </>
   );
 }

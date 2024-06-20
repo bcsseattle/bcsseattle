@@ -238,11 +238,18 @@ const updateMember = async ({
     .eq('id', user_id)
     .maybeSingle();
 
+  const { data: subscription } = await supabaseAdmin
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', user_id)
+    .maybeSingle();
+
   const { error: updateError } = await supabaseAdmin
     .from('members')
     .update({
       status: 'active',
-      stripe_customer_id: existingSupabaseCustomer?.id
+      stripe_customer_id: existingSupabaseCustomer?.id,
+      subscription_id: subscription?.id
     })
     .eq('user_id', user_id);
 

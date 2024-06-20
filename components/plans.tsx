@@ -124,7 +124,7 @@ export default function Plans({ user, products, subscription, member }: Props) {
                   : price.interval === 'month'
                     ? 'monthly'
                     : 'annual';
-              console.log('isGenerous', price);
+
               const title =
                 price.interval === 'month'
                   ? 'Monthly Contribution'
