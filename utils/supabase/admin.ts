@@ -371,6 +371,14 @@ const manageSubscriptionStatusChange = async (
       uuid,
       subscription.default_payment_method as Stripe.PaymentMethod
     );
+
+  await supabaseAdmin
+    .from('members')
+    .update({
+      status: 'active',
+      subscription_id: subscription?.id
+    })
+    .eq('user_id', uuid);
 };
 
 const getStripeAvailableBalance = async () => {
@@ -410,7 +418,7 @@ const getStripeRecentTransactions = async () => {
 
 const getStripePayments = async () => {
   const payments = await stripe.paymentIntents.list({
-    limit: 30,
+    limit: 100,
     created: {
       gte: 1718491540 // 2024-06-15
     }

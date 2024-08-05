@@ -9,7 +9,10 @@ export default async function Members() {
     data: { user }
   } = await supabase.auth.getUser();
 
-  const { data: members } = await supabase.from('members').select('*');
+  const { data: members } = await supabase
+    .from('members')
+    .select('*')
+    .order('fullName', { ascending: true });
 
   const { data: member } = await supabase
     .from('members')
