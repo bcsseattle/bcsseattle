@@ -28,7 +28,17 @@ export default async function MembershipFeePage() {
     .eq('user_id', user?.id)
     .maybeSingle();
 
-  if (member?.status === 'active') {
+  const { data: subscription }: { data: any } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', user?.id)
+    .maybeSingle();
+
+  if (
+    subscription &&
+    subscription?.status === 'active' &&
+    member?.status === 'active'
+  ) {
     return redirect('/account');
   }
 

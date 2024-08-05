@@ -247,7 +247,7 @@ const updateMember = async ({
   const { error: updateError } = await supabaseAdmin
     .from('members')
     .update({
-      status: 'active',
+      status: subscription ? 'active' : 'inactive',
       stripe_customer_id: existingSupabaseCustomer?.id,
       subscription_id: subscription?.id
     })

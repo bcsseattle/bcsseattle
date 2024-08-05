@@ -27,7 +27,17 @@ export default async function Register() {
     return redirect('/signin');
   }
 
-  if (member?.status === 'active') {
+  const { data: subscription }: { data: any } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', user?.id)
+    .maybeSingle();
+
+  if (
+    subscription &&
+    subscription?.status === 'active' &&
+    member?.status === 'active'
+  ) {
     return redirect('/account');
   }
 
@@ -41,7 +51,11 @@ export default async function Register() {
               <CardDescription>Register to become a member</CardDescription>
             </CardHeader>
             <CardContent>
-              <RegisterForm redirectMethod={redirectMethod} user={user} member={member}/>
+              <RegisterForm
+                redirectMethod={redirectMethod}
+                user={user}
+                member={member}
+              />
             </CardContent>
           </Card>
         </div>
