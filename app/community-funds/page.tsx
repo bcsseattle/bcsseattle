@@ -73,7 +73,7 @@ export default async function CommunityFunds() {
       0
     ) ?? 0;
 
-  const collectedAmount = availableAmount + pendingAmount + fundsInBank;
+  const collectedAmount = availableAmount + pendingAmount + fundsInBank + totalStripeFees;
   // availableAmount > pendingAmount ? availableAmount : pendingAmount;
 
   const collectedFunds = new Intl.NumberFormat('en-US', {
