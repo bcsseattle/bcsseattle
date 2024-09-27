@@ -66,7 +66,7 @@ export default async function RootLayout({ children }: PropsWithChildren) {
         )}
       >
         <Navbar />
-        <main id="skip" className="mx-auto p-12">
+        <main id="skip" className="mx-auto p-2 sm:p-12">
           {children}
         </main>
         <Footer />

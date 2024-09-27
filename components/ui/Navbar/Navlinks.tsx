@@ -91,6 +91,11 @@ export default function Navlinks({ user }: NavlinksProps) {
                   {component.description}
                 </ListItem>
               ))}
+              {
+                user && (
+                  <ListItem href="/resources/immigration" title="Immigration"></ListItem>
+                )
+              }
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>

@@ -51,3 +51,160 @@
 p {
   @apply mt-2;
 }
+
+.notion-heading_1 {
+  @apply text-3xl font-bold;
+}
+
+.notion-heading_2 {
+  @apply text-2xl font-bold;
+}
+
+.notion-heading_3 {
+  @apply text-lg font-bold;
+}
+
+.notion-numbered_list_item {
+  @apply list-decimal ml-4;
+}
+
+.notion-bulleted_list {
+  @apply list-disc ml-4;
+}
+
+.bulleted_list_item {
+  @apply list-disc ml-4;
+}
+
+.notion-table {
+  @apply w-full;
+  @apply border;
+  @apply border-collapse;
+  @apply table-auto;
+}
+
+.notion-table_cell {
+  @apply border-r;
+  @apply p-2
+}
+
+.notion-table_cell:first-child {
+  @apply border-l;
+}
+
+.notion-table_row {
+  @apply border-b;
+}
+
+.notion-table_row:first-child {
+  @apply border-t;
+}
+
+.notion-quote {
+  @apply text-gray-500 dark:text-gray-400 italic mb-5 mt-5;
+}
+
+.notion-text-href {
+  @apply text-primary underline;
+}
+
+.notion-heading_3 {
+  @apply mb-5
+}
+
+.notion-code {
+  @apply mt-5 mb-5 text-sm p-4 overflow-auto bg-gray-100 dark:bg-gray-900 rounded-md;
+  ;
+}
+
+.notion-text-bold {
+  @apply font-bold;
+}
+
+.notion-text-code {
+  @apply px-2 inline-block bg-gray-200 dark:bg-gray-700 rounded text-secondary dark:text-secondary-foreground;
+}
+
+.notion-heading_1 {
+  @apply font-bold mb-4 text-foreground dark:text-primary-foreground mt-5;
+}
+
+.notion-numbered_list {
+  @apply list-decimal pl-6 text-foreground dark:text-primary-foreground;
+}
+
+.notion-numbered_list_item {
+  @apply mb-2;
+}
+
+.notion-color-default {
+  @apply text-gray-800 dark:text-gray-300;
+}
+
+.notion-bulleted_list {
+  @apply list-disc pl-6;
+}
+
+.notion-bulleted_list_item {
+  @apply mb-2;
+}
+
+.notion-color-default {
+  @apply text-gray-800 dark:text-gray-300;
+}
+
+.notion-image {
+  @apply mt-5 mb-5;
+}
+
+.notion-color-yellow_background {
+  @apply bg-yellow-100 dark:bg-yellow-800;
+}
+
+.notion-color-red_background {
+  @apply bg-red-100 dark:bg-red-800;
+}
+
+.notion-color-blue_background {
+  @apply bg-blue-100 dark:bg-blue-800;
+}
+
+.notion-color-green_background {
+  @apply bg-green-100 dark:bg-green-800;
+}
+
+.notion-color-gray_background {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+.notion-color_orange_background {
+  @apply bg-orange-100 dark:bg-orange-800;
+}
+
+.notion-color_purple_background {
+  @apply bg-purple-100 dark:bg-purple-800;
+}
+
+.notion-color-purple_background {
+  @apply bg-purple-100 dark:bg-purple-800;
+}
+
+.notion-color-purple {
+  @apply text-purple-700 dark:text-purple-300;
+}
+
+.notion-color-green {
+  @apply text-green-700 dark:text-green-300;
+}
+
+.notion-color-blue {
+  @apply text-blue-700 dark:text-blue-300;
+}
+
+.notion-color-red {
+  @apply text-red-700 dark:text-red-300;
+}
+
+blockquote {
+  @apply border-l border-primary/30 pl-4 italic;
+}
