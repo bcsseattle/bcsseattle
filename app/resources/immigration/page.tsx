@@ -7,7 +7,7 @@ export interface Resource {
   image: string;
 }
 
-export const resources: Resource[] = [
+const resources: Resource[] = [
   {
     name: 'Asylum Resources',
     href: '/resources/immigration/asylum',
