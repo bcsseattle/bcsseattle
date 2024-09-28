@@ -1,5 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { createClient } from '@/utils/supabase/server';
+import { redirect } from 'next/navigation';
 
 export interface Resource {
   name: string;
@@ -25,9 +27,18 @@ const resources: Resource[] = [
   }
 ];
 
-export default function Page() {
+export default async function Page() {
+  const supabase = createClient();
+
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return redirect('/signin');
+  }
+  
   return (
-    <div className='p-4'>
+    <div className="p-4">
       <h1 className="text-2xl font-bold">Immigration Resources</h1>
       <p className="mt-5">
         The U.S. immigration process can be incredibly complex and difficult to
