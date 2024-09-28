@@ -27,7 +27,7 @@ const resources: Resource[] = [
 
 export default function Page() {
   return (
-    <div>
+    <div className='p-4'>
       <h1 className="text-2xl font-bold">Immigration Resources</h1>
       <p className="mt-5">
         The U.S. immigration process can be incredibly complex and difficult to
@@ -45,7 +45,7 @@ export default function Page() {
         {resources.map((resource) => (
           <div
             key={resource.name}
-            className="p-4 max-w-sm relative isolate transition duration-300 ease-in-out hover:scale-110"
+            className="m-1 sm:m-4 max-w-sm relative isolate transition duration-300 ease-in-out hover:scale-110"
           >
             <Link href={resource.href}>
               <Image
@@ -55,7 +55,7 @@ export default function Page() {
                 width={300}
                 height={400}
               />
-              <div className="absolute inset-4 bg-gray-700 opacity-60 rounded-md"></div>
+              <div className="absolute inset-0 bg-gray-700 opacity-60 rounded-md"></div>
               <div className="absolute inset-0 flex items-center justify-center">
                 <h2 className="text-white text-2xl font-bold">
                   {resource.name}
