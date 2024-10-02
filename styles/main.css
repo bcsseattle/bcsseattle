@@ -208,3 +208,9 @@ p {
 blockquote {
   @apply border-l border-primary/30 pl-4 italic;
 }
+
+@media print {
+  .no-print {
+    @apply hidden;
+  }
+}
