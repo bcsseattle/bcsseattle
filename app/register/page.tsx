@@ -27,17 +27,16 @@ export default async function Register() {
     return redirect('/signin');
   }
 
-  const { data: subscription }: { data: any } = await supabase
+  const { data: subscriptions }: { data: any } = await supabase
     .from('subscriptions')
     .select('*')
-    .eq('user_id', user?.id)
-    .maybeSingle();
+    .eq('user_id', user?.id);
 
-  if (
-    subscription &&
-    subscription?.status === 'active' &&
-    member?.status === 'active'
-  ) {
+  const isSubscriptionActive = subscriptions?.filter(
+    (subscription: any) => subscription.status === 'active'
+  );
+
+  if (subscriptions && isSubscriptionActive && member?.status === 'active') {
     return redirect('/account');
   }
 
