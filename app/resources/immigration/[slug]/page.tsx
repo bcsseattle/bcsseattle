@@ -15,6 +15,26 @@ export default async function Page({ params }: { params: { slug: string } }) {
   if (!user) {
     return redirect('/signin');
   }
+
+  const { data: subscriptions }: { data: any } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', user?.id);
+
+  const isSubscriptionActive = subscriptions?.filter(
+    (subscription: any) => subscription.status === 'active'
+  );
+
+  const { data: member } = await supabase
+  .from('members')
+  .select('*')
+  .eq('user_id', user?.id)
+  .maybeSingle();
+
+  if (subscriptions && !isSubscriptionActive || member?.status !== 'active') {
+    return redirect('/register');
+  }
+
   const post = await fetchPageBySlug(params?.slug);
 
   if (!post) notFound();
