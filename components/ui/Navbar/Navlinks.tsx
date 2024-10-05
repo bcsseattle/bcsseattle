@@ -32,6 +32,7 @@ interface NavlinksProps {
 
 export default function Navlinks({ user }: NavlinksProps) {
   const router = getRedirectMethod() === 'client' ? useRouter() : null;
+  const currentPath = usePathname();
 
   return (
     <NavigationMenu>
@@ -45,7 +46,10 @@ export default function Navlinks({ user }: NavlinksProps) {
                   href="/about-us"
                   className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 pt-2 no-underline outline-none focus:shadow-md"
                 >
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()} asChild>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle()}
+                    asChild
+                  >
                     <>
                       <div className="mb-2 mt-4 text-lg font-medium">
                         BCS Seattle
@@ -91,11 +95,12 @@ export default function Navlinks({ user }: NavlinksProps) {
                   {component.description}
                 </ListItem>
               ))}
-              {
-                user && (
-                  <ListItem href="/resources/immigration" title="Immigration"></ListItem>
-                )
-              }
+              {user && (
+                <ListItem
+                  href="/resources/immigration"
+                  title="Immigration"
+                ></ListItem>
+              )}
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
@@ -117,16 +122,22 @@ export default function Navlinks({ user }: NavlinksProps) {
             <NavigationMenuContent>
               <ul className="grid w-[400px] gap-3 p-4 md:w-[200px] md:grid-cols-2 lg:w-[600px] ">
                 <ListItem href="/account" title="Account"></ListItem>
-                <ListItem href="/contribute" title="Manage contribution"></ListItem>
+                <ListItem
+                  href="/contribute"
+                  title="Manage contribution"
+                ></ListItem>
                 <ListItem href="/members" title="Members"></ListItem>
-                <ListItem href="/community-funds" title="Community Funds"></ListItem>
+                <ListItem
+                  href="/community-funds"
+                  title="Community Funds"
+                ></ListItem>
                 <NavigationMenuLink asChild>
                   <li className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                    <form onSubmit={(e) => handleRequest(e, SignOut, router)}>
+                  <form onSubmit={(e) => handleRequest(e, SignOut, router)}>
                       <input
                         type="hidden"
                         name="pathName"
-                        value={usePathname()}
+                        value={currentPath}
                       />
                       <button type="submit">Sign out</button>
                     </form>

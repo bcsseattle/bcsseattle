@@ -40,8 +40,6 @@ export default async function Account() {
     return redirect('/register');
   }
 
-  console.log(userDetails);
-
   return (
     <section className="my-8">
       <div className="space-y-4">

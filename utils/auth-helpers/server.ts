@@ -319,8 +319,6 @@ export async function updateEmail(formData: FormData) {
 export async function updateName(formData: FormData) {
   // Get form data
   const fullName = String(formData.get('fullName')).trim();
-  console.log(formData);
-  console.log(fullName);
 
   const supabase = createClient();
   const { error, data } = await supabase.auth.updateUser({
