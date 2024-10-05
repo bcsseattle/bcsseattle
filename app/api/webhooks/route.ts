@@ -75,6 +75,35 @@ export async function POST(req: Request) {
             );
           }
           break;
+        case 'balance.available':
+        case 'billing_portal.session.created':
+        case 'charge.succeeded':
+        case 'checkout.session.expired':
+        case 'customer.created':
+        case 'customer.deleted':
+        case 'customer.discount.created':
+        case 'customer.discount.deleted':
+        case 'customer.discount.updated':
+        case 'customer.source.created':
+        case 'customer.source.deleted':
+        case 'customer.source.updated':
+        case 'customer.subscription.deleted':
+        case 'customer.subscription.pending_update_applied':
+        case 'customer.subscription.pending_update_expired':
+        case 'customer.subscription.trial_will_end':
+        case 'customer.subscription.updated':
+        case 'customer.tax_id.created':
+        case 'customer.tax_id.deleted':
+        case 'customer.tax_id.updated':
+        case 'invoice.created':
+        case 'invoice.finalized':
+        case 'invoice.payment_succeeded':
+        case 'invoice.paid':
+        case 'payment_intent.created':
+        case 'payment_intent.succeeded':
+          return new Response('Event type ignored', {
+            status: 204,
+          });
         default:
           throw new Error('Unhandled relevant event!');
       }
