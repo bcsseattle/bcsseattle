@@ -119,7 +119,7 @@ export default function Plans({ user, products, subscription, member }: Props) {
               );
 
               const priceType =
-                product.name === 'Generous Contribution'
+                product.name === 'BCS Donation'
                   ? 'generous'
                   : price.interval === 'month'
                     ? 'monthly'
