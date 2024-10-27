@@ -5,7 +5,7 @@ const allowPassword = true;
 
 // Boolean toggle to determine whether auth interface should route through server or client
 // (Currently set to false because screen sometimes flickers with server redirects)
-const allowServerRedirect = true;
+const allowServerRedirect = false;
 
 // Check that at least one of allowPassword and allowEmail is true
 if (!allowPassword && !allowEmail)
