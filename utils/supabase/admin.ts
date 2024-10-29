@@ -417,12 +417,14 @@ const getStripeRecentTransactions = async () => {
 };
 
 const getStripePayments = async () => {
-  const payments = await stripe.paymentIntents.list({
-    limit: 100,
-    created: {
-      gte: 1718491540 // 2024-06-15
-    }
-  });
+  const payments = await stripe.paymentIntents
+    .list({
+      limit: 100,
+      created: {
+        gte: 1718491540 // 2024-06-15
+      }
+    })
+    .autoPagingToArray({ limit: 1000 });
   return payments;
 };
 

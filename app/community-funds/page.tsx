@@ -4,13 +4,13 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
+  // CardFooter,
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
 import {
   getStripeAvailableBalance,
-  getStripeCustomers,
+  // getStripeCustomers,
   getStripePayments,
   getStripeRecentTransactions
 } from '@/utils/supabase/admin';
@@ -57,7 +57,7 @@ export default async function CommunityFunds() {
     0
   );
 
-  const { data: payments } = await getStripePayments();
+  const payments = await getStripePayments();
   const { available, pending } = await getStripeAvailableBalance();
   const transactions = await getStripeRecentTransactions();
 
@@ -73,7 +73,8 @@ export default async function CommunityFunds() {
       0
     ) ?? 0;
 
-  const collectedAmount = availableAmount + pendingAmount + fundsInBank + totalStripeFees;
+  const collectedAmount =
+    availableAmount + pendingAmount + fundsInBank + totalStripeFees;
   // availableAmount > pendingAmount ? availableAmount : pendingAmount;
 
   const collectedFunds = new Intl.NumberFormat('en-US', {
@@ -195,7 +196,7 @@ export default async function CommunityFunds() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
-        <Card className="col-span-3">
+        <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Administrative Expenses</CardTitle>
             <CardDescription>
@@ -206,14 +207,9 @@ export default async function CommunityFunds() {
             <Expenses expenses={expenses || []} />
           </CardContent>
         </Card>
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Recent funds</CardTitle>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <RecentFunds payments={payments} members={members || []} />
-          </CardContent>
-        </Card>
+      </div>
+      <div className="col-span-4">
+        <RecentFunds payments={payments} members={members || []} />
       </div>
     </>
   );

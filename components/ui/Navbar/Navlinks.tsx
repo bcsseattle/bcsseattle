@@ -120,7 +120,7 @@ export default function Navlinks({ user }: NavlinksProps) {
           <NavigationMenuItem>
             <NavigationMenuTrigger>Membership</NavigationMenuTrigger>
             <NavigationMenuContent>
-              <ul className="grid w-[400px] gap-3 p-4 md:w-[200px] md:grid-cols-2 lg:w-[600px] ">
+              <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
                 <ListItem href="/account" title="Account"></ListItem>
                 <ListItem
                   href="/contribute"
