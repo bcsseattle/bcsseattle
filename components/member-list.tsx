@@ -63,7 +63,7 @@ export default function MemberList({
                 style: 'currency',
                 currency: 'USD',
                 minimumFractionDigits: 0
-              }).format((price?.unit_amount * member.totalMembersInFamily || 0) / 100);
+              }).format(((price?.unit_amount || 0) * member.totalMembersInFamily || 0) / 100);
 
               return (
                 <TableRow key={member.id}>
