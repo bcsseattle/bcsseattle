@@ -8,6 +8,7 @@ import { cn } from '@/utils/cn';
 import '@/styles/main.css';
 import Footer from '@/components/Footer';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
+import Breadcrumbs from '@/components/ui/breadcrumbs';
 
 const fontSans = FontSans({
   subsets: ['latin'],
@@ -67,6 +68,7 @@ export default async function RootLayout({ children }: PropsWithChildren) {
       >
         <Navbar />
         <main id="skip" className="mx-auto p-2 sm:p-12">
+          <Breadcrumbs />
           {children}
         </main>
         <Footer />
