@@ -416,9 +416,10 @@ const getStripeRecentTransactions = async () => {
   return allTransactions;
 };
 
-const getStripePayments = async () => {
+const getStripePayments = async (customerId?: string) => {
   const payments = await stripe.paymentIntents
     .list({
+      customer: customerId,
       limit: 100,
       created: {
         gte: 1718491540 // 2024-06-15

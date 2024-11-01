@@ -2,16 +2,19 @@
 
 import { Member } from '@/types';
 import Stripe from 'stripe';
-import { columns } from './payments/columns';
+import { Data } from './payments/columns';
 import { CardHeader, CardTitle } from './ui/card';
 import { DataTable } from './payments/data-table';
+import { ColumnDef } from '@tanstack/react-table';
 
 export default function RecentFunds({
   payments = [],
-  members = []
+  members = [],
+  columns = []
 }: {
   payments?: Stripe.PaymentIntent[];
   members?: Member[];
+  columns?: ColumnDef<Data>[];
 }) {
   const data = payments
     ?.filter(
@@ -36,14 +39,14 @@ export default function RecentFunds({
           day: 'numeric',
           year: 'numeric'
         }),
-        amount: payment.amount,
+        amount: payment.amount
       };
     });
 
   return (
     <div>
       <CardHeader>
-        <CardTitle>Recent funds</CardTitle>
+        <CardTitle>Recent Contributions</CardTitle>
       </CardHeader>
       <DataTable columns={columns} data={data} />
     </div>

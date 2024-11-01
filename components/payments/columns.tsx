@@ -36,7 +36,10 @@ export const columns: ColumnDef<Data>[] = [
     cell: ({ row }) => {
       const member: Member = row.getValue('member');
       return (
-        <Link href={`/members/${member?.id}`} className="text-blue-500 hover:text-blue-700 focus:text-blue-700 active:text-blue-800">
+        <Link
+          href={`/members/${member?.id}`}
+          className="text-blue-500 hover:text-blue-700 focus:text-blue-700 active:text-blue-800"
+        >
           {member?.fullName}
         </Link>
       );
@@ -116,6 +119,66 @@ export const columns: ColumnDef<Data>[] = [
       const member: Member = row.getValue('member');
       return (
         <div className="text-right w-1/3">{member?.totalMembersInFamily}</div>
+      );
+    }
+  }
+];
+
+export const individualColumns: ColumnDef<Data>[] = [
+  {
+    accessorKey: 'date', // Update the accessorKey to match the data key for the date field
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Payment Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    sortingFn: (rowA, rowB) => {
+      const dateA = new Date(rowA.getValue('date')).getTime();
+      const dateB = new Date(rowB.getValue('date')).getTime();
+      return dateA - dateB;
+    }
+  },
+  {
+    accessorKey: 'amount',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Amount
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const amount = parseFloat(row.getValue('amount'));
+      const formatted = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0
+      }).format(amount / 100);
+
+      return <div className="text-center font-medium">{formatted}</div>;
+    }
+  },
+  {
+    accessorKey: 'type',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Type
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
       );
     }
   }

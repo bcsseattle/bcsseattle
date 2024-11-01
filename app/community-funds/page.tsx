@@ -1,4 +1,5 @@
 import { Expenses } from '@/components/expenses';
+import { columns } from '@/components/payments/columns';
 import RecentFunds from '@/components/recent-funds';
 import {
   Card,
@@ -209,7 +210,7 @@ export default async function CommunityFunds() {
         </Card>
       </div>
       <div className="col-span-4">
-        <RecentFunds payments={payments} members={members || []} />
+        <RecentFunds payments={payments} members={members || []} columns={columns}/>
       </div>
     </>
   );

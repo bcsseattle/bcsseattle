@@ -2,7 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PersonIcon } from '@radix-ui/react-icons';
 import { createClient } from '@/utils/supabase/server';
 import { ClockIcon, DollarSign, TypeIcon } from 'lucide-react';
-import { getTotalCustomerSpent } from '@/utils/supabase/admin';
+import {
+  getStripePayments,
+  getTotalCustomerSpent
+} from '@/utils/supabase/admin';
+import RecentFunds from '@/components/recent-funds';
+import { individualColumns } from '@/components/payments/columns';
 
 export default async function Page({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -16,6 +21,10 @@ export default async function Page({ params }: { params: { id: string } }) {
     .select('*, customers(stripe_customer_id)')
     .eq('id', params?.id)
     .maybeSingle();
+
+  const payments = await getStripePayments(
+    member?.customers?.stripe_customer_id
+  );
 
   // get total spent from customer in stripe
   const totalSpent = await getTotalCustomerSpent(
@@ -75,6 +84,11 @@ export default async function Page({ params }: { params: { id: string } }) {
           </Card>
         ))}
       </div>
+      <RecentFunds
+        payments={payments}
+        members={[member]}
+        columns={individualColumns}
+      />
     </div>
   );
 }
