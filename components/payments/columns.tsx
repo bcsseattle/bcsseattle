@@ -5,6 +5,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown } from 'lucide-react';
 import Stripe from 'stripe';
 import { Button } from '../ui/button';
+import Link from 'next/link';
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -16,6 +17,11 @@ export type Data = {
 export const columns: ColumnDef<Data>[] = [
   {
     accessorKey: 'member',
+    sortingFn: (rowA, rowB) => {
+      const memberA: Member = rowA.getValue('member');
+      const memberB: Member = rowB.getValue('member');
+      return memberA?.fullName.localeCompare(memberB.fullName);
+    },
     header: ({ column }) => {
       return (
         <Button
@@ -25,6 +31,14 @@ export const columns: ColumnDef<Data>[] = [
           Member
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const member: Member = row.getValue('member');
+      return (
+        <Link href={`/members/${member?.id}`} className="text-blue-500 hover:text-blue-700 focus:text-blue-700 active:text-blue-800">
+          {member?.fullName}
+        </Link>
       );
     }
   },
@@ -86,7 +100,7 @@ export const columns: ColumnDef<Data>[] = [
     }
   },
   {
-    accessorKey: 'totalMembersInFamily',
+    accessorKey: 'member.totalMembersInFamily',
     header: ({ column }) => {
       return (
         <Button
@@ -99,10 +113,9 @@ export const columns: ColumnDef<Data>[] = [
       );
     },
     cell: ({ row }) => {
+      const member: Member = row.getValue('member');
       return (
-        <div className="text-right w-1/3">
-          {row.getValue('totalMembersInFamily')}
-        </div>
+        <div className="text-right w-1/3">{member?.totalMembersInFamily}</div>
       );
     }
   }

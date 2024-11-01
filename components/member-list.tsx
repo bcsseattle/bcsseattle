@@ -17,6 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 import { Member, Price, Subscription } from '@/types';
+import Link from 'next/link';
 
 export default function MemberList({
   members,
@@ -63,13 +64,21 @@ export default function MemberList({
                 style: 'currency',
                 currency: 'USD',
                 minimumFractionDigits: 0
-              }).format(((price?.unit_amount || 0) * member.totalMembersInFamily || 0) / 100);
+              }).format(
+                ((price?.unit_amount || 0) * member.totalMembersInFamily || 0) /
+                  100
+              );
 
               return (
                 <TableRow key={member.id}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell className="font-medium">
-                    {member.fullName}
+                    <Link
+                      href={`/members/${member.id}`}
+                      className="text-blue-500 hover:text-blue-700 focus:text-blue-700 active:text-blue-800"
+                    >
+                      {member.fullName}
+                    </Link>
                   </TableCell>
                   <TableCell>{member.city}</TableCell>
                   <TableCell>

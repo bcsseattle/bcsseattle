@@ -428,6 +428,30 @@ const getStripePayments = async () => {
   return payments;
 };
 
+const getTotalCustomerSpent = async (customerId: string) => {
+  let totalSpent = 0;
+  try {
+    const charges = await stripe.charges
+      .list({
+        customer: customerId,
+        limit: 100,
+        created: {
+          gte: 1718491540 // 2024-06-15
+        }
+      })
+      .autoPagingToArray({ limit: 1000 });
+
+    charges.forEach((charge) => {
+      if (charge.status === 'succeeded') {
+        totalSpent += charge.amount;
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching charges:', error);
+  }
+  return totalSpent;
+};
+
 const getStripeCustomers = async () => {
   const customers = await stripe.customers.list();
   return customers;
@@ -445,5 +469,6 @@ export {
   getStripeAvailableBalance,
   getStripeRecentTransactions,
   getStripePayments,
+  getTotalCustomerSpent,
   getStripeCustomers
 };
