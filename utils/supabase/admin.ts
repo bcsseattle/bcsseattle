@@ -1,3 +1,5 @@
+import { z } from 'zod';
+import { FuneralFundFormSchema } from '@/types';
 import { toDateTime } from '@/utils/helpers';
 import { stripe } from '@/utils/stripe/config';
 import { User, createClient } from '@supabase/supabase-js';
@@ -458,6 +460,35 @@ const getStripeCustomers = async () => {
   return customers;
 };
 
+const updateFuneralSignup = async (
+  values: z.infer<typeof FuneralFundFormSchema>
+) => {
+  // Check if the customer already exists in Supabase
+  const { data: existingSignedUp } = await supabaseAdmin
+    .from('funeral_fund_interest')
+    .select('*')
+    .eq('email', values.email)
+    .maybeSingle();
+
+  if (!existingSignedUp) {
+    const data = {
+      email: values.email,
+      full_name: values.fullName,
+      phone_number: values.phoneNumber,
+      additional_services: values.additionalServices,
+      additional_comments: values.additionalComments
+    };
+    const { error: insertError } = await supabaseAdmin
+      .from('funeral_fund_interest')
+      .insert([{ ...data }]);
+    if (insertError)
+      throw new Error(`Funeral signup insert failed: ${insertError.message}`);
+    console.log(`Funeral signup inserted: ${values.email}`);
+  }
+
+  return existingSignedUp;
+};
+
 export {
   upsertProductRecord,
   upsertPriceRecord,
@@ -471,5 +502,6 @@ export {
   getStripeRecentTransactions,
   getStripePayments,
   getTotalCustomerSpent,
-  getStripeCustomers
+  getStripeCustomers,
+  updateFuneralSignup
 };

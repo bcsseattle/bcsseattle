@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation';
 import { getURL, getErrorRedirect, getStatusRedirect } from 'utils/helpers';
 import { getAuthTypes } from 'utils/auth-helpers/settings';
 import { createOrRetrieveCustomer } from '../supabase/admin';
-import { ContactFormSchema } from '@/types';
+import { ContactFormSchema, FuneralFundFormSchema } from '@/types';
 
 function isValidEmail(email: string) {
   var regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
@@ -403,6 +403,45 @@ export async function sendEmail(values: z.infer<typeof ContactFormSchema>) {
       '/contact-us',
       'Hmm... Something went wrong.',
       'Your message could not be sent.'
+    );
+  }
+}
+
+export async function signUpFuneralBurial(
+  values: z.infer<typeof FuneralFundFormSchema>
+) {
+  const {
+    fullName,
+    email,
+    phoneNumber,
+    additionalServices,
+    additionalComments
+  } = values;
+
+  const api_url = process.env.NEXT_PUBLIC_SITE_URL + '/api/signup-funeral';
+
+  try {
+    const response = fetch(api_url, {
+      method: 'POST',
+      body: JSON.stringify({
+        fullName,
+        email,
+        phoneNumber,
+        additionalServices,
+        additionalComments
+      })
+    });
+    return getStatusRedirect(
+      '/funeral-burials',
+      'Successfully signed up!',
+      'Your response has been recorded.'
+    );
+  } catch (error) {
+    console.error(error);
+    return getErrorRedirect(
+      '/funeral-burials',
+      'Hmm... Something went wrong.',
+      'Your response could not be captured.'
     );
   }
 }

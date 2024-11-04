@@ -30,6 +30,14 @@ export const ContactFormSchema = z.object({
   message: z.string().min(1, 'Message is required')
 });
 
+export const FuneralFundFormSchema = z.object({
+  fullName: z.string().min(1, 'Full name is required'),
+  email: z.string().email('Invalid email address'),
+  phoneNumber: z.string().regex(/^[0-9\-\+\(\)\s]*$/, 'Invalid phone number'),
+  additionalServices: z.enum(['Yes', 'No', 'Not sure']),
+  additionalComments: z.string().optional()
+});
+
 export type Subscription = Tables<'subscriptions'>;
 export type Product = Tables<'products'>;
 export type Price = Tables<'prices'>;

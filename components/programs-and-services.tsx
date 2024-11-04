@@ -16,7 +16,7 @@ export default function ProgramsAndServices() {
         <div className="">
           <div className="flex flex-wrap lg:space-x-12">
             <div className="w-full md:w-1/2 lg:my-4 lg:w-1/3 mb-4">
-              <Link href="/funeral-burial">
+              <Link href="/funeral-burials">
                 <Card className="">
                   <CardHeader className="text-xl">
                     <CardTitle>Funeral & Burial</CardTitle>
@@ -26,7 +26,7 @@ export default function ProgramsAndServices() {
               </Link>
             </div>
             <div className="w-full md:w-1/2 lg:my-4 lg:w-1/4 mb-4">
-              <Link href="/youth-programs">
+              <Link href="/programs/youth-programs">
                 <Card>
                   <CardHeader>
                     <CardTitle>Youth Programs</CardTitle>
