@@ -43,6 +43,8 @@ export default async function CommunityFunds() {
   const { data: funds } = await supabase
     .from('funds')
     .select('*')
+    .neq('status', 'cancelled')
+    .neq('status', 'failed')
     .order('created_at', { ascending: false });
 
   if (!user) {

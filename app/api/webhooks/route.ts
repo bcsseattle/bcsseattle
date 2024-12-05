@@ -3,9 +3,10 @@ import { stripe } from '@/utils/stripe/config';
 import {
   upsertProductRecord,
   upsertPriceRecord,
+  upsertFundRecord,
   manageSubscriptionStatusChange,
   deleteProductRecord,
-  deletePriceRecord
+  deletePriceRecord,
 } from '@/utils/supabase/admin';
 
 const relevantEvents = new Set([
@@ -18,7 +19,11 @@ const relevantEvents = new Set([
   'checkout.session.completed',
   'customer.subscription.created',
   'customer.subscription.updated',
-  'customer.subscription.deleted'
+  'customer.subscription.deleted',
+  'payout.created',
+  'payout.updated',
+  'payout.paid',
+  'payout.failed',
 ]);
 
 export async function POST(req: Request) {
@@ -74,6 +79,13 @@ export async function POST(req: Request) {
               true
             );
           }
+          break;
+        case 'payout.paid':
+        case 'payout.failed':
+        case 'payout.created':
+        case 'payout.updated':
+          const payout = event.data.object as Stripe.Payout;
+          await upsertFundRecord(payout);
           break;
         case 'balance.available':
         case 'billing_portal.session.created':

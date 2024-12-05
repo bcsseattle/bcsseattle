@@ -8,6 +8,7 @@ import type { Database, Tables, TablesInsert } from 'types_db';
 
 type Product = Tables<'products'>;
 type Price = Tables<'prices'>;
+// type Funds = Tables<'funds'>;
 
 // Change to control trial period length
 const TRIAL_PERIOD_DAYS = 0;
@@ -97,6 +98,49 @@ const upsertPriceRecord = async (
     throw new Error(`Price insert/update failed: ${upsertError.message}`);
   } else {
     console.log(`Price inserted/updated: ${price.id}`);
+  }
+};
+
+const upsertFundRecord = async (
+  payout: Stripe.Payout,
+  retryCount = 0,
+  maxRetries = 3
+) => {
+  const fundData: any = {
+    id: payout.id,
+    date: toDateTime(payout.arrival_date).toISOString(),
+    amount: payout.amount,
+    source: 'stripe',
+    description: 'Stripe Payout',
+    payment_method: payout.destination,
+    created_at: toDateTime(payout.created).toISOString(),
+    currency: payout.currency,
+    stripe_payout_id: payout.id,
+    stripe_status: payout.status,
+    stripe_fees: 0.0,
+    status: payout.status === 'paid' ? 'completed' : 'pending'
+  };
+
+  const { error: upsertError } = await supabaseAdmin
+    .from('funds')
+    .upsert([fundData]);
+
+  if (upsertError?.message.includes('foreign key constraint')) {
+    if (retryCount < maxRetries) {
+      console.log(
+        `Retry attempt ${retryCount + 1} for payout ID: ${payout.id}`
+      );
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await upsertFundRecord(payout, retryCount + 1, maxRetries);
+    } else {
+      throw new Error(
+        `Fund insert/update failed after ${maxRetries} retries: ${upsertError.message}`
+      );
+    }
+  } else if (upsertError) {
+    throw new Error(`Fund insert/update failed: ${upsertError.message}`);
+  } else {
+    console.log(`Fund inserted/updated: ${payout.id}`);
   }
 };
 
@@ -492,6 +536,7 @@ const updateFuneralSignup = async (
 export {
   upsertProductRecord,
   upsertPriceRecord,
+  upsertFundRecord,
   deleteProductRecord,
   deletePriceRecord,
   createOrRetrieveCustomer,
