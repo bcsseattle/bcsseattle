@@ -1,22 +1,33 @@
-import { Button } from '@/components/ui/button';
+// import { getRedirectMethod } from '@/utils/auth-helpers/settings';
+import { createClient } from '@/utils/supabase/server';
+import DonateForm from '@/components/forms/donate-form';
 
-export default function Page() {
+export default async function Page() {
+  // const redirectMethod = getRedirectMethod();
+  const supabase = createClient();
+
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  const { data: product } = await supabase
+    .from('products')
+    .select('*, prices(*)')
+    .eq('active', true)
+    .eq('name', 'BCS Donation (Test)')
+    .eq('prices.active', true)
+    .order('metadata->index')
+    .order('unit_amount', { referencedTable: 'prices' })
+    .maybeSingle();
+
   return (
-    <section className="mb-32">
-      <div className="max-w-6xl px-4 py-8 mx-auto sm:px-6 sm:pt-24 lg:px-8">
-        <div className="sm:align-center sm:flex sm:flex-col">
-          <h1 className="text-4xl font-extrabold sm:text-center sm:text-5xl">
-            Donate
-          </h1>
-          <Button variant="default" className="mt-10 w-60 self-center">
-            <a
-              href="https://buy.stripe.com/00gg2g57M3XxemQ4gi"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Donate
-            </a>
-          </Button>
+    <section className="my-8">
+      <div className="flex justify-center height-screen-helper">
+        <div className="flex flex-col justify-between p-3">
+          <DonateForm
+            user={user}
+            product={product as any}
+          />
         </div>
       </div>
     </section>

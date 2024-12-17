@@ -38,9 +38,67 @@ export const FuneralFundFormSchema = z.object({
   additionalComments: z.string().optional()
 });
 
+export const DonationFormSchema = z
+  .object({
+    frequency: z.enum(['one-time', 'month', 'year']),
+    amount: z.string().refine((val) => !Number.isNaN(Number(val)), {
+      message: 'Amount must be a valid number'
+    }),
+    purpose: z.enum([
+      'general-purpose',
+      'funeral-and-burial',
+      'new-member-support',
+      'youth-programs'
+    ]),
+    donorType: z.enum(['individual', 'organization']),
+    donorName: z.string().optional(),
+    organizationName: z.string().optional(),
+    email: z.string().email('Invalid email address'),
+    phone: z
+      .string()
+      .regex(/^\+?[0-9\-()\s]{7,15}$/, 'Phone number must be valid')
+      .optional(),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    zip: z.string().optional(),
+    country: z.string().optional().default('USA'),
+    currency: z.string().default('USD'),
+    paymentMethod: z.enum([
+      'card',
+      'zelle',
+      'check',
+      'cash',
+      'us_bank_account'
+    ]),
+    bankName: z.string().optional(),
+    isAnonymous: z.boolean().optional().default(false),
+    nonCashDescription: z.string().optional(),
+    userId: z.string().optional()
+  })
+  .superRefine((data, ctx) => {
+    if (data.donorType === 'individual' && !data.donorName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['donorName'],
+        message: 'Donor name is required for individuals'
+      });
+    }
+    if (data.donorType === 'organization' && !data.organizationName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['organizationName'],
+        message: 'Organization name is required for organizations'
+      });
+    }
+  });
+
 export type Subscription = Tables<'subscriptions'>;
 export type Product = Tables<'products'>;
 export type Price = Tables<'prices'>;
+export type Member = Tables<'members'>;
+export type Donation = Tables<'donations'>;
+export type Donor = Tables<'donors'>;
 export interface ProductWithPrices extends Product {
   prices: Price[];
 }
@@ -59,22 +117,10 @@ export interface Props {
 
 export type BillingInterval = 'lifetime' | 'year' | 'month';
 
-export interface Member {
-  id: string;
-  user_id: string;
-  stripe_customer_id?: string;
-  subscription_id?: string;
-  status: string;
-  fullName: string;
-  phone: string;
-  address: string;
-  address2?: string;
-  city: string;
-  state: string;
-  zip: string;
-  membershipType: string;
-  totalMembersInFamily: number;
-  terms: boolean;
-  metadata?: Record<string, any>;
+export type MemberWithCustomers = Member & {
   customers: Record<string, any>;
-}
+};
+
+export type DonationByDonor = Partial<Donation> & {
+  donors: Donor[];
+};

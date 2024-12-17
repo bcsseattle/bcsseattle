@@ -4,18 +4,20 @@ import Stripe from 'stripe';
 import { stripe } from '@/utils/stripe/config';
 import { createClient } from '@/utils/supabase/server';
 import {
+  createCustomerInStripe,
   createOrRetrieveCustomer,
+  getOrCreateUser,
   retrieveMember,
-  updateMember
+  updateDonation,
+  updateMember,
+  updateDonor
 } from '@/utils/supabase/admin';
 import {
   getURL,
   getErrorRedirect,
   calculateTrialEndUnixTimestamp
 } from '@/utils/helpers';
-import { Tables } from '@/types_db';
-
-type Price = Tables<'prices'>;
+import { Donation, Donor, Price } from '@/types';
 
 type CheckoutResponse = {
   errorRedirect?: string;
@@ -99,7 +101,17 @@ export async function checkoutWithStripe(
     } else if (price.type === 'one_time') {
       params = {
         ...params,
-        mode: 'payment'
+        mode: 'payment',
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              unit_amount: Number(price.unit_amount),
+              product: price.product_id as string
+            },
+            quantity: 1
+          }
+        ]
       };
     }
 
@@ -122,6 +134,129 @@ export async function checkoutWithStripe(
       } catch (err) {
         console.error(err);
         throw new Error('Unable to update member record.');
+      }
+      return { sessionId: session.id };
+    } else {
+      throw new Error('Unable to create checkout session.');
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      return {
+        errorRedirect: getErrorRedirect(
+          redirectPath,
+          error.message,
+          'Please try again later or contact a system administrator.'
+        )
+      };
+    } else {
+      return {
+        errorRedirect: getErrorRedirect(
+          redirectPath,
+          'An unknown error occurred.',
+          'Please try again later or contact a system administrator.'
+        )
+      };
+    }
+  }
+}
+
+export async function checkoutWithStripeForDonation(
+  price: Price,
+  redirectPath: string = '/donation-confirmation',
+  cancelUrl: string,
+  donor: Donor | null,
+  donation: Donation | null
+): Promise<CheckoutResponse> {
+  try {
+    const { data: user, error: userError } = await getOrCreateUser({
+      email: donor?.email!
+    });
+
+    if (!user || userError) {
+      console.error(userError);
+      throw new Error('Could not create user.');
+    }
+
+    // Retrieve or create the customer in Stripe
+    let customer: string;
+    try {
+      customer = await createCustomerInStripe(user.id, donor?.email!);
+    } catch (err) {
+      console.error(err);
+      throw new Error('Unable to access customer record.');
+    }
+
+    let params: Stripe.Checkout.SessionCreateParams = {
+      allow_promotion_codes: false,
+      billing_address_collection: 'required',
+      customer,
+      customer_update: {
+        address: 'auto'
+      },
+      payment_method_types: [(donation?.payment_method as any) || 'card'],
+      line_items: [
+        {
+          price: price.id,
+          quantity: 1
+        }
+      ],
+      cancel_url: getURL(cancelUrl),
+      success_url: getURL(redirectPath)
+    };
+
+    console.log(
+      'Trial end:',
+      calculateTrialEndUnixTimestamp(price.trial_period_days)
+    );
+    if (price.type === 'recurring') {
+      params = {
+        ...params,
+        mode: 'subscription',
+        subscription_data: {
+          trial_end: calculateTrialEndUnixTimestamp(price.trial_period_days)
+        }
+      };
+    } else if (price.type === 'one_time') {
+      console.log('One-time payment', price);
+      params = {
+        ...params,
+        mode: 'payment',
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd', // Replace with your desired currency
+              unit_amount: Number(price.unit_amount),
+              product: price.product_id as string
+            },
+            quantity: 1
+          }
+        ]
+      };
+    }
+
+    // Create a checkout session in Stripe
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create(params);
+    } catch (err) {
+      console.error(err);
+      throw new Error('Unable to create checkout session.');
+    }
+
+    // Instead of returning a Response, just return the data or error.
+    if (session) {
+      try {
+        await updateDonor({
+          stripe_customer_id: customer,
+          email: user?.email || ''
+        });
+        await updateDonation({
+          stripe_customer_id: customer,
+          donation_id: donation?.id!
+        });
+      } catch (err) {
+        console.error(err);
+        throw new Error('Unable to update donation record.');
       }
       return { sessionId: session.id };
     } else {

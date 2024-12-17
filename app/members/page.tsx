@@ -18,6 +18,10 @@ export default async function Members() {
     data: { user }
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    return redirect('/signin');
+  }
+
   const { data: members } = await supabase
     .from('members')
     .select('*')
@@ -35,10 +39,6 @@ export default async function Members() {
 
   const { data: prices } = await supabase.from('prices').select('*');
 
-  if (!user) {
-    return redirect('/signin');
-  }
-
   if (member?.status !== 'active') {
     return redirect('/membership-fee');
   }
@@ -48,7 +48,7 @@ export default async function Members() {
   );
 
   const totalFamilyMembers = activeMembers?.reduce(
-    (acc: number, member: Member) => acc + member.totalMembersInFamily,
+    (acc: number, member: Member) => acc + (member.totalMembersInFamily ?? 0),
     0
   );
 

@@ -2,15 +2,17 @@
 import { NavigationMenu } from '@/components/ui/navigation-menu';
 import { User } from '@supabase/supabase-js';
 import Navlinks from './ui/Navbar/Navlinks';
+import { Member } from '@/types';
 
 interface Props {
   user: User | null | undefined;
+  member: Member;
 }
-export default function TopNavigation({ user }: Props) {
+export default function TopNavigation({ user, member }: Props) {
   return (
     <div>
       <NavigationMenu>
-        <Navlinks user={user} />
+        <Navlinks user={user} member={member} />
       </NavigationMenu>
     </div>
   );

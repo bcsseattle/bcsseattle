@@ -16,16 +16,16 @@ export default async function Register() {
   const {
     data: { user }
   } = await supabase.auth.getUser();
-
-  const { data: member } = await supabase
-    .from('members')
-    .select('*')
-    .eq('user_id', user?.id)
-    .maybeSingle();
-
+  
   if (!user) {
     return redirect('/signin');
   }
+  
+  const { data: member } = await supabase
+    .from('members')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle();
 
   const { data: subscriptions }: { data: any } = await supabase
     .from('subscriptions')
@@ -37,7 +37,7 @@ export default async function Register() {
   );
 
   if (subscriptions && isSubscriptionActive && member?.status === 'active') {
-    return redirect('/account');
+    return redirect('/community-funds');
   }
 
   return (

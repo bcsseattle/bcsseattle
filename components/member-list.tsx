@@ -65,7 +65,7 @@ export default function MemberList({
                 currency: 'USD',
                 minimumFractionDigits: 0
               }).format(
-                ((price?.unit_amount || 0) * member.totalMembersInFamily || 0) /
+                ((price?.unit_amount || 0) * (member.totalMembersInFamily ?? 0) || 0) /
                   100
               );
 

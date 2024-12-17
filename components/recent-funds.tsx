@@ -1,6 +1,6 @@
 'use client';
 
-import { Member } from '@/types';
+import { MemberWithCustomers } from '@/types';
 import Stripe from 'stripe';
 import { Data } from './payments/columns';
 import { CardHeader, CardTitle } from './ui/card';
@@ -13,7 +13,7 @@ export default function RecentFunds({
   columns = []
 }: {
   payments?: Stripe.PaymentIntent[];
-  members?: Member[];
+  members?: any[];
   columns?: ColumnDef<Data>[];
 }) {
   const data = payments

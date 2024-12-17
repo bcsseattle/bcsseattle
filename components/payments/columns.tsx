@@ -20,7 +20,7 @@ export const columns: ColumnDef<Data>[] = [
     sortingFn: (rowA, rowB) => {
       const memberA: Member = rowA.getValue('member');
       const memberB: Member = rowB.getValue('member');
-      return memberA?.fullName.localeCompare(memberB.fullName);
+      return memberA?.fullName?.localeCompare(memberB.fullName || '') || 0;
     },
     header: ({ column }) => {
       return (

@@ -139,3 +139,19 @@ export const getPriceString = (amountPerPerHead: number) => {
     minimumFractionDigits: 0
   }).format(amountPerPerHead / 100);
 };
+
+export const paymentMethodMap: { [key: string]: string } = {
+  card: 'Card',
+  check: 'Check',
+  cash: 'Cash',
+  zelle: 'Zelle',
+  us_bank_account: 'US Bank Account',
+  other: 'Other'
+};
+
+export const purposeTitleMap: { [key: string]: string } = {
+  'general-purpose': 'General Purpose',
+  'funeral-and-burial': 'Funeral and Burial',
+  'new-member-support': 'New Member Support',
+  'youth-programs': 'Youth Programs'
+};

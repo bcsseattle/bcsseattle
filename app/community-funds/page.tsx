@@ -1,5 +1,6 @@
 import { Expenses } from '@/components/expenses';
 import { columns } from '@/components/payments/columns';
+import RecentDonations from '@/components/recent-donations';
 import RecentFunds from '@/components/recent-funds';
 import {
   Card,
@@ -10,6 +11,7 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import {
+  getDonations,
   getStripeAvailableBalance,
   // getStripeCustomers,
   getStripePayments,
@@ -24,6 +26,10 @@ export default async function CommunityFunds() {
   const {
     data: { user }
   } = await supabase.auth.getUser();
+
+  if (!user) {
+    return redirect('/signin');
+  }
 
   const { data: members } = await supabase
     .from('members')
@@ -47,13 +53,11 @@ export default async function CommunityFunds() {
     .neq('status', 'failed')
     .order('created_at', { ascending: false });
 
-  if (!user) {
-    return redirect('/signin');
-  }
-
   if (member?.status === 'inactive') {
     return redirect('/register');
   }
+
+  const { data: donations } = await getDonations();
 
   const fundsInBank = funds?.reduce(
     (acc: number, fund: any) => acc + fund.amount,
@@ -77,7 +81,7 @@ export default async function CommunityFunds() {
     ) ?? 0;
 
   const collectedAmount =
-    availableAmount + pendingAmount + fundsInBank + totalStripeFees;
+    availableAmount + pendingAmount + (fundsInBank || 0) + totalStripeFees;
   // availableAmount > pendingAmount ? availableAmount : pendingAmount;
 
   const collectedFunds = new Intl.NumberFormat('en-US', {
@@ -197,7 +201,16 @@ export default async function CommunityFunds() {
           </CardContent>
         </Card>
       </div>
-
+      <div className="col-span-4">
+        <RecentDonations donations={donations || []} />
+      </div>
+      <div className="col-span-4">
+        <RecentFunds
+          payments={payments}
+          members={members as any}
+          columns={columns}
+        />
+      </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
         <Card className="col-span-4">
           <CardHeader>
@@ -210,9 +223,6 @@ export default async function CommunityFunds() {
             <Expenses expenses={expenses || []} />
           </CardContent>
         </Card>
-      </div>
-      <div className="col-span-4">
-        <RecentFunds payments={payments} members={members || []} columns={columns}/>
       </div>
     </>
   );

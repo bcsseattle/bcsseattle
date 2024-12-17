@@ -1,14 +1,17 @@
 import { z } from 'zod';
-import { FuneralFundFormSchema } from '@/types';
+import {
+  Donation,
+  Donor,
+  FuneralFundFormSchema,
+  Member,
+  Price,
+  Product
+} from '@/types';
 import { toDateTime } from '@/utils/helpers';
 import { stripe } from '@/utils/stripe/config';
-import { User, createClient } from '@supabase/supabase-js';
+import { PostgrestError, User, createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 import type { Database, Tables, TablesInsert } from 'types_db';
-
-type Product = Tables<'products'>;
-type Price = Tables<'prices'>;
-// type Funds = Tables<'funds'>;
 
 // Change to control trial period length
 const TRIAL_PERIOD_DAYS = 0;
@@ -20,24 +23,7 @@ const supabaseAdmin = createClient<Database>(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-interface Member {
-  user_id: string;
-  // stripe_customer_id: string;
-  // subscription_id: string;
-  status: string;
-  fullName: string;
-  phone: string;
-  address: string;
-  address2?: string;
-  city: string;
-  state: string;
-  zip: string;
-  membershipType: string;
-  totalMembersInFamily: number;
-  terms: boolean;
-  metadata?: Record<string, any>;
-}
-export const createMember = async (member: Member) => {
+export const createMember = async (member: Partial<Member>) => {
   const { error: upsertError } = await supabaseAdmin
     .from('members')
     .upsert(member, { onConflict: 'user_id' });
@@ -77,7 +63,9 @@ const upsertPriceRecord = async (
     unit_amount: price.unit_amount ?? null,
     interval: price.recurring?.interval ?? null,
     interval_count: price.recurring?.interval_count ?? null,
-    trial_period_days: price.recurring?.trial_period_days ?? TRIAL_PERIOD_DAYS
+    trial_period_days: price.recurring?.trial_period_days ?? TRIAL_PERIOD_DAYS,
+    description: null,
+    metadata: null
   };
 
   const { error: upsertError } = await supabaseAdmin
@@ -257,6 +245,68 @@ const createOrRetrieveCustomer = async ({
 
     return upsertedStripeCustomer;
   }
+};
+
+const updateDonor = async ({
+  stripe_customer_id,
+  email
+}: {
+  stripe_customer_id: string;
+  email: string;
+}) => {
+  // Check if the member already exists in Supabase
+  const { data: existingDonor, error: queryError } = await supabaseAdmin
+    .from('donors')
+    .select('*')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (queryError) {
+    throw new Error(`Supabase donor lookup failed: ${queryError.message}`);
+  }
+
+  const { error: updateError } = await supabaseAdmin
+    .from('donors')
+    .update({
+      stripe_customer_id: stripe_customer_id
+    })
+    .eq('id', existingDonor!.id);
+
+  if (updateError)
+    throw new Error(
+      `Supabase member record update failed: ${updateError.message}`
+    );
+};
+
+const updateDonation = async ({
+  stripe_customer_id,
+  donation_id
+}: {
+  stripe_customer_id: string;
+  donation_id: string;
+}) => {
+  // Check if the member already exists in Supabase
+  const { data: existingDonation, error: queryError } = await supabaseAdmin
+    .from('donations')
+    .select('*')
+    .eq('id', donation_id)
+    .maybeSingle();
+
+  if (queryError) {
+    throw new Error(`Supabase donation lookup failed: ${queryError.message}`);
+  }
+
+  const { error: updateError } = await supabaseAdmin
+    .from('donations')
+    .update({
+      stripe_payment_id: stripe_customer_id
+    })
+    .eq('id', donation_id);
+
+  if (updateError)
+    throw new Error(
+      `Supabase donation record update failed: ${updateError.message}`
+    );
 };
 
 const updateMember = async ({
@@ -533,6 +583,156 @@ const updateFuneralSignup = async (
   return existingSignedUp;
 };
 
+const getDonations = async () => {
+  const { data, error } = await supabaseAdmin.from('donations').select(`
+     *,
+      donors (
+        *
+      )
+    `);
+
+  if (error) {
+    console.error('Error fetching donations:', error);
+    return { data: null, error };
+  }
+
+  // Transform data to match the Donation type
+  const transformedData: any[] = data.map((donation) => ({
+    ...donation,
+    donationId: donation.id,
+    donorName: donation.is_anonymous
+      ? 'Anonymous'
+      : donation.donors?.organization_name || `${donation.donors?.full_name}`,
+    email: donation.donors?.email || null,
+    amount: donation.donation_amount,
+    date: donation.donation_date,
+    paymentMethod: donation.payment_method || 'N/A',
+    nonCashDescription: donation.non_cash_description || null
+  }));
+
+  return { data: transformedData, error: null };
+};
+
+const getOrCreateUser = async ({
+  email
+}: {
+  email: string;
+}): Promise<{
+  data: User | null;
+  error: string | null;
+}> => {
+  try {
+    // Step 1: Check if the user exists
+    const { data: allUsers, error: listError } =
+      await supabaseAdmin.auth.admin.listUsers();
+    if (listError) {
+      console.error('Error fetching users:', listError.message);
+      return { data: null, error: 'Error fetching users' };
+    }
+
+    const userExists = allUsers?.users?.find(
+      (user: any) => user.email === email
+    );
+    if (userExists) {
+      console.log('User already exists:', userExists.email);
+      return { data: userExists, error: null };
+    }
+
+    // Step 2: Sign up the user
+    const { data, error: signUpError } = await supabaseAdmin.auth.signUp({
+      email,
+      password: process.env.SUPABASE_DEFAULT_PASSWORD || ''
+    });
+
+    if (signUpError) {
+      console.error('Error signing up user:', signUpError.message);
+      return { data: null, error: signUpError.message };
+    }
+
+    console.log('User signed up successfully:', data);
+    return { data: data.user, error: null };
+  } catch (error) {
+    console.error('Unexpected error:', error);
+  }
+  return {
+    data: null,
+    error: 'Error creating user'
+  };
+};
+export const createDonor = async (
+  values: Donor
+): Promise<{
+  data: Donor | null | any;
+  error: PostgrestError | null | string;
+}> => {
+  const { data, error: upsertError } = await supabaseAdmin
+    .from('donors')
+    .upsert(values, { onConflict: 'email' })
+    .select()
+    .single();
+  if (upsertError) {
+    console.error('Donor upsert error:', upsertError);
+    throw new Error(`Donor insert/update failed: ${upsertError.message}`);
+  }
+
+  return { data, error: upsertError };
+};
+
+export const getOrCreateDonor = async (
+  donorDetails: Partial<Donor>
+): Promise<{ data: Donor | null; error: PostgrestError | null | string }> => {
+  try {
+    const { data, error: donorError } = await supabaseAdmin
+      .from('donors')
+      .select('*')
+      .eq('email', donorDetails.email!!)
+      .single();
+
+    if (data) {
+      console.log('Donor fetched:', data);
+      return {
+        data,
+        error: donorError
+      };
+    }
+    const { data: donor, error } = await createDonor(donorDetails as Donor);
+    return {
+      data: donor,
+      error
+    };
+  } catch (error) {
+    console.error('Error creating donor:', error);
+    return { data: null, error: 'Error creating donor' };
+  }
+};
+
+export const createDonation = async (donationDetails: Omit<Donation, 'id'>) => {
+  try {
+    const { data, error: insertError } = await supabaseAdmin
+      .from('donations')
+      .insert(donationDetails)
+      .select()
+      .single();
+
+    if (data) {
+      console.log('Donation:', data);
+      return {
+        data,
+        error: null
+      };
+    }
+
+    if (insertError) {
+      console.error('Donation insert error:', insertError);
+      throw new Error(`Donation insert failed: ${insertError.message}`);
+    }
+  } catch (error) {
+    console.error('Error creating donation:', error);
+    return { data: null, error: 'Error creating donation' };
+  }
+  return { data: null, error: 'Error creating donation' };
+};
+
 export {
   upsertProductRecord,
   upsertPriceRecord,
@@ -541,6 +741,8 @@ export {
   deletePriceRecord,
   createOrRetrieveCustomer,
   updateMember,
+  updateDonor,
+  updateDonation,
   retrieveMember,
   manageSubscriptionStatusChange,
   getStripeAvailableBalance,
@@ -548,5 +750,8 @@ export {
   getStripePayments,
   getTotalCustomerSpent,
   getStripeCustomers,
-  updateFuneralSignup
+  updateFuneralSignup,
+  getDonations,
+  getOrCreateUser,
+  createCustomerInStripe
 };

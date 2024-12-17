@@ -28,10 +28,9 @@ interface Props {
   user: User | null | undefined;
   products: ProductWithPrices[];
   subscription: SubscriptionWithProduct | null;
-  member: Member;
 }
 
-export default function Plans({ user, products, subscription, member }: Props) {
+export default function Plans({ user, products, subscription }: Props) {
   const router = useRouter();
   const [priceIdLoading, setPriceIdLoading] = useState<string>();
   const currentPath = usePathname();

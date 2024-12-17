@@ -22,14 +22,11 @@ export default async function Page({ params }: { params: { id: string } }) {
     .eq('id', params?.id)
     .maybeSingle();
 
-  const payments = await getStripePayments(
-    member?.customers?.stripe_customer_id
-  );
+  const stripeCustomerId = member?.customers?.stripe_customer_id ?? '';
+  const payments = await getStripePayments(stripeCustomerId);
 
   // get total spent from customer in stripe
-  const totalSpent = await getTotalCustomerSpent(
-    member?.customers?.stripe_customer_id
-  );
+  const totalSpent = await getTotalCustomerSpent(stripeCustomerId);
 
   const totalSpentString = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -41,7 +38,7 @@ export default async function Page({ params }: { params: { id: string } }) {
     {
       title: 'Member since',
       icon: ClockIcon,
-      value: new Date(member?.created_at).toLocaleDateString('en-US', {
+      value: new Date(member!.created_at).toLocaleDateString('en-US', {
         month: 'long',
         day: 'numeric',
         year: 'numeric'
@@ -86,7 +83,7 @@ export default async function Page({ params }: { params: { id: string } }) {
       </div>
       <RecentFunds
         payments={payments}
-        members={[member]}
+        members={member ? [member] : []}
         columns={individualColumns}
       />
     </div>

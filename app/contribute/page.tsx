@@ -9,10 +9,14 @@ export default async function Page() {
     data: { user }
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    return redirect('/signin');
+  }
+
   const { data: subscription, error } = await supabase
     .from('subscriptions')
     .select('*, prices(*, products(*))')
-    .in('status', ['trialing', 'active'])
+    .eq('status', 'active')
     .maybeSingle();
 
   if (error) {
@@ -43,7 +47,6 @@ export default async function Page() {
         user={user}
         products={products ?? []}
         subscription={subscription}
-        member={member}
       />
     </section>
   );
