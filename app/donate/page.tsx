@@ -14,20 +14,23 @@ export default async function Page() {
     .from('products')
     .select('*, prices(*)')
     .eq('active', true)
-    .eq('name', 'BCS Donation (Test)')
+    .eq('name', 'BCS Donation')
     .eq('prices.active', true)
     .order('metadata->index')
     .order('unit_amount', { referencedTable: 'prices' })
+    .maybeSingle();
+
+  const { data: donor } = await supabase
+    .from('donors')
+    .select('*')
+    .eq('user_id', user!.id)
     .maybeSingle();
 
   return (
     <section className="my-8">
       <div className="flex justify-center height-screen-helper">
         <div className="flex flex-col justify-between p-3">
-          <DonateForm
-            user={user}
-            product={product as any}
-          />
+          <DonateForm user={user} product={product as any} donor={donor} />
         </div>
       </div>
     </section>

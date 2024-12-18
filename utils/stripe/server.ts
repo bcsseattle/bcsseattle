@@ -196,7 +196,12 @@ export async function checkoutWithStripeForDonation(
       payment_method_types: [(donation?.payment_method as any) || 'card'],
       line_items: [
         {
-          price: price.id,
+          price_data: {
+            currency: 'usd',
+            unit_amount: Number(price.unit_amount),
+            product: price.product_id as string,
+            recurring: { interval: donation?.donation_interval as any }
+          },
           quantity: 1
         }
       ],
@@ -251,6 +256,7 @@ export async function checkoutWithStripeForDonation(
           email: user?.email || ''
         });
         await updateDonation({
+          stripe_payment_id: (session.payment_intent as string) || '',
           stripe_customer_id: customer,
           donation_id: donation?.id!
         });

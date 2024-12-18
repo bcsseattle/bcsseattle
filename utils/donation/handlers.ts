@@ -18,8 +18,9 @@ export async function submitDonation(
       state: values.state || null,
       zip_code: values.zip || null,
       country: values.country || null,
-      registration_date: null,
-      stripe_customer_id: null
+      registration_date: new Date().toISOString(),
+      stripe_customer_id: null,
+      user_id: values.userId || null
     };
 
     const { data: donor, error } = await getOrCreateDonor(donorDetails);
@@ -46,7 +47,11 @@ export async function submitDonation(
       stripe_customer_id: null,
       tax_receipt_generated: false,
       purpose: values.purpose,
-      goods_services_estimate: null
+      goods_services_estimate: null,
+      donation_status: 'pending',
+      donation_interval:
+        values.frequency === 'one_time' ? null : (values.frequency as any),
+      donation_type: values.isRecurring ? 'recurring' : 'one_time'
     };
     const { data: donation, error: donationError } =
       await createDonation(donationDetails);

@@ -29,6 +29,9 @@ export type Database = {
           currency: string | null
           donation_amount: number
           donation_date: string | null
+          donation_interval: Database["public"]["Enums"]["pricing_plan_interval"]
+          donation_status: Database["public"]["Enums"]["donation_status_enum"]
+          donation_type: Database["public"]["Enums"]["pricing_type"]
           donor_id: string | null
           goods_or_services_provided: boolean | null
           goods_services_description: string | null
@@ -49,6 +52,9 @@ export type Database = {
           currency?: string | null
           donation_amount: number
           donation_date?: string | null
+          donation_interval: Database["public"]["Enums"]["pricing_plan_interval"]
+          donation_status?: Database["public"]["Enums"]["donation_status_enum"]
+          donation_type: Database["public"]["Enums"]["pricing_type"]
           donor_id?: string | null
           goods_or_services_provided?: boolean | null
           goods_services_description?: string | null
@@ -69,6 +75,9 @@ export type Database = {
           currency?: string | null
           donation_amount?: number
           donation_date?: string | null
+          donation_interval?: Database["public"]["Enums"]["pricing_plan_interval"]
+          donation_status?: Database["public"]["Enums"]["donation_status_enum"]
+          donation_type?: Database["public"]["Enums"]["pricing_type"]
           donor_id?: string | null
           goods_or_services_provided?: boolean | null
           goods_services_description?: string | null
@@ -100,7 +109,7 @@ export type Database = {
           address: string | null
           city: string | null
           country: string | null
-          donor_type: string
+          donor_type: Database["public"]["Enums"]["donor_type_enum"]
           email: string
           full_name: string | null
           id: string
@@ -109,13 +118,14 @@ export type Database = {
           registration_date: string | null
           state: string | null
           stripe_customer_id: string | null
+          user_id: string | null
           zip_code: string | null
         }
         Insert: {
           address?: string | null
           city?: string | null
           country?: string | null
-          donor_type: string
+          donor_type: Database["public"]["Enums"]["donor_type_enum"]
           email: string
           full_name?: string | null
           id?: string
@@ -124,13 +134,14 @@ export type Database = {
           registration_date?: string | null
           state?: string | null
           stripe_customer_id?: string | null
+          user_id?: string | null
           zip_code?: string | null
         }
         Update: {
           address?: string | null
           city?: string | null
           country?: string | null
-          donor_type?: string
+          donor_type?: Database["public"]["Enums"]["donor_type_enum"]
           email?: string
           full_name?: string | null
           id?: string
@@ -139,9 +150,18 @@ export type Database = {
           registration_date?: string | null
           state?: string | null
           stripe_customer_id?: string | null
+          user_id?: string | null
           zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "donors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       expenses: {
         Row: {
@@ -522,6 +542,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      donation_status_enum: "pending" | "completed" | "failed" | "refunded"
+      donor_type_enum: "individual" | "organization"
       membershiptypes: "Individual" | "Family"
       payment_method_enum:
         | "card"

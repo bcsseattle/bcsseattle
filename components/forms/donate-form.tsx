@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { User } from '@supabase/supabase-js';
-import { DonationFormSchema, Product, Price } from '@/types';
+import { DonationFormSchema, Product, Price, Donor } from '@/types';
 import { Card } from '../ui/card';
 import { US_STATES } from '@/utils/constants';
 import { submitDonation } from '@/utils/donation/handlers';
@@ -54,9 +54,10 @@ interface DonateFormProps {
   product: Product & {
     prices: Price[];
   };
+  donor?: Donor | null;
 }
 
-export default function DonateForm({ user, product }: DonateFormProps) {
+export default function DonateForm({ user, product, donor }: DonateFormProps) {
   const router = useRouter();
   const [donationLoading, setDonationLoading] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
@@ -67,18 +68,18 @@ export default function DonateForm({ user, product }: DonateFormProps) {
     mode: 'all',
     resolver: zodResolver(DonationFormSchema),
     defaultValues: {
-      frequency: 'one-time',
+      frequency: 'one_time',
       purpose: 'general-purpose',
-      donorType: 'individual',
-      donorName: '',
-      // organizationName: '',
-      // // email: 'muata@test.com',
-      // phone: '', // Changed from member?.phone
-      // address: '', // Changed from concatenated member address
-      // city: '', // Changed from member?.city
-      // state: '', // Changed from member?.state
-      // zip: '', // Changed from member?.zip
-      country: 'USA',
+      donorType: donor?.donor_type || 'individual',
+      donorName: donor?.full_name || '',
+      organizationName: donor?.organization_name || '',
+      email: donor?.email || '',
+      phone: donor?.phone || '',
+      address: donor?.address || '',
+      city: donor?.city || '',
+      state: donor?.state || '',
+      zip: donor?.zip_code || '',
+      country: donor?.country || 'USA',
       amount: '100',
       currency: 'USD',
       paymentMethod: 'card',
@@ -170,7 +171,7 @@ export default function DonateForm({ user, product }: DonateFormProps) {
   const donationFrequencies = [
     {
       text: 'One-Time',
-      value: 'one-time'
+      value: 'one_time'
     },
     { text: 'Monthly', value: 'month' },
     { text: 'Yearly', value: 'year' }
@@ -207,9 +208,12 @@ export default function DonateForm({ user, product }: DonateFormProps) {
                           : 'outline'
                       }
                       type="button"
-                      onClick={() =>
-                        form.setValue('frequency', donationFrequency?.value)
-                      }
+                      onClick={() => {
+                        form.setValue('frequency', donationFrequency?.value);
+                        form.watch('frequency') === 'one_time'
+                          ? form.setValue('isRecurring', false)
+                          : form.setValue('isRecurring', true);
+                      }}
                     >
                       {donationFrequency?.text}
                     </Button>

@@ -40,7 +40,8 @@ export const FuneralFundFormSchema = z.object({
 
 export const DonationFormSchema = z
   .object({
-    frequency: z.enum(['one-time', 'month', 'year']),
+    frequency: z.enum(['one_time', 'month', 'year']),
+    isRecurring: z.boolean().default(false),
     amount: z.string().refine((val) => !Number.isNaN(Number(val)), {
       message: 'Amount must be a valid number'
     }),

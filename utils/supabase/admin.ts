@@ -279,9 +279,11 @@ const updateDonor = async ({
 };
 
 const updateDonation = async ({
+  stripe_payment_id,
   stripe_customer_id,
   donation_id
 }: {
+  stripe_payment_id: string;
   stripe_customer_id: string;
   donation_id: string;
 }) => {
@@ -299,7 +301,8 @@ const updateDonation = async ({
   const { error: updateError } = await supabaseAdmin
     .from('donations')
     .update({
-      stripe_payment_id: stripe_customer_id
+      stripe_payment_id: stripe_payment_id,
+      stripe_customer_id: stripe_customer_id
     })
     .eq('id', donation_id);
 
