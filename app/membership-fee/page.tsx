@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import MembershipPlan from '@/components/membership-plan';
 
 export default async function MembershipFeePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user }

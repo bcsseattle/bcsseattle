@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -32,10 +33,10 @@ export default function Breadcrumbs() {
         <BreadcrumbSeparator />
         {breadcrumbss.map((breadcrumb, index) => {
           return (
-            <>
+            <React.Fragment key={index}>
               {breadcrumbss.length - 1 !== index ? (
                 <>
-                  <BreadcrumbItem key={index}>
+                  <BreadcrumbItem>
                     <BreadcrumbLink
                       href={breadcrumb.link}
                       className="capitalize"
@@ -50,7 +51,7 @@ export default function Breadcrumbs() {
                   {breadcrumb.name}
                 </BreadcrumbPage>
               )}
-            </>
+            </React.Fragment>
           );
         })}
       </BreadcrumbList>

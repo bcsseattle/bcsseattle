@@ -12,7 +12,7 @@ export async function registerMember(
   values: z.infer<typeof MemberRegistrationFormSchema>
 ) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       data: { user }
     } = await supabase.auth.getUser();

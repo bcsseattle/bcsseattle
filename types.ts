@@ -100,6 +100,8 @@ export type Price = Tables<'prices'>;
 export type Member = Tables<'members'>;
 export type Donation = Tables<'donations'>;
 export type Donor = Tables<'donors'>;
+export type organization = Tables<'organization'>;
+
 export interface ProductWithPrices extends Product {
   prices: Price[];
 }

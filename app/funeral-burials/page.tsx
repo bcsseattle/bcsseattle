@@ -23,7 +23,7 @@ const lotPrice = 450000;
 const numberOfLosts = 5;
 
 export default async function Page() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase
     .from('funeral_fund_interest')
     .select('*')

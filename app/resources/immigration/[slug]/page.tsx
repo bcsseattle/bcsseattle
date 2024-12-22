@@ -6,8 +6,9 @@ import { NotionRenderer } from '@notion-render/client';
 import hljsPlugin from '@notion-render/hljs-plugin';
 import { notFound } from 'next/navigation';
 
-export default async function Page({ params }: { params: { slug: string } }) {
-  const supabase = createClient();
+export default async function Page(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient();
 
   const {
     data: { user }

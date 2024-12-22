@@ -4,7 +4,7 @@ import DonateForm from '@/components/forms/donate-form';
 
 export default async function Page() {
   // const redirectMethod = getRedirectMethod();
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user }
@@ -20,11 +20,15 @@ export default async function Page() {
     .order('unit_amount', { referencedTable: 'prices' })
     .maybeSingle();
 
-  const { data: donor } = await supabase
-    .from('donors')
-    .select('*')
-    .eq('user_id', user!.id)
-    .maybeSingle();
+  let donor = null;
+  if (user) {
+    const { data } = await supabase
+      .from('donors')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    donor = data;
+  }
 
   return (
     <section className="my-8">

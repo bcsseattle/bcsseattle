@@ -278,15 +278,18 @@ const updateDonor = async ({
     );
 };
 
-const updateDonation = async ({
-  stripe_payment_id,
-  stripe_customer_id,
-  donation_id
-}: {
+const updateDonation = async (params: {
+  donation_id: string;
   stripe_payment_id: string;
   stripe_customer_id: string;
-  donation_id: string;
+  [key: string]: any;
 }) => {
+  const {
+    donation_id,
+    stripe_payment_id,
+    stripe_customer_id,
+    ...otherProperties
+  } = params;
   // Check if the member already exists in Supabase
   const { data: existingDonation, error: queryError } = await supabaseAdmin
     .from('donations')
@@ -301,6 +304,7 @@ const updateDonation = async ({
   const { error: updateError } = await supabaseAdmin
     .from('donations')
     .update({
+      ...otherProperties,
       stripe_payment_id: stripe_payment_id,
       stripe_customer_id: stripe_customer_id
     })
@@ -692,7 +696,6 @@ export const getOrCreateDonor = async (
       .single();
 
     if (data) {
-      console.log('Donor fetched:', data);
       return {
         data,
         error: donorError
@@ -718,7 +721,6 @@ export const createDonation = async (donationDetails: Omit<Donation, 'id'>) => {
       .single();
 
     if (data) {
-      console.log('Donation:', data);
       return {
         data,
         error: null

@@ -5,7 +5,7 @@ import { signInWithOAuth } from '@/utils/auth-helpers/client';
 import { type Provider } from '@supabase/supabase-js';
 import Google from '@/components/icons/Google';
 import Facebook from '@/components/icons/Facebook';
-import { useState } from 'react';
+import { useState, type JSX } from 'react';
 
 type OAuthProviders = {
   name: Provider;

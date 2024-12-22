@@ -28,11 +28,12 @@ export type Database = {
         Row: {
           currency: string | null
           donation_amount: number
-          donation_date: string | null
+          donation_date: string
+          donation_description: string | null
           donation_interval: Database["public"]["Enums"]["pricing_plan_interval"]
           donation_status: Database["public"]["Enums"]["donation_status_enum"]
           donation_type: Database["public"]["Enums"]["pricing_type"]
-          donor_id: string | null
+          donor_id: string
           goods_or_services_provided: boolean | null
           goods_services_description: string | null
           goods_services_estimate: number | null
@@ -51,11 +52,12 @@ export type Database = {
         Insert: {
           currency?: string | null
           donation_amount: number
-          donation_date?: string | null
+          donation_date?: string
+          donation_description?: string | null
           donation_interval: Database["public"]["Enums"]["pricing_plan_interval"]
           donation_status?: Database["public"]["Enums"]["donation_status_enum"]
           donation_type: Database["public"]["Enums"]["pricing_type"]
-          donor_id?: string | null
+          donor_id: string
           goods_or_services_provided?: boolean | null
           goods_services_description?: string | null
           goods_services_estimate?: number | null
@@ -74,11 +76,12 @@ export type Database = {
         Update: {
           currency?: string | null
           donation_amount?: number
-          donation_date?: string | null
+          donation_date?: string
+          donation_description?: string | null
           donation_interval?: Database["public"]["Enums"]["pricing_plan_interval"]
           donation_status?: Database["public"]["Enums"]["donation_status_enum"]
           donation_type?: Database["public"]["Enums"]["pricing_type"]
-          donor_id?: string | null
+          donor_id?: string
           goods_or_services_provided?: boolean | null
           goods_services_description?: string | null
           goods_services_estimate?: number | null
@@ -370,6 +373,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organization: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          description: string | null
+          ein: string | null
+          email: string | null
+          id: string
+          name: string | null
+          phone: string | null
+          state: string | null
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          ein?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          state?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          ein?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          state?: string | null
+          zip?: string | null
+        }
+        Relationships: []
       }
       prices: {
         Row: {

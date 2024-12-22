@@ -9,8 +9,9 @@ import {
 import RecentFunds from '@/components/recent-funds';
 import { individualColumns } from '@/components/payments/columns';
 
-export default async function Page({ params }: { params: { id: string } }) {
-  const supabase = createClient();
+export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient();
 
   const {
     data: { user }

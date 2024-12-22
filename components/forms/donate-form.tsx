@@ -36,18 +36,7 @@ import { getErrorRedirect, getPriceString } from '@/utils/helpers';
 import { getStripe } from '@/utils/stripe/client';
 import { Wizard } from '../ui/wizard';
 import Image from 'next/image';
-
-const InfoBlock = ({ title, description, children }: any) => (
-  <Card className="p-4 bg-blue-100">
-    <div className="flex items-center space-x-2">
-      <div>
-        <p className="text-lg font-semibold">{title}</p>
-        <p className="text-md">{description}</p>
-        {children}
-      </div>
-    </div>
-  </Card>
-);
+import { InfoBlock } from '../ui/info-block';
 
 interface DonateFormProps {
   user: User | null | undefined;
@@ -138,7 +127,7 @@ export default function DonateForm({ user, product, donor }: DonateFormProps) {
         const { errorRedirect, sessionId } =
           await checkoutWithStripeForDonation(
             price,
-            `/donate/confirmation?donation_id=${donation.id}`,
+            `/donate/confirmation/${donation.id}`,
             cancelUrl,
             donor,
             donation

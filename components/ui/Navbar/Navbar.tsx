@@ -4,7 +4,7 @@ import Link from 'next/link';
 import TopNavigation from '@/components/top-navigation';
 
 export default async function Navbar() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user }

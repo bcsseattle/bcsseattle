@@ -12,7 +12,7 @@ import { PersonIcon } from '@radix-ui/react-icons';
 import { redirect } from 'next/navigation';
 
 export default async function Members() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user }
