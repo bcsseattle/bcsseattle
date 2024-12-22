@@ -158,9 +158,9 @@ export async function signInWithPassword(formData: FormData) {
     });
     try {
       redirectPath = getStatusRedirect(
-        '/register',
+        '/community-funds',
         'Success!',
-        'You are now signed in.' + 'error2'
+        'You are now signed in.'
       );
     } catch (error) {
       console.error(error);

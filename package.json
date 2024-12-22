@@ -42,7 +42,7 @@
     "@radix-ui/react-toast": "^1.2.4",
     "@react-pdf/renderer": "^4.1.5",
     "@stripe/stripe-js": "2.4.0",
-    "@supabase/ssr": "^0.1.0",
+    "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "@tanstack/react-table": "^8.20.6",
     "@types/nodemailer": "^6.4.17",
@@ -81,8 +81,10 @@
     "supabase": "^1.226.4",
     "typescript": "^5.7.2"
   },
-  "pnpm": {
+ "pnpm": {
     "overrides": {
+      "lucide-react>react": "18.2.0",
+      "lucide-react>react-dom": "18.2.0",
       "undici": "5.28.4",
       "@types/react": "19.0.2",
       "@types/react-dom": "19.0.2"

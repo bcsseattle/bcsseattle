@@ -14,29 +14,38 @@ export default async function Register() {
   const supabase = await createClient();
 
   const {
-    data: { user }
+    data: { user },
+    error: userError
   } = await supabase.auth.getUser();
-  
-  if (!user) {
+
+  if (!user || userError) {
     return redirect('/signin');
   }
-  
-  const { data: member } = await supabase
+
+  const { data: member, error: memberError } = await supabase
     .from('members')
     .select('*')
     .eq('user_id', user.id)
     .maybeSingle();
 
-  const { data: subscriptions }: { data: any } = await supabase
+  if (memberError) {
+    console.error('Error fetching member:', memberError);
+    throw new Error('Failed to fetch member data');
+  }
+
+  const { data: subscription, error: subscriptionError } = await supabase
     .from('subscriptions')
     .select('*')
-    .eq('user_id', user?.id);
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .maybeSingle();
 
-  const isSubscriptionActive = subscriptions?.filter(
-    (subscription: any) => subscription.status === 'active'
-  );
+  if (subscriptionError) {
+    console.error('Error fetching subscription:', subscriptionError);
+    throw new Error('Failed to fetch subscription data');
+  }
 
-  if (subscriptions && isSubscriptionActive && member?.status === 'active') {
+  if (subscription && member?.status === 'active') {
     return redirect('/community-funds');
   }
 
