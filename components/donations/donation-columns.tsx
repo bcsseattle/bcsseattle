@@ -8,7 +8,8 @@
 
 import { Donation } from '@/types';
 import { ColumnDef } from '@tanstack/react-table';
-import { paymentMethodMap, purposeTitleMap } from '@/utils/helpers';
+import { getPriceString, paymentMethodMap, purposeTitleMap } from '@/utils/helpers';
+import { Badge } from '../ui/badge';
 
 export const donationColumns: ColumnDef<Donation>[] = [
   {
@@ -17,16 +18,19 @@ export const donationColumns: ColumnDef<Donation>[] = [
     cell: (info) => info.getValue() || 'Anonymous' // If donorName is null, display 'Anonymous'
   },
   {
+    accessorKey: 'donation_description', // Email address of the donor
+    header: 'Description',
+    cell: (info) => {
+      const value = info.getValue<string>();
+      return value || '-';
+    }
+  },
+  {
     accessorKey: 'amount', // Donation amount
     header: 'Amount',
     cell: (info) => {
       const value = info.getValue<number>(); // Explicitly type the value
-      const formatted = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0
-      }).format(value / 100); // Convert cents to dollars
-
+      const formatted = getPriceString(value); // Format the number as a currency string
       return <div className="text-center font-medium">{formatted}</div>;
     }
   },
@@ -56,6 +60,18 @@ export const donationColumns: ColumnDef<Donation>[] = [
     cell: (info) => {
       const value = info.getValue<string>();
       return purposeTitleMap[value] || value; // If purpose is null, display the original value
+    }
+  },
+  {
+    accessorKey: 'donation_status',
+    header: 'Status',
+    cell: (info) => {
+      const value = info.getValue<string>();
+      return (
+        <Badge variant={value === 'completed' ? 'secondary' : 'destructive'}>
+          {value}
+        </Badge>
+      );
     }
   }
 ];

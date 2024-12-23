@@ -79,7 +79,7 @@ export async function checkoutWithStripe(
           quantity:
             isMembership || isGenerous
               ? 1
-              : Math.min(member?.totalMembersInFamily, 5) ?? 1
+              : (Math.min(member?.totalMembersInFamily, 5) ?? 1)
         }
       ],
       cancel_url: getURL(cancelUrl),
@@ -206,7 +206,11 @@ export async function checkoutWithStripeForDonation(
         }
       ],
       cancel_url: getURL(cancelUrl),
-      success_url: getURL(redirectPath)
+      success_url: getURL(redirectPath),
+      metadata: {
+        category: 'donation',
+        donation_id: donation?.id!
+      }
     };
 
     console.log(
@@ -255,11 +259,6 @@ export async function checkoutWithStripeForDonation(
           stripe_customer_id: customer,
           email: user?.email || ''
         });
-        await updateDonation({
-          stripe_payment_id: (session.payment_intent as string) || '',
-          stripe_customer_id: customer,
-          donation_id: donation?.id!
-        });
       } catch (err) {
         console.error(err);
         throw new Error('Unable to update donation record.');
@@ -272,7 +271,7 @@ export async function checkoutWithStripeForDonation(
     if (error instanceof Error) {
       return {
         errorRedirect: getErrorRedirect(
-          redirectPath,
+          cancelUrl,
           error.message,
           'Please try again later or contact a system administrator.'
         )
@@ -280,7 +279,7 @@ export async function checkoutWithStripeForDonation(
     } else {
       return {
         errorRedirect: getErrorRedirect(
-          redirectPath,
+          cancelUrl,
           'An unknown error occurred.',
           'Please try again later or contact a system administrator.'
         )

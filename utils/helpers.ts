@@ -146,7 +146,8 @@ export const paymentMethodMap: { [key: string]: string } = {
   cash: 'Cash',
   zelle: 'Zelle',
   us_bank_account: 'US Bank Account',
-  other: 'Other'
+  other: 'Other',
+  external: 'External'
 };
 
 export const purposeTitleMap: { [key: string]: string } = {

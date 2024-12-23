@@ -5,7 +5,8 @@ import {
   FuneralFundFormSchema,
   Member,
   Price,
-  Product
+  Product,
+  UpdateDonationParams
 } from '@/types';
 import { toDateTime } from '@/utils/helpers';
 import { stripe } from '@/utils/stripe/config';
@@ -278,18 +279,8 @@ const updateDonor = async ({
     );
 };
 
-const updateDonation = async (params: {
-  donation_id: string;
-  stripe_payment_id: string;
-  stripe_customer_id: string;
-  [key: string]: any;
-}) => {
-  const {
-    donation_id,
-    stripe_payment_id,
-    stripe_customer_id,
-    ...otherProperties
-  } = params;
+const updateDonation = async (params: UpdateDonationParams) => {
+  const { donation_id, ...updateFields } = params;
   // Check if the member already exists in Supabase
   const { data: existingDonation, error: queryError } = await supabaseAdmin
     .from('donations')
@@ -301,19 +292,20 @@ const updateDonation = async (params: {
     throw new Error(`Supabase donation lookup failed: ${queryError.message}`);
   }
 
+  if (!existingDonation) {
+    throw new Error(`Donation with id ${donation_id} not found`);
+  }
+
   const { error: updateError } = await supabaseAdmin
     .from('donations')
-    .update({
-      ...otherProperties,
-      stripe_payment_id: stripe_payment_id,
-      stripe_customer_id: stripe_customer_id
-    })
+    .update(updateFields)
     .eq('id', donation_id);
 
   if (updateError)
     throw new Error(
       `Supabase donation record update failed: ${updateError.message}`
     );
+  return { updated: true };
 };
 
 const updateMember = async ({

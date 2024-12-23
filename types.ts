@@ -102,6 +102,9 @@ export type Donation = Tables<'donations'>;
 export type Donor = Tables<'donors'>;
 export type organization = Tables<'organization'>;
 
+export type UpdateDonationParams = Partial<Donation> & { donation_id: string };
+
+
 export interface ProductWithPrices extends Product {
   prices: Price[];
 }

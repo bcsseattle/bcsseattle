@@ -7,6 +7,7 @@ import {
   manageSubscriptionStatusChange,
   deleteProductRecord,
   deletePriceRecord,
+  updateDonation
 } from '@/utils/supabase/admin';
 
 const relevantEvents = new Set([
@@ -23,7 +24,7 @@ const relevantEvents = new Set([
   'payout.created',
   'payout.updated',
   'payout.paid',
-  'payout.failed',
+  'payout.failed'
 ]);
 
 export async function POST(req: Request) {
@@ -71,6 +72,14 @@ export async function POST(req: Request) {
           break;
         case 'checkout.session.completed':
           const checkoutSession = event.data.object as Stripe.Checkout.Session;
+          const metadata = checkoutSession.metadata;
+          if (metadata?.category === 'donation') {
+            await updateDonation({
+              stripe_payment_id: checkoutSession.payment_intent as string,
+              donation_id: metadata.donation_id,
+              donation_status: 'completed'
+            });
+          }
           if (checkoutSession.mode === 'subscription') {
             const subscriptionId = checkoutSession.subscription;
             await manageSubscriptionStatusChange(
@@ -114,7 +123,7 @@ export async function POST(req: Request) {
         case 'payment_intent.created':
         case 'payment_intent.succeeded':
           return new Response('Event type ignored', {
-            status: 204,
+            status: 204
           });
         default:
           throw new Error('Unhandled relevant event!');

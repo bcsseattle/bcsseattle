@@ -79,8 +79,6 @@ export async function GET(
 
     await updateDonation({
       donation_id: donation.id,
-      stripe_customer_id: donation.stripe_customer_id as string,
-      stripe_payment_id: donation.stripe_payment_id as string,
       tax_receipt_generated: true
     });
 
