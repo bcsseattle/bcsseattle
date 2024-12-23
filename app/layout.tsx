@@ -8,6 +8,7 @@ import { cn } from '@/utils/cn';
 import '@/styles/main.css';
 import Footer from '@/components/Footer';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
+import { Analytics } from '@vercel/analytics/react';
 import Breadcrumbs from '@/components/ui/breadcrumbs';
 
 const fontSans = FontSans({
@@ -70,6 +71,7 @@ export default async function RootLayout({ children }: PropsWithChildren) {
         <main id="skip" className="mx-auto p-2 sm:p-12">
           <Breadcrumbs />
           {children}
+          <Analytics />
         </main>
         <Footer />
         <Suspense>

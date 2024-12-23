@@ -46,6 +46,7 @@
     "@supabase/supabase-js": "^2.47.10",
     "@tanstack/react-table": "^8.20.6",
     "@types/nodemailer": "^6.4.17",
+    "@vercel/analytics": "^1.4.1",
     "add": "^2.0.6",
     "breadcrumb": "^1.0.0",
     "class-variance-authority": "^0.7.1",
@@ -81,7 +82,7 @@
     "supabase": "^1.226.4",
     "typescript": "^5.7.2"
   },
- "pnpm": {
+  "pnpm": {
     "overrides": {
       "lucide-react>react": "18.2.0",
       "lucide-react>react-dom": "18.2.0",
