@@ -2,7 +2,8 @@ import React from 'react';
 import {
   useReactTable,
   getCoreRowModel,
-  flexRender
+  flexRender,
+  getPaginationRowModel
 } from '@tanstack/react-table';
 import {
   Table,
@@ -24,7 +25,13 @@ const DonationTable: React.FC<DonationTableProps> = ({ data }) => {
   const table = useReactTable({
     data,
     columns: donationColumns,
-    getCoreRowModel: getCoreRowModel()
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 5
+      }
+    }
   });
 
   return (

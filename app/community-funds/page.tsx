@@ -41,6 +41,10 @@ export default async function CommunityFunds() {
     .eq('user_id', user?.id)
     .maybeSingle();
 
+  if (member?.status === 'inactive') {
+    return redirect('/register');
+  }
+
   const { data: expenses } = await supabase
     .from('expenses')
     .select('*')
@@ -53,18 +57,20 @@ export default async function CommunityFunds() {
     .neq('status', 'failed')
     .order('created_at', { ascending: false });
 
-  if (member?.status === 'inactive') {
-    return redirect('/register');
-  }
-
   const { data: donations } = await getDonations();
+
+  const totalDonations = donations?.reduce(
+    (acc: number, donation: any) => acc + donation.amount,
+    0
+  );
+
+  console.log('totalDonations', totalDonations);
 
   const fundsInBank = funds?.reduce(
     (acc: number, fund: any) => acc + fund.amount,
     0
   );
 
-  const payments = await getStripePayments();
   const { available, pending } = await getStripeAvailableBalance();
   const transactions = await getStripeRecentTransactions();
 
@@ -81,7 +87,11 @@ export default async function CommunityFunds() {
     ) ?? 0;
 
   const collectedAmount =
-    availableAmount + pendingAmount + (fundsInBank || 0) + totalStripeFees;
+    availableAmount +
+    pendingAmount +
+    (fundsInBank || 0) +
+    totalDonations +
+    totalStripeFees;
   // availableAmount > pendingAmount ? availableAmount : pendingAmount;
 
   const collectedFunds = new Intl.NumberFormat('en-US', {
@@ -205,11 +215,7 @@ export default async function CommunityFunds() {
         <RecentDonations donations={donations || []} />
       </div>
       <div className="col-span-4">
-        <RecentFunds
-          payments={payments}
-          members={members as any}
-          columns={columns}
-        />
+        <RecentFunds members={members as any} columns={columns} />
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
         <Card className="col-span-4">

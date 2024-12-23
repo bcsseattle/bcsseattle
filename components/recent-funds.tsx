@@ -1,21 +1,17 @@
-'use client';
-
-import { MemberWithCustomers } from '@/types';
-import Stripe from 'stripe';
 import { Data } from './payments/columns';
 import { CardHeader, CardTitle } from './ui/card';
 import { DataTable } from './payments/data-table';
 import { ColumnDef } from '@tanstack/react-table';
+import { getStripePayments } from '@/utils/supabase/admin';
 
-export default function RecentFunds({
-  payments = [],
+export default async function RecentFunds({
   members = [],
   columns = []
 }: {
-  payments?: Stripe.PaymentIntent[];
   members?: any[];
   columns?: ColumnDef<Data>[];
 }) {
+  const payments = await getStripePayments();
   const data = payments
     ?.filter(
       (payment) => payment.status === 'succeeded' && payment.customer !== null
