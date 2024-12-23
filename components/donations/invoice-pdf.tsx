@@ -1,4 +1,4 @@
-import { Donation, Donor, organization } from '@/types';
+import { Donation, Donor, Organization } from '@/types';
 import {
   Document,
   Page,
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   }
 });
 interface InvoicePDFProps {
-  organization: organization;
+  organization: Organization;
   donation: Donation;
   donor: Donor;
 }

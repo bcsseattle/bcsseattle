@@ -9,7 +9,7 @@ import {
   TableRow
 } from '../ui/table';
 import { InfoBlock } from '../ui/info-block';
-import { Donor, organization, Donation } from '@/types';
+import { Donor, Organization, Donation } from '@/types';
 import { getPriceString } from '@/utils/helpers';
 import Logo from '../icons/Logo';
 import { Button } from '../ui/button';
@@ -17,7 +17,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 interface Props {
-  organization: organization;
+  organization: Organization;
   donor: Donor;
   donation: Donation;
 }

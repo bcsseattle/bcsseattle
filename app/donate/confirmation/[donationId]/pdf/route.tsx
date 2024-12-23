@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { renderToStream } from '@react-pdf/renderer';
-import InvoicePDFProps from '@/components/donations/invoice-pdf';
+import InvoicePDF from '@/components/donations/invoice-pdf';
 import { updateDonation } from '@/utils/supabase/admin';
 import { getErrorRedirect } from '@/utils/helpers';
 
@@ -70,7 +70,7 @@ export async function GET(
     }
 
     const stream = await renderToStream(
-      <InvoicePDFProps
+      <InvoicePDF
         organization={organization}
         donation={donation}
         donor={donor}

@@ -51,7 +51,7 @@ export async function submitDonation(
       donation_status: 'pending',
       donation_interval: values.frequency === 'one_time' ? null : (values.frequency as any),
       donation_type: values.isRecurring ? 'recurring' : 'one_time',
-      donation_description: null
+      donation_description: 'Donation'
     };
     const { data: donation, error: donationError } =
       await createDonation(donationDetails);

@@ -295,6 +295,32 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       members: {
         Row: {
           address: string | null
@@ -599,6 +625,7 @@ export type Database = {
         | "check"
         | "cash"
         | "us_bank_account"
+        | "external"
       pricing_plan_interval: "day" | "week" | "month" | "year"
       pricing_type: "one_time" | "recurring"
       purpose_enum:

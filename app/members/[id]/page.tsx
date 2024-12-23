@@ -24,10 +24,12 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     .maybeSingle();
 
   const stripeCustomerId = member?.customers?.stripe_customer_id ?? '';
-  const payments = await getStripePayments(stripeCustomerId);
+  const payments = await getStripePayments({ customerId: stripeCustomerId });
 
   // get total spent from customer in stripe
-  const totalSpent = await getTotalCustomerSpent(stripeCustomerId);
+  const totalSpent = await getTotalCustomerSpent({
+    customerId: stripeCustomerId
+  });
 
   const totalSpentString = new Intl.NumberFormat('en-US', {
     style: 'currency',

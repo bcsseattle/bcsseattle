@@ -100,7 +100,8 @@ export type Price = Tables<'prices'>;
 export type Member = Tables<'members'>;
 export type Donation = Tables<'donations'>;
 export type Donor = Tables<'donors'>;
-export type organization = Tables<'organization'>;
+export type Organization = Tables<'organization'>;
+export type Invoice = Tables<'invoices'>;
 
 export type UpdateDonationParams = Partial<Donation> & { donation_id: string };
 
@@ -130,3 +131,8 @@ export type MemberWithCustomers = Member & {
 export type DonationByDonor = Partial<Donation> & {
   donors: Donor[];
 };
+
+export interface DateRange {
+  startDate: number; // Unix timestamp
+  endDate: number;   // Unix timestamp
+}

@@ -1,6 +1,7 @@
 import CustomerPortalForm from '@/components/ui/AccountForms/CustomerPortalForm';
 import EmailForm from '@/components/ui/AccountForms/EmailForm';
 import NameForm from '@/components/ui/AccountForms/NameForm';
+import ReceiptForm from '@/components/ui/AccountForms/ReceiptForm';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
@@ -36,6 +37,10 @@ export default async function Account() {
     .eq('user_id', user?.id)
     .maybeSingle();
 
+  if (!member) {
+    return redirect('/register');
+  }
+
   if (member?.status === 'inactive') {
     return redirect('/register');
   }
@@ -43,6 +48,7 @@ export default async function Account() {
   return (
     <section className="my-8">
       <div className="space-y-4">
+        <ReceiptForm member={member} />
         <CustomerPortalForm subscription={subscription} />
         <NameForm userName={userDetails?.full_name ?? ''} />
         <EmailForm userEmail={user.email} />

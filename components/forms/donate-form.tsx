@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { User } from '@supabase/supabase-js';
-import { DonationFormSchema, Product, Price, Donor } from '@/types';
+import { DonationFormSchema, Donor, ProductWithPrices } from '@/types';
 import { Card } from '../ui/card';
 import { US_STATES } from '@/utils/constants';
 import { submitDonation } from '@/utils/donation/handlers';
@@ -40,9 +40,7 @@ import { InfoBlock } from '../ui/info-block';
 
 interface DonateFormProps {
   user: User | null | undefined;
-  product: Product & {
-    prices: Price[];
-  };
+  product: ProductWithPrices;
   donor?: Donor | null;
 }
 

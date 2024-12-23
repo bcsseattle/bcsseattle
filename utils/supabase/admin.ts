@@ -3,6 +3,7 @@ import {
   Donation,
   Donor,
   FuneralFundFormSchema,
+  Invoice,
   Member,
   Price,
   Product,
@@ -511,20 +512,30 @@ const getStripeRecentTransactions = async () => {
   return allTransactions;
 };
 
-const getStripePayments = async (customerId?: string) => {
+const getStripePayments = async (params?: {
+  customerId?: string;
+  dateRange?: Stripe.RangeQueryParam;
+}) => {
+  const { customerId, dateRange } = params || {};
+
   const payments = await stripe.paymentIntents
     .list({
       customer: customerId,
       limit: 100,
       created: {
-        gte: 1718491540 // 2024-06-15
+        gte: dateRange?.gte ?? 1718491540, // 2024-06-15,
+        lte: dateRange?.lte ?? Math.floor(Date.now() / 1000)
       }
     })
     .autoPagingToArray({ limit: 1000 });
   return payments;
 };
 
-const getTotalCustomerSpent = async (customerId: string) => {
+const getTotalCustomerSpent = async (params?: {
+  customerId?: string;
+  dateRange?: Stripe.RangeQueryParam;
+}) => {
+  const { customerId, dateRange } = params || {};
   let totalSpent = 0;
   try {
     const charges = await stripe.charges
@@ -532,7 +543,8 @@ const getTotalCustomerSpent = async (customerId: string) => {
         customer: customerId,
         limit: 100,
         created: {
-          gte: 1718491540 // 2024-06-15
+          gte: dateRange?.gte ?? 1718491540, // 2024-06-15,
+          lte: dateRange?.lte ?? Math.floor(Date.now() / 1000)
         }
       })
       .autoPagingToArray({ limit: 1000 });
@@ -551,6 +563,11 @@ const getTotalCustomerSpent = async (customerId: string) => {
 const getStripeCustomers = async () => {
   const customers = await stripe.customers.list();
   return customers;
+};
+
+const getStripeCustomer = async (customerId: string) => {
+  const customer = await stripe.customers.retrieve(customerId);
+  return customer;
 };
 
 const updateFuneralSignup = async (
@@ -677,6 +694,28 @@ export const createDonor = async (
   return { data, error: upsertError };
 };
 
+const createInvoice = async (
+  memberDetails: Partial<Member>
+): Promise<{ data: Invoice | null; error: PostgrestError | null | string }> => {
+  try {
+    const { data, error: upsertError } = await supabaseAdmin
+      .from('invoices')
+      .upsert({
+        member_id: memberDetails.id!
+      })
+      .select()
+      .single();
+    if (upsertError) {
+      console.error('Invoice upsert error:', upsertError);
+      throw new Error(`Invoice insert/update failed: ${upsertError.message}`);
+    }
+    return { data, error: upsertError };
+  } catch (error) {
+    console.error('Error creating invoice:', error);
+    return { data: null, error: 'Error creating invoice' };
+  }
+};
+
 export const getOrCreateDonor = async (
   donorDetails: Partial<Donor>
 ): Promise<{ data: Donor | null; error: PostgrestError | null | string }> => {
@@ -747,8 +786,10 @@ export {
   getStripePayments,
   getTotalCustomerSpent,
   getStripeCustomers,
+  getStripeCustomer,
   updateFuneralSignup,
   getDonations,
   getOrCreateUser,
-  createCustomerInStripe
+  createCustomerInStripe,
+  createInvoice
 };
