@@ -45,7 +45,7 @@ export default function Plans({ user, products, subscription }: Props) {
 
     const { errorRedirect, sessionId } = await checkoutWithStripe(
       price,
-      currentPath,
+      '/community-funds',
       currentPath,
       false,
       priceType === 'generous'
@@ -112,10 +112,7 @@ export default function Plans({ user, products, subscription }: Props) {
                 style: 'currency',
                 currency: price.currency!,
                 minimumFractionDigits: 0
-              }).format(
-                (price?.unit_amount || 10000) /
-                  100
-              );
+              }).format((price?.unit_amount || 10000) / 100);
 
               const priceType =
                 product.name === 'BCS Donation'
@@ -132,7 +129,7 @@ export default function Plans({ user, products, subscription }: Props) {
                     : 'One-time Contribution';
               return (
                 <Card
-                  key={product.id}
+                  key={price.id}
                   className="w-full md:w-1/2 lg:my-4 lg:w-1/4 mb-4"
                 >
                   <CardHeader>

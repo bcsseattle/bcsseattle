@@ -180,7 +180,13 @@ export async function checkoutWithStripeForDonation(
     // Retrieve or create the customer in Stripe
     let customer: string;
     try {
-      customer = await createCustomerInStripe(user.id, donor?.email!);
+      if (!user.id || !donor?.email) {
+        throw new Error('Missing user ID or email');
+      }
+      customer = await createOrRetrieveCustomer({
+        uuid: user.id,
+        email: donor.email
+      });
     } catch (err) {
       console.error(err);
       throw new Error('Unable to access customer record.');
