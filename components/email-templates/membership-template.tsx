@@ -24,8 +24,8 @@ export const WelcomeEmailTemplate = () => (
           <Img
             alt="BCS Seattle"
             src={`${baseUrl}/bcss-logo.png`}
-            width={49}
-            height={21}
+            width={100}
+            height={100}
           />
           <Text style={paragraph}>
             Welcome to Baloch Community Services of Seattle! We are excited to

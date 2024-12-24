@@ -36,8 +36,8 @@ export const PaymentFailedTemplate = ({
           <Img
             alt="BCS Seattle"
             src={`${baseUrl}/bcss-logo.png`}
-            width={49}
-            height={21}
+            width={100}
+            height={100}
           />
 
           <Heading>Payment Failed</Heading>
