@@ -3,9 +3,11 @@ import { stripe } from '@/utils/stripe/config';
 import {
   upsertProductRecord,
   upsertPriceRecord,
+  upsertFundRecord,
   manageSubscriptionStatusChange,
   deleteProductRecord,
-  deletePriceRecord
+  deletePriceRecord,
+  updateDonation
 } from '@/utils/supabase/admin';
 
 const relevantEvents = new Set([
@@ -18,7 +20,11 @@ const relevantEvents = new Set([
   'checkout.session.completed',
   'customer.subscription.created',
   'customer.subscription.updated',
-  'customer.subscription.deleted'
+  'customer.subscription.deleted',
+  'payout.created',
+  'payout.updated',
+  'payout.paid',
+  'payout.failed'
 ]);
 
 export async function POST(req: Request) {
@@ -66,6 +72,14 @@ export async function POST(req: Request) {
           break;
         case 'checkout.session.completed':
           const checkoutSession = event.data.object as Stripe.Checkout.Session;
+          const metadata = checkoutSession.metadata;
+          if (metadata?.category === 'donation') {
+            await updateDonation({
+              stripe_payment_id: checkoutSession.payment_intent as string,
+              donation_id: metadata.donation_id,
+              donation_status: 'completed'
+            });
+          }
           if (checkoutSession.mode === 'subscription') {
             const subscriptionId = checkoutSession.subscription;
             await manageSubscriptionStatusChange(
@@ -75,6 +89,42 @@ export async function POST(req: Request) {
             );
           }
           break;
+        case 'payout.paid':
+        case 'payout.failed':
+        case 'payout.created':
+        case 'payout.updated':
+          const payout = event.data.object as Stripe.Payout;
+          await upsertFundRecord(payout);
+          break;
+        case 'balance.available':
+        case 'billing_portal.session.created':
+        case 'charge.succeeded':
+        case 'checkout.session.expired':
+        case 'customer.created':
+        case 'customer.deleted':
+        case 'customer.discount.created':
+        case 'customer.discount.deleted':
+        case 'customer.discount.updated':
+        case 'customer.source.created':
+        case 'customer.source.deleted':
+        case 'customer.source.updated':
+        case 'customer.subscription.deleted':
+        case 'customer.subscription.pending_update_applied':
+        case 'customer.subscription.pending_update_expired':
+        case 'customer.subscription.trial_will_end':
+        case 'customer.subscription.updated':
+        case 'customer.tax_id.created':
+        case 'customer.tax_id.deleted':
+        case 'customer.tax_id.updated':
+        case 'invoice.created':
+        case 'invoice.finalized':
+        case 'invoice.payment_succeeded':
+        case 'invoice.paid':
+        case 'payment_intent.created':
+        case 'payment_intent.succeeded':
+          return new Response('Event type ignored', {
+            status: 204
+          });
         default:
           throw new Error('Unhandled relevant event!');
       }

@@ -131,3 +131,28 @@ export const getErrorRedirect = (
     disableButton,
     arbitraryParams
   );
+
+export const getPriceString = (amountPerPerHead: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0
+  }).format(amountPerPerHead / 100);
+};
+
+export const paymentMethodMap: { [key: string]: string } = {
+  card: 'Card',
+  check: 'Check',
+  cash: 'Cash',
+  zelle: 'Zelle',
+  us_bank_account: 'US Bank Account',
+  other: 'Other',
+  external: 'External'
+};
+
+export const purposeTitleMap: { [key: string]: string } = {
+  'general-purpose': 'General Purpose',
+  'funeral-and-burial': 'Funeral and Burial',
+  'new-member-support': 'New Member Support',
+  'youth-programs': 'Youth Programs'
+};

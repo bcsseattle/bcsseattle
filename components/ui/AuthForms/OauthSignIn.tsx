@@ -1,10 +1,11 @@
 'use client';
-
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { signInWithOAuth } from '@/utils/auth-helpers/client';
 import { type Provider } from '@supabase/supabase-js';
-import { Github } from 'lucide-react';
-import { useState } from 'react';
+import Google from '@/components/icons/Google';
+import Facebook from '@/components/icons/Facebook';
+import { useState, type JSX } from 'react';
 
 type OAuthProviders = {
   name: Provider;
@@ -15,9 +16,14 @@ type OAuthProviders = {
 export default function OauthSignIn() {
   const oAuthProviders: OAuthProviders[] = [
     {
-      name: 'github',
-      displayName: 'GitHub',
-      icon: <Github className="h-5 w-5" />
+      name: 'google',
+      displayName: 'Sign in with Google',
+      icon: <Google className="h-8 w-8" />
+    },
+    {
+      name: 'facebook',
+      displayName: 'Sign in with Facebook',
+      icon: <Facebook className="h-8 w-8" />
     }
     /* Add desired OAuth providers here */
   ];
@@ -37,16 +43,15 @@ export default function OauthSignIn() {
           className="pb-2"
           onSubmit={(e) => handleSubmit(e)}
         >
-          <input type="hidden" name="provider" value={provider.name} />
-          <Button
-            variant="slim"
-            type="submit"
-            className="w-full"
-            loading={isSubmitting}
-          >
-            <span className="mr-2">{provider.icon}</span>
-            <span>{provider.displayName}</span>
-          </Button>
+          <Input type="hidden" name="provider" value={provider.name} />
+          {isSubmitting ? (
+            <h1>Loading...</h1>
+          ) : (
+            <Button variant="outline" type="submit" className="w-full">
+              <span className="mr-2">{provider.icon}</span>
+              <span>{provider.displayName}</span>
+            </Button>
+          )}
         </form>
       ))}
     </div>

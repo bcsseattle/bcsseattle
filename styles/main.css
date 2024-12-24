@@ -2,58 +2,215 @@
 @tailwind components;
 @tailwind utilities;
 
-*,
-*:before,
-*:after {
-  box-sizing: inherit;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 24.6 76% 67.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 194.3 89.8% 34.7%;
+    --secondary-foreground: 222.2 47.4% 100%;
+    --tertiary: 200.4 44.6% 22%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.75rem;
+  }
 }
 
-*:focus:not(ol) {
-  @apply outline-none ring-2 ring-pink-500 ring-opacity-50;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
-html {
-  height: 100%;
-  box-sizing: border-box;
-  touch-action: manipulation;
-  font-feature-settings:
-    'case' 1,
-    'rlig' 1,
-    'calt' 0;
+/* nav {
+  @apply max-w-6xl mx-auto my-4;
+
+} */
+
+/* main {
+  @apply max-w-6xl mx-auto my-4;
+} */
+
+p {
+  @apply mt-2;
 }
 
-html,
-body {
-  font-family: -apple-system, system-ui, BlinkMacSystemFont, 'Helvetica Neue',
-    'Helvetica', sans-serif;
-  text-rendering: optimizeLegibility;
-  -moz-osx-font-smoothing: grayscale;
-  @apply text-white bg-zinc-800 antialiased;
+.notion-heading_1 {
+  @apply text-3xl font-bold;
 }
 
-body {
-  position: relative;
-  min-height: 100%;
-  margin: 0;
+.notion-heading_2 {
+  @apply text-2xl font-bold;
 }
 
-a {
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+.notion-heading_3 {
+  @apply text-lg font-bold;
 }
 
-p a {
-  @apply hover:underline;
+.notion-numbered_list_item {
+  @apply list-decimal ml-4;
 }
 
-.animated {
-  -webkit-animation-duration: 1s;
-  animation-duration: 1s;
-  -webkit-animation-duration: 1s;
-  animation-duration: 1s;
-  -webkit-animation-fill-mode: both;
-  animation-fill-mode: both;
+.notion-bulleted_list {
+  @apply list-disc ml-4;
 }
 
-.height-screen-helper {
-  min-height: calc(100vh - 80px);
+.bulleted_list_item {
+  @apply list-disc ml-4;
+}
+
+.notion-table {
+  @apply w-full;
+  @apply border;
+  @apply border-collapse;
+  @apply table-auto;
+}
+
+.notion-table_cell {
+  @apply border-r;
+  @apply p-2
+}
+
+.notion-table_cell:first-child {
+  @apply border-l;
+}
+
+.notion-table_row {
+  @apply border-b;
+}
+
+.notion-table_row:first-child {
+  @apply border-t;
+}
+
+.notion-quote {
+  @apply text-gray-500 dark:text-gray-400 italic mb-5 mt-5;
+}
+
+.notion-text-href {
+  @apply text-primary underline;
+}
+
+.notion-heading_3 {
+  @apply mb-5
+}
+
+.notion-code {
+  @apply mt-5 mb-5 text-sm p-4 overflow-auto bg-gray-100 dark:bg-gray-900 rounded-md;
+  ;
+}
+
+.notion-text-bold {
+  @apply font-bold;
+}
+
+.notion-text-code {
+  @apply px-2 inline-block bg-gray-200 dark:bg-gray-700 rounded text-secondary dark:text-secondary-foreground;
+}
+
+.notion-heading_1 {
+  @apply font-bold mb-4 text-foreground dark:text-primary-foreground mt-5;
+}
+
+.notion-numbered_list {
+  @apply list-decimal pl-6 text-foreground dark:text-primary-foreground;
+}
+
+.notion-numbered_list_item {
+  @apply mb-2;
+}
+
+.notion-color-default {
+  @apply text-gray-800 dark:text-gray-300;
+}
+
+.notion-bulleted_list {
+  @apply list-disc pl-6;
+}
+
+.notion-bulleted_list_item {
+  @apply mb-2;
+}
+
+.notion-color-default {
+  @apply text-gray-800 dark:text-gray-300;
+}
+
+.notion-image {
+  @apply mt-5 mb-5;
+}
+
+.notion-color-yellow_background {
+  @apply bg-yellow-100 dark:bg-yellow-800;
+}
+
+.notion-color-red_background {
+  @apply bg-red-100 dark:bg-red-800;
+}
+
+.notion-color-blue_background {
+  @apply bg-blue-100 dark:bg-blue-800;
+}
+
+.notion-color-green_background {
+  @apply bg-green-100 dark:bg-green-800;
+}
+
+.notion-color-gray_background {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+.notion-color_orange_background {
+  @apply bg-orange-100 dark:bg-orange-800;
+}
+
+.notion-color_purple_background {
+  @apply bg-purple-100 dark:bg-purple-800;
+}
+
+.notion-color-purple_background {
+  @apply bg-purple-100 dark:bg-purple-800;
+}
+
+.notion-color-purple {
+  @apply text-purple-700 dark:text-purple-300;
+}
+
+.notion-color-green {
+  @apply text-green-700 dark:text-green-300;
+}
+
+.notion-color-blue {
+  @apply text-blue-700 dark:text-blue-300;
+}
+
+.notion-color-red {
+  @apply text-red-700 dark:text-red-300;
+}
+
+blockquote {
+  @apply border-l border-primary/30 pl-4 italic;
+}
+
+@media print {
+  .no-print {
+    @apply hidden;
+  }
 }

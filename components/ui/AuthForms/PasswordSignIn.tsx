@@ -1,6 +1,8 @@
 'use client';
 
-import Button from '@/components/ui/Button';
+import { Button } from "@/components/ui/button"
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { signInWithPassword } from '@/utils/auth-helpers/server';
 import { handleRequest } from '@/utils/auth-helpers/client';
@@ -33,10 +35,10 @@ export default function PasswordSignIn({
         className="mb-4"
         onSubmit={(e) => handleSubmit(e)}
       >
-        <div className="grid gap-2">
-          <div className="grid gap-1">
-            <label htmlFor="email">Email</label>
-            <input
+        <div className="grid w-full items-center gap-4">
+          <div className="flex flex-col space-y-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input
               id="email"
               placeholder="name@example.com"
               type="email"
@@ -44,23 +46,23 @@ export default function PasswordSignIn({
               autoCapitalize="none"
               autoComplete="email"
               autoCorrect="off"
-              className="w-full p-3 rounded-md bg-zinc-800"
             />
-            <label htmlFor="password">Password</label>
-            <input
+          </div>
+          <div className="flex flex-col space-y-1.5">
+            <Label htmlFor="password">Password</Label>
+            <Input
               id="password"
               placeholder="Password"
               type="password"
               name="password"
               autoComplete="current-password"
-              className="w-full p-3 rounded-md bg-zinc-800"
             />
           </div>
           <Button
-            variant="slim"
+            variant="default"
             type="submit"
             className="mt-1"
-            loading={isSubmitting}
+            disabled={isSubmitting}
           >
             Sign in
           </Button>
@@ -79,7 +81,7 @@ export default function PasswordSignIn({
         </p>
       )}
       <p>
-        <Link href="/signin/signup" className="font-light text-sm">
+        <Link href="/signin/signup" className="text-orange-900 font-light text-sm">
           Don't have an account? Sign up
         </Link>
       </p>

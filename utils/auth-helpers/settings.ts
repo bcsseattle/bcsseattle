@@ -1,5 +1,5 @@
 // Boolean toggles to determine which auth types are allowed
-const allowOauth = true;
+const allowOauth = false;
 const allowEmail = true;
 const allowPassword = true;
 
@@ -27,7 +27,8 @@ export const getViewTypes = () => {
       'password_signin',
       'forgot_password',
       'update_password',
-      'signup'
+      'signup',
+      'register',
     ];
   }
 
