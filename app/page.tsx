@@ -10,6 +10,7 @@ export default async function PricingPage() {
     <>
       <Hero />
       <div className="border-b" />
+      <h1 className='text-4xl text-center'>Pricing Page</h1>
       <Mission />
       <ProgramsAndServices />
       <ContactForm />
