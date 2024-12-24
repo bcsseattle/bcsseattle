@@ -214,7 +214,7 @@ export async function checkoutWithStripeForDonation(
       cancel_url: getURL(cancelUrl),
       success_url: getURL(redirectPath),
       metadata: {
-        category: 'donation',
+        type: 'donation',
         donation_id: donation?.id!
       }
     };

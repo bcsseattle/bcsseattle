@@ -75,7 +75,7 @@ export async function POST(req: Request) {
         case 'checkout.session.completed':
           const checkoutSession = event.data.object as Stripe.Checkout.Session;
           const metadata = checkoutSession.metadata;
-          if (metadata?.category === 'donation') {
+          if (metadata?.type === 'donation') {
             await updateDonation({
               stripe_payment_id: checkoutSession.payment_intent as string,
               donation_id: metadata.donation_id,
