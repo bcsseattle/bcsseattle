@@ -9,6 +9,7 @@ import {
   deletePriceRecord,
   updateDonation
 } from '@/utils/supabase/admin';
+import { sendPaymentFailedEmail } from '@/utils/membership/handlers';
 
 const relevantEvents = new Set([
   'product.created',
@@ -24,7 +25,8 @@ const relevantEvents = new Set([
   'payout.created',
   'payout.updated',
   'payout.paid',
-  'payout.failed'
+  'payout.failed',
+  'charge.failed',
 ]);
 
 export async function POST(req: Request) {
@@ -88,6 +90,10 @@ export async function POST(req: Request) {
               true
             );
           }
+          break;
+        case 'charge.failed':
+          const charge = event.data.object as Stripe.Charge;
+          await sendPaymentFailedEmail(charge);
           break;
         case 'payout.paid':
         case 'payout.failed':

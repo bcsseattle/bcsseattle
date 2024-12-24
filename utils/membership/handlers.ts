@@ -1,12 +1,19 @@
 'use server';
 
-import { getURL, getErrorRedirect, getStatusRedirect } from 'utils/helpers';
+import {
+  getURL,
+  getErrorRedirect,
+  getStatusRedirect,
+  getPriceString
+} from 'utils/helpers';
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { createMember } from '../supabase/admin';
 import { User } from '@supabase/supabase-js';
 import { MemberRegistrationFormSchema } from '@/types';
+import { send } from 'process';
+import Stripe from 'stripe';
 
 export async function registerMember(
   values: z.infer<typeof MemberRegistrationFormSchema>
@@ -49,7 +56,13 @@ export async function registerMember(
       terms
     };
 
-    await createMember(createMemberDetails);
+    const { data, error } = await createMember(createMemberDetails);
+    if (error) {
+      console.error('Error creating member:', error);
+      // throw new Error('Failed to create member');
+    }
+
+    await sendWelecomEmail(user);
 
     return getStatusRedirect(
       '/membership-fee',
@@ -63,5 +76,42 @@ export async function registerMember(
       'Something went wrong.',
       'Your membership account could not be created. You may already be a member. Please contact support.'
     );
+  }
+}
+export async function sendWelecomEmail(User: User) {
+  const api_url = process.env.NEXT_PUBLIC_SITE_URL + '/api/send-email/welcome';
+  debugger;
+  try {
+    const response = await fetch(api_url, {
+      method: 'POST',
+      body: JSON.stringify({
+        fullName: User.user_metadata.full_name,
+        email: User.email
+      })
+    });
+    return response;
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+  }
+}
+
+export async function sendPaymentFailedEmail(charnge: Stripe.Charge) {
+  const api_url =
+    process.env.NEXT_PUBLIC_SITE_URL + '/api/send-email/payment-failed';
+  debugger;
+  try {
+    const response = await fetch(api_url, {
+      method: 'POST',
+      body: JSON.stringify({
+        email: charnge.billing_details.email,
+        name: charnge.billing_details.name,
+        amount: getPriceString(charnge.amount),
+        failureMessage: charnge.failure_message,
+        retryUrl: getURL('/account')
+      })
+    });
+    return response;
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
   }
 }

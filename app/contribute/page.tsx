@@ -32,6 +32,7 @@ export default async function Page() {
     .select('*, prices(*)')
     .eq('active', true)
     .eq('prices.active', true)
+    .contains('metadata', { type: 'contribution' })
     .order('metadata->index')
     .order('unit_amount', { referencedTable: 'prices' });
 

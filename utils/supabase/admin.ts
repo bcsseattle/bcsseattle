@@ -26,11 +26,18 @@ const supabaseAdmin = createClient<Database>(
 );
 
 export const createMember = async (member: Partial<Member>) => {
-  const { error: upsertError } = await supabaseAdmin
-    .from('members')
-    .upsert(member, { onConflict: 'user_id' });
-  if (upsertError)
-    throw new Error(`Member insert/update failed: ${upsertError.message}`);
+  try {
+    const { data, error: upsertError } = await supabaseAdmin
+      .from('members')
+      .upsert(member, { onConflict: 'user_id' })
+      .select();
+    if (upsertError)
+      throw new Error(`Member insert/update failed: ${upsertError.message}`);
+    return { data, error: upsertError };
+  } catch (error) {
+    console.error('Error creating member:', error);
+    return { data: null, error: 'Error creating member' };
+  }
 };
 
 const upsertProductRecord = async (product: Stripe.Product) => {
