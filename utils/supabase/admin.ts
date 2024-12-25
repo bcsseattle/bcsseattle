@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   Donation,
   Donor,
+  EmailLogs,
   FuneralFundFormSchema,
   Invoice,
   Member,
@@ -776,6 +777,21 @@ export const createDonation = async (donationDetails: Omit<Donation, 'id'>) => {
   return { data: null, error: 'Error creating donation' };
 };
 
+const upsertEmailLogs = async (emailLog: Partial<EmailLogs>) => {
+  try {
+    const { data, error: upsertError } = await supabaseAdmin
+      .from('email_logs')
+      .upsert(emailLog)
+      .select();
+    if (upsertError)
+      throw new Error(`Email log insert/update failed: ${upsertError.message}`);
+    return { data, error: upsertError };
+  } catch (error) {
+    console.error('Error creating email log:', error);
+    return { data: null, error: 'Error creating email log' };
+  }
+};
+
 export {
   upsertProductRecord,
   upsertPriceRecord,
@@ -798,5 +814,6 @@ export {
   getDonations,
   getOrCreateUser,
   createCustomerInStripe,
-  createInvoice
+  createInvoice,
+  upsertEmailLogs
 };
