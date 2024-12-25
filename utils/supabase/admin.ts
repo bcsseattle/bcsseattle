@@ -363,6 +363,54 @@ const updateMember = async ({
     );
 };
 
+const retrieveSmsNotification = async (
+  subscriptionId: string,
+  month: number,
+  year: number
+) => {
+  const { data: subscription, error: queryError } = await supabaseAdmin
+    .from('sms_notifications')
+    .select('*')
+    .eq('subscription_id', subscriptionId)
+    .eq('month', month)
+    .eq('year', year)
+    .limit(1);
+
+  if (queryError) {
+    return {
+      data: null,
+      error: queryError
+    };
+  }
+
+  return {
+    data: subscription,
+    error: null
+  };
+};
+
+const updateSmsNotification = async (
+  subscriptionId: string,
+  currentMonth: number,
+  currentYear: number
+) => {
+  const { error: insertError } = await supabaseAdmin
+    .from('sms_notifications')
+    .insert([
+      {
+        subscription_id: subscriptionId,
+        month: currentMonth,
+        year: currentYear
+      }
+    ]);
+
+  if (insertError) {
+    console.error('Error logging SMS notification:', insertError);
+  } else {
+    console.log('SMS notification logged successfully.');
+  }
+};
+
 const retrieveMember = async ({ user_id }: { user_id: string }) => {
   // Check if the member already exists in Supabase
   const { data: existingMember, error: queryError } = await supabaseAdmin
@@ -815,5 +863,7 @@ export {
   getOrCreateUser,
   createCustomerInStripe,
   createInvoice,
-  upsertEmailLogs
+  upsertEmailLogs,
+  retrieveSmsNotification,
+  updateSmsNotification
 };

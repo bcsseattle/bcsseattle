@@ -10,6 +10,7 @@ import {
   updateDonation
 } from '@/utils/supabase/admin';
 import { sendPaymentFailedEmail } from '@/utils/membership/handlers';
+import { handleUpcomingInvoice } from '@/utils/stripe/server';
 
 const relevantEvents = new Set([
   'product.created',
@@ -27,6 +28,7 @@ const relevantEvents = new Set([
   'payout.paid',
   'payout.failed',
   'charge.failed',
+  'invoice.upcoming'
 ]);
 
 export async function POST(req: Request) {
@@ -101,6 +103,10 @@ export async function POST(req: Request) {
         case 'payout.updated':
           const payout = event.data.object as Stripe.Payout;
           await upsertFundRecord(payout);
+          break;
+        case 'invoice.upcoming':
+          const invoice = event.data.object as Stripe.Invoice;
+          await handleUpcomingInvoice(invoice);
           break;
         case 'balance.available':
         case 'billing_portal.session.created':

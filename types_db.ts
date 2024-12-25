@@ -552,6 +552,30 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_notifications: {
+        Row: {
+          id: string
+          month: number
+          sent_at: string | null
+          subscription_id: string
+          year: number
+        }
+        Insert: {
+          id?: string
+          month: number
+          sent_at?: string | null
+          subscription_id: string
+          year: number
+        }
+        Update: {
+          id?: string
+          month?: number
+          sent_at?: string | null
+          subscription_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at: string | null

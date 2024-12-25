@@ -4,15 +4,21 @@ import {
   getURL,
   getErrorRedirect,
   getStatusRedirect,
-  getPriceString
+  getPriceString,
+  formatPhoneNumber
 } from 'utils/helpers';
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { createMember, upsertEmailLogs } from '../supabase/admin';
+import {
+  createMember,
+  retrieveMember,
+  upsertEmailLogs
+} from '../supabase/admin';
 import { User } from '@supabase/supabase-js';
 import { MemberRegistrationFormSchema } from '@/types';
 import Stripe from 'stripe';
+import { getTwilio } from '@/utils/twilio/client';
 
 export async function registerMember(
   values: z.infer<typeof MemberRegistrationFormSchema>
@@ -133,5 +139,59 @@ export async function sendPaymentFailedEmail(charnge: Stripe.Charge) {
     return response;
   } catch (error) {
     console.error('Error sending welcome email:', error);
+  }
+}
+
+async function getCustomerPhone(
+  phone: string,
+  userId: string
+): Promise<string | null> {
+  if (phone) return phone;
+
+  const member = await retrieveMember({ user_id: userId });
+  return member?.phone || null;
+}
+
+interface SMSResult {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+}
+
+export async function sendSMS(
+  phone: string,
+  body: string,
+  userId: string
+): Promise<SMSResult> {
+  try {
+    if (!body?.trim()) {
+      throw new Error('Message body is required');
+    }
+
+    const customerPhone = await getCustomerPhone(phone, userId);
+
+    if (!customerPhone) {
+      throw new Error(`No phone number found for user: ${userId}`);
+    }
+
+    const twilio = getTwilio();
+    const message = await twilio.messages.create({
+      body,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: formatPhoneNumber(customerPhone)
+    });
+
+    console.log(`SMS sent successfully - MessageID: ${message.sid}`);
+
+    return {
+      success: true,
+      messageId: message.sid
+    };
+  } catch (error: any) {
+    console.error('SMS send failed:', error);
+    return {
+      success: false,
+      error: error?.message
+    };
   }
 }
