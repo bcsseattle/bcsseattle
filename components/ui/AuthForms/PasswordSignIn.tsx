@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
@@ -13,11 +13,13 @@ import React, { useState } from 'react';
 interface PasswordSignInProps {
   allowEmail: boolean;
   redirectMethod: string;
+  redirectTo: string | undefined;
 }
 
 export default function PasswordSignIn({
   allowEmail,
-  redirectMethod
+  redirectMethod,
+  redirectTo
 }: PasswordSignInProps) {
   const router = redirectMethod === 'client' ? useRouter() : null;
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,6 +60,7 @@ export default function PasswordSignIn({
               autoComplete="current-password"
             />
           </div>
+          <input type="hidden" name="redirectTo" value={redirectTo} />
           <Button
             variant="default"
             type="submit"
@@ -81,7 +84,10 @@ export default function PasswordSignIn({
         </p>
       )}
       <p>
-        <Link href="/signin/signup" className="text-orange-900 font-light text-sm">
+        <Link
+          href="/signin/signup"
+          className="text-orange-900 font-light text-sm"
+        >
           Don't have an account? Sign up
         </Link>
       </p>

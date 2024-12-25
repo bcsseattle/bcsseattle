@@ -53,6 +53,12 @@ export const PaymentFailedTemplate = ({
           </Link>
 
           <Text style={paragraph}>
+            Alternatively, you can update your payment method by logging into
+            BCS Seattle, navigating to the Account menu, and clicking on Open
+            Customer Portal.
+          </Text>
+
+          <Text style={paragraph}>
             If you continue to experience issues, please contact us at{' '}
             <Link href="mailto:info@bcsseattle.org">info@bcsseattle.org</Link>{' '}
             for assistance.
@@ -119,3 +125,5 @@ const footer = {
   fontSize: '12px',
   lineHeight: '16px'
 };
+
+export default PaymentFailedTemplate;

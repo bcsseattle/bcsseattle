@@ -120,7 +120,7 @@ export async function sendPaymentFailedEmail(charnge: Stripe.Charge) {
         name: charnge.billing_details.name,
         amount: getPriceString(charnge.amount),
         failureMessage: charnge.failure_message,
-        retryUrl: getURL('/account')
+        retryUrl: getURL(`/account?redirectTo=account`)
       })
     });
 

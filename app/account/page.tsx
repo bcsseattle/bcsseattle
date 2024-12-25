@@ -7,7 +7,12 @@ import { Donation } from '@/types';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
-export default async function Account() {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+export default async function Account(props: { searchParams: SearchParams }) {
+  const searchParams = await props.searchParams;
+  const redirectTo = searchParams?.redirectTo ?? 'account';
+
   const supabase = await createClient();
 
   const {
@@ -30,7 +35,7 @@ export default async function Account() {
   }
 
   if (!user) {
-    return redirect('/signin');
+    return redirect(`/signin?redirectTo=${redirectTo}`);
   }
 
   const { data: member } = await supabase

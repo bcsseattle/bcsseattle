@@ -3,6 +3,7 @@ import {
   Button,
   Container,
   Head,
+  Heading,
   Hr,
   Html,
   Img,
@@ -27,6 +28,7 @@ export const WelcomeEmailTemplate = () => (
             width={100}
             height={100}
           />
+          <Heading>Welcome to BCS Seattle</Heading>
           <Text style={paragraph}>
             Welcome to Baloch Community Services of Seattle! We are excited to
             have you become a member of our community.
@@ -103,3 +105,5 @@ const footer = {
   fontSize: '12px',
   lineHeight: '16px'
 };
+
+export default WelcomeEmailTemplate;
