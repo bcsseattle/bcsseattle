@@ -138,6 +138,7 @@ export async function signInWithPassword(formData: FormData) {
   const cookieStore = await cookies();
   const email = String(formData.get('email')).trim();
   const password = String(formData.get('password')).trim();
+  const redirectTo = String(formData.get('redirectTo')).trim();
   let redirectPath: string;
 
   const supabase = await createClient();
@@ -158,7 +159,7 @@ export async function signInWithPassword(formData: FormData) {
     });
     try {
       redirectPath = getStatusRedirect(
-        '/community-funds',
+        `/${redirectTo ?? 'community-funds'}`,
         'Success!',
         'You are now signed in.'
       );

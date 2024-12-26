@@ -1,4 +1,5 @@
 import type { Tables } from '@/types_db';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
 type Price = Tables<'prices'>;
 
@@ -156,3 +157,49 @@ export const purposeTitleMap: { [key: string]: string } = {
   'new-member-support': 'New Member Support',
   'youth-programs': 'Youth Programs'
 };
+
+export function formatPhoneNumber(phoneNumber: string) {
+  const parsedNumber = parsePhoneNumberFromString(phoneNumber, 'US');
+
+  if (!parsedNumber || !parsedNumber.isValid()) {
+    throw new Error('Invalid phone number');
+  }
+
+  return parsedNumber.format('E.164'); // Ensures the +1 format
+}
+
+export async function formatInvoiceMessage(
+  amountDue: number,
+  dueDate: Date,
+  accountUrl: string
+): Promise<string> {
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(dueDate);
+
+  return `BCS Seattle Contribution Reminder
+
+This is a friendly reminder that your next contribution payment of ${getPriceString(amountDue)} is due on ${formattedDate}.
+
+You can update your payment method by visiting your account page here:
+${accountUrl}
+
+Reply STOP to opt out of future notifications.`;
+}
+
+export function getSubscriptionInterval(price: Price) {
+  if (price.interval === 'month' && price.interval_count === 6) {
+    return 'Six Months';
+  }
+  if (price.interval === 'month') {
+    return 'Monthly';
+  }
+
+  if (price.interval === 'year') {
+    return 'Annual';
+  }
+
+  return 'Unknown';
+}

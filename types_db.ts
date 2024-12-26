@@ -30,7 +30,9 @@ export type Database = {
           donation_amount: number
           donation_date: string
           donation_description: string | null
-          donation_interval: Database["public"]["Enums"]["pricing_plan_interval"]
+          donation_interval:
+            | Database["public"]["Enums"]["pricing_plan_interval"]
+            | null
           donation_status: Database["public"]["Enums"]["donation_status_enum"]
           donation_type: Database["public"]["Enums"]["pricing_type"]
           donor_id: string
@@ -54,7 +56,9 @@ export type Database = {
           donation_amount: number
           donation_date?: string
           donation_description?: string | null
-          donation_interval: Database["public"]["Enums"]["pricing_plan_interval"]
+          donation_interval?:
+            | Database["public"]["Enums"]["pricing_plan_interval"]
+            | null
           donation_status?: Database["public"]["Enums"]["donation_status_enum"]
           donation_type: Database["public"]["Enums"]["pricing_type"]
           donor_id: string
@@ -78,7 +82,9 @@ export type Database = {
           donation_amount?: number
           donation_date?: string
           donation_description?: string | null
-          donation_interval?: Database["public"]["Enums"]["pricing_plan_interval"]
+          donation_interval?:
+            | Database["public"]["Enums"]["pricing_plan_interval"]
+            | null
           donation_status?: Database["public"]["Enums"]["donation_status_enum"]
           donation_type?: Database["public"]["Enums"]["pricing_type"]
           donor_id?: string
@@ -165,6 +171,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_logs: {
+        Row: {
+          id: string
+          purpose: string | null
+          recipient: string | null
+          sent_at: string | null
+          subject: string | null
+        }
+        Insert: {
+          id?: string
+          purpose?: string | null
+          recipient?: string | null
+          sent_at?: string | null
+          subject?: string | null
+        }
+        Update: {
+          id?: string
+          purpose?: string | null
+          recipient?: string | null
+          sent_at?: string | null
+          subject?: string | null
+        }
+        Relationships: []
       }
       expenses: {
         Row: {
@@ -519,6 +549,30 @@ export type Database = {
           image?: string | null
           metadata?: Json | null
           name?: string | null
+        }
+        Relationships: []
+      }
+      sms_notifications: {
+        Row: {
+          id: string
+          month: number
+          sent_at: string | null
+          subscription_id: string
+          year: number
+        }
+        Insert: {
+          id?: string
+          month: number
+          sent_at?: string | null
+          subscription_id: string
+          year: number
+        }
+        Update: {
+          id?: string
+          month?: number
+          sent_at?: string | null
+          subscription_id?: string
+          year?: number
         }
         Relationships: []
       }

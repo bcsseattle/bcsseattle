@@ -10,14 +10,19 @@ import {
   retrieveMember,
   updateDonation,
   updateMember,
-  updateDonor
+  updateDonor,
+  retrieveSmsNotification,
+  updateSmsNotification,
+  getStripeCustomer
 } from '@/utils/supabase/admin';
 import {
   getURL,
   getErrorRedirect,
-  calculateTrialEndUnixTimestamp
+  calculateTrialEndUnixTimestamp,
+  formatInvoiceMessage
 } from '@/utils/helpers';
 import { Donation, Donor, Price } from '@/types';
+import { sendSMS } from '../membership/handlers';
 
 type CheckoutResponse = {
   errorRedirect?: string;
@@ -180,7 +185,13 @@ export async function checkoutWithStripeForDonation(
     // Retrieve or create the customer in Stripe
     let customer: string;
     try {
-      customer = await createCustomerInStripe(user.id, donor?.email!);
+      if (!user.id || !donor?.email) {
+        throw new Error('Missing user ID or email');
+      }
+      customer = await createOrRetrieveCustomer({
+        uuid: user.id,
+        email: donor.email
+      });
     } catch (err) {
       console.error(err);
       throw new Error('Unable to access customer record.');
@@ -208,7 +219,7 @@ export async function checkoutWithStripeForDonation(
       cancel_url: getURL(cancelUrl),
       success_url: getURL(redirectPath),
       metadata: {
-        category: 'donation',
+        type: 'donation',
         donation_id: donation?.id!
       }
     };
@@ -346,5 +357,90 @@ export async function createStripePortal(currentPath: string) {
         'Please try again later or contact a system administrator.'
       );
     }
+  }
+}
+
+interface HandleUpcomingInvoiceResult {
+  success: boolean;
+  error?: string;
+}
+export async function handleUpcomingInvoice(
+  invoice: Stripe.Invoice
+): Promise<HandleUpcomingInvoiceResult> {
+  try {
+    const subscriptionId = invoice.subscription as string;
+
+    if (!invoice.next_payment_attempt) {
+      throw new Error('Missing next payment attempt date');
+    }
+
+    const dueDate = new Date(invoice.next_payment_attempt * 1000);
+    const currentDate = new Date();
+
+    // Check existing notifications
+    const { data: smsRecords, error: smsError } = await retrieveSmsNotification(
+      subscriptionId,
+      currentDate.getMonth() + 1,
+      currentDate.getFullYear()
+    );
+
+    if (smsError) {
+      throw new Error(`Failed to check SMS records: ${smsError?.message}`);
+    }
+
+    if (smsRecords.length > 0) {
+      console.log(
+        `SMS already sent for subscription ${subscriptionId} this month`
+      );
+      return { success: true };
+    }
+
+    // Get customer details
+    const customer = (await getStripeCustomer(
+      invoice.customer as string
+    )) as Stripe.Customer;
+
+    if (!customer?.metadata?.supabaseUUID) {
+      throw new Error('Customer metadata missing Supabase UUID');
+    }
+
+    // Prepare and send message
+    const accountUrl = getURL('/account?redirectTo=account');
+    const message = await formatInvoiceMessage(
+      invoice.amount_due,
+      dueDate,
+      accountUrl
+    );
+
+    const smsResult = await sendSMS(
+      customer.phone!,
+      message,
+      customer.metadata.supabaseUUID
+    );
+
+    if (!smsResult.success) {
+      throw new Error(`Failed to send SMS: ${smsResult.error}`);
+    }
+
+    // Update notification record
+    await updateSmsNotification(
+      subscriptionId,
+      currentDate.getMonth() + 1,
+      currentDate.getFullYear()
+    );
+
+    console.log('Successfully processed upcoming invoice:', {
+      subscriptionId,
+      customerId: customer.id,
+      dueDate: dueDate.toISOString()
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to handle upcoming invoice:', error);
+    return {
+      success: false,
+      error: error?.message
+    };
   }
 }

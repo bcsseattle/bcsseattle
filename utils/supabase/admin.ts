@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   Donation,
   Donor,
+  EmailLogs,
   FuneralFundFormSchema,
   Invoice,
   Member,
@@ -26,11 +27,18 @@ const supabaseAdmin = createClient<Database>(
 );
 
 export const createMember = async (member: Partial<Member>) => {
-  const { error: upsertError } = await supabaseAdmin
-    .from('members')
-    .upsert(member, { onConflict: 'user_id' });
-  if (upsertError)
-    throw new Error(`Member insert/update failed: ${upsertError.message}`);
+  try {
+    const { data, error: upsertError } = await supabaseAdmin
+      .from('members')
+      .upsert(member, { onConflict: 'user_id' })
+      .select();
+    if (upsertError)
+      throw new Error(`Member insert/update failed: ${upsertError.message}`);
+    return { data, error: upsertError };
+  } catch (error) {
+    console.error('Error creating member:', error);
+    return { data: null, error: 'Error creating member' };
+  }
 };
 
 const upsertProductRecord = async (product: Stripe.Product) => {
@@ -67,7 +75,7 @@ const upsertPriceRecord = async (
     interval_count: price.recurring?.interval_count ?? null,
     trial_period_days: price.recurring?.trial_period_days ?? TRIAL_PERIOD_DAYS,
     description: null,
-    metadata: null
+    metadata: price.metadata
   };
 
   const { error: upsertError } = await supabaseAdmin
@@ -353,6 +361,54 @@ const updateMember = async ({
     throw new Error(
       `Supabase member record update failed: ${updateError.message}`
     );
+};
+
+const retrieveSmsNotification = async (
+  subscriptionId: string,
+  month: number,
+  year: number
+) => {
+  const { data: subscription, error: queryError } = await supabaseAdmin
+    .from('sms_notifications')
+    .select('*')
+    .eq('subscription_id', subscriptionId)
+    .eq('month', month)
+    .eq('year', year)
+    .limit(1);
+
+  if (queryError) {
+    return {
+      data: null,
+      error: queryError
+    };
+  }
+
+  return {
+    data: subscription,
+    error: null
+  };
+};
+
+const updateSmsNotification = async (
+  subscriptionId: string,
+  currentMonth: number,
+  currentYear: number
+) => {
+  const { error: insertError } = await supabaseAdmin
+    .from('sms_notifications')
+    .insert([
+      {
+        subscription_id: subscriptionId,
+        month: currentMonth,
+        year: currentYear
+      }
+    ]);
+
+  if (insertError) {
+    console.error('Error logging SMS notification:', insertError);
+  } else {
+    console.log('SMS notification logged successfully.');
+  }
 };
 
 const retrieveMember = async ({ user_id }: { user_id: string }) => {
@@ -769,6 +825,21 @@ export const createDonation = async (donationDetails: Omit<Donation, 'id'>) => {
   return { data: null, error: 'Error creating donation' };
 };
 
+const upsertEmailLogs = async (emailLog: Partial<EmailLogs>) => {
+  try {
+    const { data, error: upsertError } = await supabaseAdmin
+      .from('email_logs')
+      .upsert(emailLog)
+      .select();
+    if (upsertError)
+      throw new Error(`Email log insert/update failed: ${upsertError.message}`);
+    return { data, error: upsertError };
+  } catch (error) {
+    console.error('Error creating email log:', error);
+    return { data: null, error: 'Error creating email log' };
+  }
+};
+
 export {
   upsertProductRecord,
   upsertPriceRecord,
@@ -791,5 +862,8 @@ export {
   getDonations,
   getOrCreateUser,
   createCustomerInStripe,
-  createInvoice
+  createInvoice,
+  upsertEmailLogs,
+  retrieveSmsNotification,
+  updateSmsNotification
 };

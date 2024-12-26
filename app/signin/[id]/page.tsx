@@ -26,7 +26,7 @@ import {
 export default async function SignIn(
   props: {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ disable_button: boolean }>;
+    searchParams: Promise<{ disable_button: boolean, redirectTo?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -81,6 +81,7 @@ export default async function SignIn(
               <PasswordSignIn
                 allowEmail={allowEmail}
                 redirectMethod={redirectMethod}
+                redirectTo={searchParams?.redirectTo}
               />
             )}
             {viewProp === 'email_signin' && (
