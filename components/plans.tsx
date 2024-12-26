@@ -2,7 +2,7 @@
 
 import { getStripe } from '@/utils/stripe/client';
 import { checkoutWithStripe } from '@/utils/stripe/server';
-import { getErrorRedirect } from '@/utils/helpers';
+import { getErrorRedirect, getSubscriptionInterval } from '@/utils/helpers';
 import { User } from '@supabase/supabase-js';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -102,10 +102,7 @@ export default function Plans({ user, products, subscription }: Props) {
         <div className="flex flex-wrap md:space-x-12">
           {products.map((product) => {
             const prices = product?.prices?.filter(
-              (price) =>
-                price.interval === 'month' ||
-                price.interval === 'year' ||
-                (price.interval === null && product.name !== 'Membership Fee')
+              (price: any) => price.metadata?.type === 'contribution'
             );
             return prices?.map((price) => {
               const priceString = new Intl.NumberFormat('en-US', {
@@ -121,12 +118,8 @@ export default function Plans({ user, products, subscription }: Props) {
                     ? 'monthly'
                     : 'annual';
 
-              const title =
-                price.interval === 'month'
-                  ? 'Monthly Contribution'
-                  : price.interval === 'year'
-                    ? 'Annual Contribution'
-                    : 'One-time Contribution';
+              const title = getSubscriptionInterval(price);
+
               return (
                 <Card
                   key={price.id}

@@ -188,3 +188,18 @@ ${accountUrl}
 
 Reply STOP to opt out of future notifications.`;
 }
+
+export function getSubscriptionInterval(price: Price) {
+  if (price.interval === 'month' && price.interval_count === 6) {
+    return 'Six Months';
+  }
+  if (price.interval === 'month') {
+    return 'Monthly';
+  }
+
+  if (price.interval === 'year') {
+    return 'Annual';
+  }
+
+  return 'Unknown';
+}
