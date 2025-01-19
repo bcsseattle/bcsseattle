@@ -49,7 +49,8 @@ export const DonationFormSchema = z
       'general-purpose',
       'funeral-and-burial',
       'new-member-support',
-      'youth-programs'
+      'youth-programs',
+      'social-events'
     ]),
     donorType: z.enum(['individual', 'organization']),
     donorName: z.string().optional(),
@@ -104,6 +105,7 @@ export type Organization = Tables<'organization'>;
 export type Invoice = Tables<'invoices'>;
 export type EmailLogs = Tables<'email_logs'>;
 export type SMSNotifications = Tables<'sms_notifications'>;
+export type Program = Tables<'programs'>;
 
 export type UpdateDonationParams = Partial<Donation> & { donation_id: string };
 

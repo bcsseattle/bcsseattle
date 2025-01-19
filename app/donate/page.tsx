@@ -30,11 +30,16 @@ export default async function Page() {
     donor = data;
   }
 
+  const { data: programs } = await supabase
+    .from('programs')
+    .select('*')
+    .eq('active', true)
+
   return (
     <section className="my-8">
       <div className="flex justify-center height-screen-helper">
         <div className="flex flex-col justify-between p-3">
-          <DonateForm user={user} product={product as any} donor={donor} />
+          <DonateForm user={user} product={product as any} donor={donor} programs={programs ?? []} />
         </div>
       </div>
     </section>

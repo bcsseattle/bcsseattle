@@ -552,6 +552,30 @@ export type Database = {
         }
         Relationships: []
       }
+      programs: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          key: Database["public"]["Enums"]["purpose_enum"]
+          value: string
+        }
+        Insert: {
+          active: boolean
+          created_at?: string
+          id?: string
+          key: Database["public"]["Enums"]["purpose_enum"]
+          value: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          key?: Database["public"]["Enums"]["purpose_enum"]
+          value?: string
+        }
+        Relationships: []
+      }
       sms_notifications: {
         Row: {
           id: string
@@ -687,6 +711,7 @@ export type Database = {
         | "funeral-and-burial"
         | "new-member-support"
         | "youth-programs"
+        | "social-events"
       subscription_status:
         | "trialing"
         | "active"
