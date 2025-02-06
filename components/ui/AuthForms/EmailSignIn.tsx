@@ -56,7 +56,7 @@ export default function EmailSignIn({
             className="mt-1"
             disabled={disableButton || isSubmitting}
           >
-            Sign in
+            Send OTP Code
           </Button>
         </div>
       </form>
