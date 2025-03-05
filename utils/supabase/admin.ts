@@ -656,12 +656,17 @@ const updateFuneralSignup = async (
 };
 
 const getDonations = async () => {
-  const { data, error } = await supabaseAdmin.from('donations').select(`
+  const { data, error } = await supabaseAdmin
+    .from('donations')
+    .select(
+      `
      *,
       donors (
         *
       )
-    `);
+    `
+    )
+    .eq('is_private', false);
 
   if (error) {
     console.error('Error fetching donations:', error);

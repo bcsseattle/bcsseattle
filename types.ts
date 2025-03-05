@@ -38,6 +38,17 @@ export const FuneralFundFormSchema = z.object({
   additionalComments: z.string().optional()
 });
 
+export const DONATION_PURPOSES = [
+  'general-purpose',
+  'funeral-and-burial',
+  'new-member-support',
+  'youth-programs',
+  'social-events'
+] as const;
+
+export const DonationPurposeEnum = z.enum(DONATION_PURPOSES);
+export type DonationPurpose = z.infer<typeof DonationPurposeEnum>;
+
 export const DonationFormSchema = z
   .object({
     frequency: z.enum(['one_time', 'month', 'year']),
@@ -45,13 +56,7 @@ export const DonationFormSchema = z
     amount: z.string().refine((val) => !Number.isNaN(Number(val)), {
       message: 'Amount must be a valid number'
     }),
-    purpose: z.enum([
-      'general-purpose',
-      'funeral-and-burial',
-      'new-member-support',
-      'youth-programs',
-      'social-events'
-    ]),
+    purpose: DonationPurposeEnum,
     donorType: z.enum(['individual', 'organization']),
     donorName: z.string().optional(),
     organizationName: z.string().optional(),
@@ -138,5 +143,5 @@ export type DonationByDonor = Partial<Donation> & {
 
 export interface DateRange {
   startDate: number; // Unix timestamp
-  endDate: number;   // Unix timestamp
+  endDate: number; // Unix timestamp
 }

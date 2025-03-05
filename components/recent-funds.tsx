@@ -6,12 +6,16 @@ import { getStripePayments } from '@/utils/supabase/admin';
 
 export default async function RecentFunds({
   members = [],
-  columns = []
+  columns = [],
+  stripeCustomerId,
 }: {
   members?: any[];
   columns?: ColumnDef<Data>[];
+  stripeCustomerId?: string;
 }) {
-  const payments = await getStripePayments();
+  const payments = await getStripePayments({
+    customerId: stripeCustomerId,
+  });
   const data = payments
     ?.filter(
       (payment) => payment.status === 'succeeded' && payment.customer !== null
@@ -24,7 +28,9 @@ export default async function RecentFunds({
         id: payment.id,
         type: payment.description?.includes('Subscription')
           ? 'Contribution'
-          : 'Membership',
+          : payment?.metadata?.isPrivate === 'true'
+            ? 'Donation'
+            : 'Membership',
         member: {
           id: member?.id,
           fullName: member?.fullName,

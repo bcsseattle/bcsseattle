@@ -27,7 +27,13 @@ import {
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { User } from '@supabase/supabase-js';
-import { DonationFormSchema, Donor, ProductWithPrices, Program } from '@/types';
+import {
+  DonationFormSchema,
+  Donor,
+  ProductWithPrices,
+  Program,
+  DonationPurpose
+} from '@/types';
 import { Card } from '../ui/card';
 import { US_STATES } from '@/utils/constants';
 import { submitDonation } from '@/utils/donation/handlers';
@@ -43,9 +49,10 @@ interface DonateFormProps {
   product: ProductWithPrices;
   donor?: Donor | null;
   programs?: Program[];
+  defaultPurpose?: DonationPurpose;
 }
 
-export default function DonateForm({ user, product, donor, programs }: DonateFormProps) {
+export default function DonateForm({ user, product, donor, programs, defaultPurpose }: DonateFormProps) {
   const router = useRouter();
   const [donationLoading, setDonationLoading] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
@@ -57,7 +64,7 @@ export default function DonateForm({ user, product, donor, programs }: DonateFor
     resolver: zodResolver(DonationFormSchema),
     defaultValues: {
       frequency: 'one_time',
-      purpose: 'general-purpose',
+      purpose: defaultPurpose ?? 'general-purpose',
       donorType: donor?.donor_type || 'individual',
       donorName: donor?.full_name || '',
       organizationName: donor?.organization_name || '',

@@ -42,6 +42,7 @@ export type Database = {
           id: string
           intangible_benefits: boolean | null
           is_anonymous: boolean
+          is_private: boolean | null
           non_cash_description: string | null
           payment_method:
             | Database["public"]["Enums"]["payment_method_enum"]
@@ -68,6 +69,7 @@ export type Database = {
           id?: string
           intangible_benefits?: boolean | null
           is_anonymous: boolean
+          is_private?: boolean | null
           non_cash_description?: string | null
           payment_method?:
             | Database["public"]["Enums"]["payment_method_enum"]
@@ -94,6 +96,7 @@ export type Database = {
           id?: string
           intangible_benefits?: boolean | null
           is_anonymous?: boolean
+          is_private?: boolean | null
           non_cash_description?: string | null
           payment_method?:
             | Database["public"]["Enums"]["payment_method_enum"]
@@ -205,6 +208,7 @@ export type Database = {
           date: string
           description: string | null
           id: string
+          is_private: boolean
           payee: string | null
           payment_method: string | null
         }
@@ -216,6 +220,7 @@ export type Database = {
           date: string
           description?: string | null
           id?: string
+          is_private?: boolean
           payee?: string | null
           payment_method?: string | null
         }
@@ -227,6 +232,7 @@ export type Database = {
           date?: string
           description?: string | null
           id?: string
+          is_private?: boolean
           payee?: string | null
           payment_method?: string | null
         }
@@ -240,6 +246,7 @@ export type Database = {
           date: string
           description: string | null
           id: string
+          is_private: boolean
           payment_method: string | null
           source: string
           status: string | null
@@ -254,6 +261,7 @@ export type Database = {
           date: string
           description?: string | null
           id: string
+          is_private?: boolean
           payment_method?: string | null
           source: string
           status?: string | null
@@ -268,6 +276,7 @@ export type Database = {
           date?: string
           description?: string | null
           id?: string
+          is_private?: boolean
           payment_method?: string | null
           source?: string
           status?: string | null

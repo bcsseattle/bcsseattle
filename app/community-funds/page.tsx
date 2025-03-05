@@ -48,6 +48,7 @@ export default async function CommunityFunds() {
   const { data: expenses } = await supabase
     .from('expenses')
     .select('*')
+    .eq('is_private', false)
     .order('created_at', { ascending: false });
 
   const { data: funds } = await supabase
@@ -55,6 +56,7 @@ export default async function CommunityFunds() {
     .select('*')
     .neq('status', 'cancelled')
     .neq('status', 'failed')
+    .neq('is_private', true)
     .order('created_at', { ascending: false });
 
   const { data: donations } = await getDonations();
@@ -63,8 +65,6 @@ export default async function CommunityFunds() {
     (acc: number, donation: any) => acc + donation.amount,
     0
   );
-
-  console.log('totalDonations', totalDonations);
 
   const fundsInBank = funds?.reduce(
     (acc: number, fund: any) => acc + fund.amount,
