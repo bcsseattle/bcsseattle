@@ -7,15 +7,25 @@ import { getStripePayments } from '@/utils/supabase/admin';
 export default async function RecentFunds({
   members = [],
   columns = [],
-  stripeCustomerId,
+  stripeCustomerId
 }: {
   members?: any[];
   columns?: ColumnDef<Data>[];
   stripeCustomerId?: string;
 }) {
-  const payments = await getStripePayments({
-    customerId: stripeCustomerId,
+  const { data: payments, error } = await getStripePayments({
+    customerId: stripeCustomerId
   });
+
+  if (!payments) {
+    return <div>No payments found</div>;
+  }
+
+  if (error) {
+    console.error(error);
+    return <div>Error loading payments: ${error}</div>;
+  }
+
   const data = payments
     ?.filter(
       (payment) => payment.status === 'succeeded' && payment.customer !== null

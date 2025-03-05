@@ -572,19 +572,24 @@ const getStripePayments = async (params?: {
   customerId?: string;
   dateRange?: Stripe.RangeQueryParam;
 }) => {
-  const { customerId, dateRange } = params || {};
+  try {
+    const { customerId, dateRange } = params || {};
 
-  const payments = await stripe.paymentIntents
-    .list({
-      customer: customerId,
-      limit: 100,
-      created: {
-        gte: dateRange?.gte ?? 1718491540, // 2024-06-15,
-        lte: dateRange?.lte ?? Math.floor(Date.now() / 1000)
-      }
-    })
-    .autoPagingToArray({ limit: 1000 });
-  return payments;
+    const payments = await stripe.paymentIntents
+      .list({
+        customer: customerId,
+        limit: 100,
+        created: {
+          gte: dateRange?.gte ?? 1718491540, // 2024-06-15,
+          lte: dateRange?.lte ?? Math.floor(Date.now() / 1000)
+        }
+      })
+      .autoPagingToArray({ limit: 1000 });
+    return { data: payments, error: null };
+  } catch (error) {
+    console.error('Error fetching stripe payments:', error);
+    return { data: null, error: 'Error fetching stripe payments' };
+  }
 };
 
 const getTotalCustomerSpent = async (params?: {

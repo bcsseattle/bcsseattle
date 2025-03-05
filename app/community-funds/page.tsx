@@ -19,6 +19,8 @@ import {
 } from '@/utils/supabase/admin';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import Loading from '../loading';
 
 export default async function CommunityFunds() {
   const supabase = await createClient();
@@ -140,7 +142,9 @@ export default async function CommunityFunds() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{collectedFunds}</div>
+            <Suspense fallback={<Loading />}>
+              <div className="text-2xl font-bold">{collectedFunds}</div>
+            </Suspense>
           </CardContent>
         </Card>
 
@@ -212,10 +216,14 @@ export default async function CommunityFunds() {
         </Card>
       </div>
       <div className="col-span-4">
-        <RecentDonations donations={donations || []} />
+        <Suspense fallback={<Loading />}>
+          <RecentDonations donations={donations || []} />
+        </Suspense>
       </div>
       <div className="col-span-4">
-        <RecentFunds members={members as any} columns={columns} />
+        <Suspense fallback={<Loading />}>
+          <RecentFunds members={members as any} columns={columns} />
+        </Suspense>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
         <Card className="col-span-4">
