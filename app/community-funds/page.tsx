@@ -22,7 +22,15 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import Loading from '../loading';
 
-export default async function CommunityFunds() {
+type SearchParams = Promise<{ [key: string]: string | undefined }>;
+
+export default async function CommunityFunds(props: {
+  searchParams: SearchParams;
+}) {
+  const searchParams = await props.searchParams;
+  const month = searchParams?.month ?? (new Date().getMonth() + 1).toString();
+  const year = searchParams?.year ?? new Date().getFullYear().toString();
+
   const supabase = await createClient();
 
   const {
@@ -222,7 +230,12 @@ export default async function CommunityFunds() {
       </div>
       <div className="col-span-4">
         <Suspense fallback={<Loading />}>
-          <RecentFunds members={members as any} columns={columns} />
+          <RecentFunds
+            members={members as any}
+            columns={columns}
+            month={month}
+            year={year}
+          />
         </Suspense>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
