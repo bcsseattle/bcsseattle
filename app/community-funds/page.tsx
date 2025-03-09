@@ -71,7 +71,11 @@ export default async function CommunityFunds(props: {
 
   const { data: donations } = await getDonations();
 
-  const totalDonations = donations?.reduce(
+  const donationsOutsideStripe = donations?.filter(
+    (donation) => !Boolean(donation.stripe_payment_id)
+  );
+
+  const totalDonations = donationsOutsideStripe?.reduce(
     (acc: number, donation: any) => acc + donation.amount,
     0
   );

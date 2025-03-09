@@ -117,7 +117,8 @@ export default async function RecentFunds({
         id: payment.id,
         type: payment.description?.includes('Subscription')
           ? 'Contribution'
-          : payment?.metadata?.isPrivate === 'true'
+          : payment?.metadata?.isPrivate === 'true' ||
+              payment?.metadata?.type === 'donation'
             ? 'Donation'
             : 'Membership',
         member: {
