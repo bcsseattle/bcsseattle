@@ -368,6 +368,7 @@ export type Database = {
           created_at: string
           fullName: string | null
           id: string
+          isApproved: boolean
           membershipType: Database["public"]["Enums"]["membershiptypes"] | null
           phone: string | null
           state: string | null
@@ -386,6 +387,7 @@ export type Database = {
           created_at?: string
           fullName?: string | null
           id?: string
+          isApproved?: boolean
           membershipType?: Database["public"]["Enums"]["membershiptypes"] | null
           phone?: string | null
           state?: string | null
@@ -404,6 +406,7 @@ export type Database = {
           created_at?: string
           fullName?: string | null
           id?: string
+          isApproved?: boolean
           membershipType?: Database["public"]["Enums"]["membershiptypes"] | null
           phone?: string | null
           state?: string | null

@@ -56,6 +56,7 @@ export async function registerMember(
       zip,
       user_id: user.id,
       status: 'inactive',
+      isApproved: false,
       membershipType,
       totalMembersInFamily,
       terms

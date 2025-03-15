@@ -55,6 +55,10 @@ export default async function CommunityFunds(props: {
     return redirect('/register');
   }
 
+  if (!member?.isApproved) {
+    return redirect(`/members/${member?.id}/pending`);
+  }
+
   const { data: expenses } = await supabase
     .from('expenses')
     .select('*')

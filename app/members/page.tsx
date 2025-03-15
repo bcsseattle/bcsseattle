@@ -39,6 +39,10 @@ export default async function Members() {
 
   const { data: prices } = await supabase.from('prices').select('*');
 
+  if (!member?.isApproved) {
+    return redirect(`/members/${member?.id}/pending`);
+  }
+
   if (member?.status !== 'active') {
     return redirect('/membership-fee');
   }

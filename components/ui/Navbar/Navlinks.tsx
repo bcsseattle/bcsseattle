@@ -108,7 +108,7 @@ export default function Navlinks({ user, member }: NavlinksProps) {
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
-        {member && member?.status === 'active' && (
+        {member && member?.status === 'active' && member?.isApproved && (
           <>
             <NavigationMenuItem>
               <NavigationMenuTrigger>Membership</NavigationMenuTrigger>
