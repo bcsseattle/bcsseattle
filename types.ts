@@ -153,13 +153,21 @@ export interface DateRange {
 export const NominateFormSchema = z.object({
   fullName: z.string().min(2, 'Full name is required'),
   position: z.string().min(1, 'Position is required'),
-  bio: z.string().optional(), // Made optional
-  manifesto: z.string().optional(), // Made optional
+  bio: z.string().optional(),
+  manifesto: z.string().optional(),
   photoFile: z
-    .instanceof(File)
+    .any() // Changed from instanceof(File) to any for debugging
     .optional()
-    .refine(
-      (file) => !file || file.size <= 5 * 1024 * 1024,
-      'Max file size is 5MB'
-    ) // max 5MB file
+    .refine((file) => {
+      if (!file) return true;
+      return file instanceof File || file instanceof Blob;
+    }, 'Please select a valid image file')
+    .refine((file) => {
+      if (!file) return true;
+      return file.size <= 15 * 1024 * 1024;
+    }, 'Max file size is 15MB')
+    .refine((file) => {
+      if (!file) return true;
+      return file.type?.startsWith('image/');
+    }, 'Only image files are allowed')
 });

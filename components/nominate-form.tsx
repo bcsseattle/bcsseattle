@@ -36,6 +36,7 @@ import {
 import { nominateCandidate } from '@/utils/elections/handlers';
 import { Upload, X, User, CheckCircle } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { compressImage } from '@/utils/image-compression';
 
 type NominateFormInputs = z.infer<typeof NominateFormSchema>;
 
@@ -93,35 +94,75 @@ export default function NominateForm({
     checkExistingNomination();
   }, [userId, electionId]);
 
-  const handleFileChange = (
+  const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
     field: any
   ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        form.setError('photoFile', {
-          type: 'manual',
-          message: 'File size must be less than 5MB'
-        });
-        return;
+
+    if (!file) {
+      // User cancelled file selection
+      return;
+    }
+
+    console.log('Selected file:', {
+      name: file.name,
+      type: file.type,
+      size: (file.size / 1024 / 1024).toFixed(2) + ' MB'
+    });
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      form.setError('photoFile', {
+        type: 'manual',
+        message: 'Please select an image file'
+      });
+      return;
+    }
+
+    // Validate file size (before compression)
+    if (file.size > 50 * 1024 * 1024) {
+      // 50MB absolute max
+      form.setError('photoFile', {
+        type: 'manual',
+        message: 'File is too large. Please select a smaller image.'
+      });
+      return;
+    }
+
+    try {
+      // Show loading state (optional)
+      console.log('Compressing image...');
+
+      // Compress the image
+      const compressedFile = await compressImage(file);
+
+      console.log('Compressed file:', {
+        name: compressedFile.name,
+        type: compressedFile.type,
+        size: (compressedFile.size / 1024 / 1024).toFixed(2) + ' MB'
+      });
+
+      // Verify compressed file is still a File instance
+      if (!(compressedFile instanceof File)) {
+        throw new Error('Compression failed - invalid file type');
       }
 
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        form.setError('photoFile', {
-          type: 'manual',
-          message: 'Please select an image file'
-        });
-        return;
-      }
+      // Set the compressed file to the form
+      form.setValue('photoFile', compressedFile);
 
-      field.onChange(file);
+      // Clear any previous errors
+      form.clearErrors('photoFile');
 
-      // Create preview URL
-      const url = URL.createObjectURL(file);
+      // Create preview URL from compressed file
+      const url = URL.createObjectURL(compressedFile);
       setPreviewUrl(url);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      form.setError('photoFile', {
+        type: 'manual',
+        message: 'Failed to process image. Please try a different image.'
+      });
     }
   };
 
@@ -139,7 +180,6 @@ export default function NominateForm({
     setSubmitting(true);
 
     try {
-      debugger;
       const res = await nominateCandidate(
         {
           fullName: values.fullName,
