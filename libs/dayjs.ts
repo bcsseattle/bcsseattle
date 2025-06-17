@@ -11,6 +11,6 @@ dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
 
 // Set default timezone (optional - will use system timezone if not set)
-dayjs.tz.setDefault('America/Los_Angeles'); // Or your preferred timezone
+// dayjs.tz.setDefault('America/Los_Angeles'); // Or your preferred timezone
 
 export default dayjs;
