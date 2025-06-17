@@ -94,6 +94,12 @@ export default function NominateForm({
     checkExistingNomination();
   }, [userId, electionId]);
 
+  // Add this function to get the position description
+  const getPositionDescription = (positionName: string) => {
+    const position = positions.find((p) => p.position === positionName);
+    return position?.description || '';
+  };
+
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
     field: any
@@ -351,9 +357,20 @@ export default function NominateForm({
                       </Select>
                     </FormControl>
                     <FormDescription>
-                      Choose carefully - you cannot change this after
-                      submission.
+                      {field.value && getPositionDescription(field.value) && (
+                        <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <h3 className="font-bold text-blue-900 mb-2">
+                            Responsibilities of {field.value}
+                          </h3>
+                          <p className="text-sm text-blue-800 leading-relaxed">
+                            {getPositionDescription(field.value)}
+                          </p>
+                        </div>
+                      )}
                     </FormDescription>
+
+                    {/* Add position description display */}
+
                     <FormMessage />
                   </FormItem>
                 )}
