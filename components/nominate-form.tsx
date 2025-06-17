@@ -41,11 +41,13 @@ import { compressImage } from '@/utils/image-compression';
 type NominateFormInputs = z.infer<typeof NominateFormSchema>;
 
 export default function NominateForm({
+  electionTitle,
   electionId,
   userId,
   positions,
   member
 }: {
+  electionTitle: string;
   electionId: string;
   userId: string;
   positions: Array<ElectionPosition>;
@@ -309,7 +311,7 @@ export default function NominateForm({
               <CardTitle>Nominate Yourself for Leadership</CardTitle>
               <CardDescription>
                 Fill out the form below to nominate yourself for a leadership
-                position.
+                position in {electionTitle}.
                 <br />
                 <span className="text-amber-600 font-medium mt-2 block">
                   ⚠️ You can only nominate yourself for one position per
