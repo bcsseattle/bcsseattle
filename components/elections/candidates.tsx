@@ -11,6 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Candidate, Election, ElectionPosition } from '@/types';
 import { Users } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 
 interface Props {
   candidates: Candidate[] | null;
@@ -25,8 +26,7 @@ export default async function Candidates({
   positionOrder,
   isNominationOpen
 }: Props) {
-  
-    function groupCandidatesByPosition(candidates: Candidate[]) {
+  function groupCandidatesByPosition(candidates: Candidate[]) {
     const groupedCandidates = candidates.reduce(
       (acc, candidate) => {
         const position = candidate.position;
@@ -54,6 +54,16 @@ export default async function Candidates({
       candidates: groupedCandidates[position]
     }));
   }
+
+  // Get candidate's initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <Card>
@@ -107,6 +117,7 @@ export default async function Candidates({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {positionCandidates.map((candidate) => (
                       <Link
+                        key={candidate.id}
                         href={`/elections/${election.id}/candidate/${candidate.id}`}
                       >
                         <Card
@@ -115,23 +126,16 @@ export default async function Candidates({
                         >
                           <CardContent className="p-4">
                             <div className="flex items-start gap-4">
-                              {candidate.photo_url ? (
-                                <Image
-                                  src={candidate.photo_url}
+                              <Avatar className="h-24 w-24 border-4 border-white shadow-lg rounded-full overflow-hidden">
+                                <AvatarImage
+                                  src={candidate.photo_url || ''}
                                   alt={candidate.full_name}
-                                  width={64}
-                                  height={64}
-                                  className="rounded-full object-cover border-2 border-gray-200"
+                                  className="object-cover w-full h-full rounded-full"
                                 />
-                              ) : (
-                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-lg border-2 border-gray-200">
-                                  {candidate.full_name
-                                    .split(' ')
-                                    .map((n) => n[0])
-                                    .join('')
-                                    .toUpperCase()}
-                                </div>
-                              )}
+                                <AvatarFallback className="text-xl font-semibold bg-gradient-to-br from-blue-500 to-indigo-600 text-white w-full h-full flex items-center justify-center rounded-full">
+                                  {getInitials(candidate.full_name)}
+                                </AvatarFallback>
+                              </Avatar>
                               <div className="flex-1 min-w-0">
                                 <h4 className="font-semibold text-gray-900 truncate">
                                   {candidate.full_name}
