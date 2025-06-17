@@ -3,7 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import dayjs from 'dayjs';
+import dayjs from '@/libs/dayjs';
 
 export default async function ElectionsPage() {
   const supabase = await createClient();

@@ -11,7 +11,7 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import dayjs from 'dayjs';
+import dayjs from '@/libs/dayjs';
 import { Candidate } from '@/types';
 import { Vote, Trophy, Clock, UserPlus, AlertCircle } from 'lucide-react';
 import Candidates from '@/components/elections/candidates';
