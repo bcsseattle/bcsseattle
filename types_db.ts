@@ -9,6 +9,74 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          meta: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          meta?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          meta?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      candidates: {
+        Row: {
+          bio: string | null
+          created_at: string | null
+          election_id: string | null
+          full_name: string
+          id: string
+          manifesto: string | null
+          photo_url: string | null
+          position: string
+          user_id: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string | null
+          election_id?: string | null
+          full_name: string
+          id?: string
+          manifesto?: string | null
+          photo_url?: string | null
+          position: string
+          user_id?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string | null
+          election_id?: string | null
+          full_name?: string
+          id?: string
+          manifesto?: string | null
+          photo_url?: string | null
+          position?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           id: string
@@ -175,6 +243,84 @@ export type Database = {
           },
         ]
       }
+      election_positions: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number
+          election_type: string
+          id: string
+          position: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order: number
+          election_type: string
+          id?: string
+          position: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number
+          election_type?: string
+          id?: string
+          position?: string
+        }
+        Relationships: []
+      }
+      elections: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_date: string
+          id: string
+          is_active: boolean | null
+          nomination_end: string | null
+          nomination_start: string | null
+          settings: Json | null
+          start_date: string
+          status: Database["public"]["Enums"]["election_status"] | null
+          title: string
+          type: Database["public"]["Enums"]["election_type"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          nomination_end?: string | null
+          nomination_start?: string | null
+          settings?: Json | null
+          start_date: string
+          status?: Database["public"]["Enums"]["election_status"] | null
+          title: string
+          type?: Database["public"]["Enums"]["election_type"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          nomination_end?: string | null
+          nomination_start?: string | null
+          settings?: Json | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["election_status"] | null
+          title?: string
+          type?: Database["public"]["Enums"]["election_type"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           id: string
@@ -334,6 +480,36 @@ export type Database = {
         }
         Relationships: []
       }
+      initiatives: {
+        Row: {
+          additional_info_url: string | null
+          created_at: string | null
+          description: string | null
+          election_id: string | null
+          id: string
+          position: number | null
+          title: string
+        }
+        Insert: {
+          additional_info_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          election_id?: string | null
+          id?: string
+          position?: number | null
+          title: string
+        }
+        Update: {
+          additional_info_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          election_id?: string | null
+          id?: string
+          position?: number | null
+          title?: string
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           created_at: string
@@ -441,6 +617,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nominations: {
+        Row: {
+          created_at: string | null
+          election_id: string
+          id: string
+          message: string | null
+          nominee_user_id: string
+          position: string
+        }
+        Insert: {
+          created_at?: string | null
+          election_id: string
+          id?: string
+          message?: string | null
+          nominee_user_id: string
+          position: string
+        }
+        Update: {
+          created_at?: string | null
+          election_id?: string
+          id?: string
+          message?: string | null
+          nominee_user_id?: string
+          position?: string
+        }
+        Relationships: []
       }
       organization: {
         Row: {
@@ -698,6 +901,44 @@ export type Database = {
         }
         Relationships: []
       }
+      votes: {
+        Row: {
+          candidate_id: string | null
+          created_at: string | null
+          election_id: string
+          id: string
+          initiative_id: string | null
+          user_id: string
+          vote_value: Database["public"]["Enums"]["vote_option"] | null
+        }
+        Insert: {
+          candidate_id?: string | null
+          created_at?: string | null
+          election_id: string
+          id?: string
+          initiative_id?: string | null
+          user_id: string
+          vote_value?: Database["public"]["Enums"]["vote_option"] | null
+        }
+        Update: {
+          candidate_id?: string | null
+          created_at?: string | null
+          election_id?: string
+          id?: string
+          initiative_id?: string | null
+          user_id?: string
+          vote_value?: Database["public"]["Enums"]["vote_option"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -708,6 +949,15 @@ export type Database = {
     Enums: {
       donation_status_enum: "pending" | "completed" | "failed" | "refunded"
       donor_type_enum: "individual" | "organization"
+      election_status:
+        | "draft"
+        | "nominations_open"
+        | "nominations_closed"
+        | "voting_open"
+        | "voting_closed"
+        | "completed"
+        | "cancelled"
+      election_type: "leadership" | "initiative" | "board"
       membershiptypes: "Individual" | "Family"
       payment_method_enum:
         | "card"
@@ -716,6 +966,7 @@ export type Database = {
         | "cash"
         | "us_bank_account"
         | "external"
+      position_enum: "President" | "Vice President" | "Secretary" | "Treasurer"
       pricing_plan_interval: "day" | "week" | "month" | "year"
       pricing_type: "one_time" | "recurring"
       purpose_enum:
@@ -733,6 +984,7 @@ export type Database = {
         | "past_due"
         | "unpaid"
         | "paused"
+      vote_option: "yes" | "no" | "abstain"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -836,3 +1088,4 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+

@@ -111,9 +111,13 @@ export type Invoice = Tables<'invoices'>;
 export type EmailLogs = Tables<'email_logs'>;
 export type SMSNotifications = Tables<'sms_notifications'>;
 export type Program = Tables<'programs'>;
+export type Election = Tables<'elections'>;
+export type Candidate = Tables<'candidates'>;
+export type Vote = Tables<'votes'>;
+export type Nomination = Tables<'nominations'>;
+export type ElectionPosition = Tables<'election_positions'>;
 
 export type UpdateDonationParams = Partial<Donation> & { donation_id: string };
-
 
 export interface ProductWithPrices extends Product {
   prices: Price[];
@@ -145,3 +149,17 @@ export interface DateRange {
   startDate: number; // Unix timestamp
   endDate: number; // Unix timestamp
 }
+
+export const NominateFormSchema = z.object({
+  fullName: z.string().min(2, 'Full name is required'),
+  position: z.string().min(1, 'Position is required'),
+  bio: z.string().optional(), // Made optional
+  manifesto: z.string().optional(), // Made optional
+  photoFile: z
+    .instanceof(File)
+    .optional()
+    .refine(
+      (file) => !file || file.size <= 5 * 1024 * 1024,
+      'Max file size is 5MB'
+    ) // max 5MB file
+});

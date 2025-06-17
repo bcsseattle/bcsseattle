@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  Candidate,
   Donation,
   Donor,
   EmailLogs,
@@ -850,6 +851,42 @@ const upsertEmailLogs = async (emailLog: Partial<EmailLogs>) => {
   }
 };
 
+const createCandidate = async (
+  candidateDetails: any
+): Promise<{
+  data: any | null;
+  error: PostgrestError | null | string;
+}> => {
+  try {
+    const { data, error: insertError } = await supabaseAdmin
+      .from('candidates')
+      .insert({
+        full_name: candidateDetails.full_name,
+        position: candidateDetails.position,
+        bio: candidateDetails.bio,
+        photo_url: candidateDetails.photo_url,
+        election_id: candidateDetails.election_id,
+        user_id: candidateDetails.user_id,
+        manifesto: candidateDetails.manifesto
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Candidate insert error:', insertError);
+      throw new Error(`Candidate insert failed: ${insertError.message}`);
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error nominating candidate:', error);
+    return {
+      data: null,
+      error: (error as Error).message || 'Error nominating candidate'
+    };
+  }
+};
+
 export {
   upsertProductRecord,
   upsertPriceRecord,
@@ -875,5 +912,6 @@ export {
   createInvoice,
   upsertEmailLogs,
   retrieveSmsNotification,
-  updateSmsNotification
+  updateSmsNotification,
+  createCandidate
 };
