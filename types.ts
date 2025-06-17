@@ -171,3 +171,10 @@ export const NominateFormSchema = z.object({
       return file.type?.startsWith('image/');
     }, 'Only image files are allowed')
 });
+
+
+export interface Position {
+  position: string;
+  description?: string | null;
+  display_order: number;
+}

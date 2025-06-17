@@ -43,7 +43,12 @@ export default async function ElectionDetailPage(props: Props) {
     .eq('election_id', election.id)
     .order('position');
 
-  // Helper function to get position order with fallbacks
+  const { data: electionPositions } = await supabase
+    .from('election_positions')
+    .select('position, description, display_order')
+    .eq('election_type', election.type!!)
+    .order('display_order');
+
   async function getPositionOrder(
     electionType: string,
     candidates: Candidate[]
@@ -51,19 +56,69 @@ export default async function ElectionDetailPage(props: Props) {
     // Try to fetch from database first
     const { data: dbPositions } = await supabase
       .from('election_positions')
-      .select('position')
+      .select('position, description, display_order')
       .eq('election_type', electionType)
       .order('display_order');
 
     if (dbPositions?.length) {
-      return dbPositions.map((p) => p.position);
+      return dbPositions;
     }
 
     // Fallback to hardcoded positions based on election type
     const defaultPositions = {
-      leadership: ['President', 'Vice President', 'Secretary', 'Treasurer'],
-      board: ['Chairperson', 'Board Member'],
-      committee: ['Committee Chair', 'Committee Member']
+      leadership: [
+        {
+          position: 'President',
+          description:
+            'Chief executive officer who leads the organization and represents it publicly',
+          display_order: 1
+        },
+        {
+          position: 'Vice President',
+          description:
+            'Second in command who assists the president and steps in when needed',
+          display_order: 2
+        },
+        {
+          position: 'Secretary',
+          description:
+            'Records meeting minutes, manages correspondence, and maintains official documents',
+          display_order: 3
+        },
+        {
+          position: 'Treasurer',
+          description:
+            'Manages organizational finances, budget, and financial reporting',
+          display_order: 4
+        }
+      ],
+      board: [
+        {
+          position: 'Chairperson',
+          description: 'Leads board meetings and oversees board activities',
+          display_order: 1
+        },
+        {
+          position: 'Board Member',
+          description:
+            'Participates in board decisions and organizational governance',
+          display_order: 2
+        }
+      ],
+      committee: [
+        {
+          position: 'Committee Chair',
+          description:
+            'Leads committee activities and coordinates with the board',
+          display_order: 1
+        },
+        {
+          position: 'Committee Member',
+          description:
+            'Participates in committee work and supports committee goals',
+          display_order: 2
+        }
+      ]
     };
 
     const typePositions =
@@ -73,7 +128,13 @@ export default async function ElectionDetailPage(props: Props) {
     }
 
     // Final fallback: extract unique positions from candidates
-    return Array.from(new Set(candidates?.map((c) => c.position) || []));
+    return Array.from(new Set(candidates?.map((c) => c.position) || [])).map(
+      (position, index) => ({
+        position,
+        description: '',
+        display_order: index + 1
+      })
+    );
   }
 
   const positionOrder = await getPositionOrder(

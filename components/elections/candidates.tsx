@@ -9,14 +9,14 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Candidate, Election, ElectionPosition } from '@/types';
+import { Candidate, Election, ElectionPosition, Position } from '@/types';
 import { Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 
 interface Props {
   candidates: Candidate[] | null;
   election: Election;
-  positionOrder: string[];
+  positionOrder: Position[]; // Array of position objects with description
   isNominationOpen: boolean | '' | null;
 }
 
@@ -39,20 +39,28 @@ export default async function Candidates({
       {} as Record<string, typeof candidates>
     );
 
-    // Use dynamic position order
-    const sortedPositions = positionOrder.filter(
+    // Use dynamic position order - map position objects to position strings
+    const positionNames = positionOrder.map((p) => p.position);
+    const sortedPositions = positionNames.filter(
       (position) => groupedCandidates[position]
     );
 
     // Add any positions not in the predefined order
     const otherPositions = Object.keys(groupedCandidates).filter(
-      (position) => !positionOrder.includes(position)
+      (position) => !positionNames.includes(position)
     );
 
-    return [...sortedPositions, ...otherPositions].map((position) => ({
-      position,
-      candidates: groupedCandidates[position]
-    }));
+    return [...sortedPositions, ...otherPositions].map((positionName) => {
+      // Find the position object for additional info
+      const positionObj = positionOrder.find(
+        (p) => p.position === positionName
+      );
+      return {
+        position: positionName,
+        positionData: positionObj,
+        candidates: groupedCandidates[positionName]
+      };
+    });
   }
 
   // Get candidate's initials for avatar fallback
@@ -95,22 +103,33 @@ export default async function Candidates({
         ) : (
           <div className="space-y-8">
             {groupCandidatesByPosition(candidates ?? []).map(
-              ({ position, candidates: positionCandidates }) => (
+              ({ position, positionData, candidates: positionCandidates }) => (
                 <div key={position} className="space-y-4">
-                  {/* Position Header */}
-                  <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-semibold text-gray-900">
-                        {position}
-                      </h3>
-                      <span className="text-sm text-gray-500">
-                        #{positionOrder.indexOf(position) + 1 || '?'}
-                      </span>
+                  {/* Enhanced Position Header with Description */}
+                  <div className="border-b border-gray-200 pb-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">
+                            {positionData?.display_order || '?'}
+                          </span>
+                        </div>
+                        <h3 className="text-xl font-semibold text-gray-900">
+                          {position}
+                        </h3>
+                      </div>
+                      <Badge variant="outline">
+                        {positionCandidates.length} candidate
+                        {positionCandidates.length !== 1 ? 's' : ''}
+                      </Badge>
                     </div>
-                    <Badge variant="outline">
-                      {positionCandidates.length} candidate
-                      {positionCandidates.length !== 1 ? 's' : ''}
-                    </Badge>
+
+                    {/* Position Description */}
+                    {positionData?.description && (
+                      <div className="ml-11 text-sm text-gray-600 leading-relaxed">
+                        {positionData.description}
+                      </div>
+                    )}
                   </div>
 
                   {/* Candidates Grid */}
@@ -120,10 +139,7 @@ export default async function Candidates({
                         key={candidate.id}
                         href={`/elections/${election.id}/candidate/${candidate.id}`}
                       >
-                        <Card
-                          key={candidate.id}
-                          className="hover:shadow-md transition-shadow border-l-4 border-l-blue-200"
-                        >
+                        <Card className="hover:shadow-md transition-shadow border-l-4 border-l-blue-200">
                           <CardContent className="p-4">
                             <div className="flex items-start gap-4">
                               <Avatar className="h-24 w-24 border-4 border-white shadow-lg rounded-full overflow-hidden">
@@ -144,8 +160,7 @@ export default async function Candidates({
                                   {candidate.position}
                                 </Badge>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  Candidate ID: {candidate.id.slice(0, 8)}
-                                  ...
+                                  Candidate ID: {candidate.id.slice(0, 8)}...
                                 </p>
                               </div>
                             </div>
