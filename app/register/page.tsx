@@ -9,9 +9,23 @@ import {
 import { getRedirectMethod } from '@/utils/auth-helpers/settings';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-export default async function Register() {
+import { useServerFeatureFlag } from '@/utils/server-feature-flags';
+import { FEATURE_FLAGS, createFeatureFlagArray } from '@/utils/feature-flag-constants';
+interface Props {
+  searchParams: Promise<{ configoverride?: string }>;
+}
+
+export default async function Register(props: Props) {
+  const searchParams = await props.searchParams;
   const redirectMethod = getRedirectMethod();
   const supabase = await createClient();
+
+  // Check feature flags for membership requirements
+  const requiredFlags = createFeatureFlagArray(
+    FEATURE_FLAGS.SKIP_MEMBERSHIP_CHECK,
+    FEATURE_FLAGS.ENABLE_DEBUG_MODE
+  );
+  const featureFlags = await useServerFeatureFlag(requiredFlags, searchParams.configoverride);
 
   const {
     data: { user },
@@ -20,6 +34,11 @@ export default async function Register() {
 
   if (!user || userError) {
     return redirect('/signin');
+  }
+
+  // If membership check is skipped, redirect authenticated users to elections page
+  if (featureFlags[FEATURE_FLAGS.SKIP_MEMBERSHIP_CHECK]) {
+    return redirect('/elections');
   }
 
   const { data: member, error: memberError } = await supabase

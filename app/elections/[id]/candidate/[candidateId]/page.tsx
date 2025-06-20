@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,15 +7,44 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { CalendarDays, Mail, User, Vote, ArrowLeft, Award } from 'lucide-react';
 import Link from 'next/link';
+import { useServerFeatureFlag } from '@/utils/server-feature-flags';
+import {
+  FEATURE_FLAGS,
+  createFeatureFlagArray
+} from '@/utils/feature-flag-constants';
 
 type Props = {
   params: Promise<{ id: string; candidateId: string }>;
+  searchParams: Promise<{ configoverride?: string }>;
 };
 
 export default async function CandidatePage2(props: Props) {
-  const params = await props.params
+  const params = await props.params;
+  const searchParams = await props.searchParams;
   const { id: electionId, candidateId } = params;
   const supabase = await createClient();
+
+  // Check feature flags for authentication override
+  const requiredFlags = createFeatureFlagArray(
+    FEATURE_FLAGS.SKIP_MEMBERSHIP_CHECK,
+    FEATURE_FLAGS.ENABLE_DEBUG_MODE
+  );
+  const featureFlags = await useServerFeatureFlag(
+    requiredFlags,
+    searchParams.configoverride
+  );
+
+  // Get current user
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  // Require authentication unless feature flag allows bypass
+  if (!user && !featureFlags[FEATURE_FLAGS.SKIP_MEMBERSHIP_CHECK]) {
+    const currentUrl = `/elections/${electionId}/candidate/${candidateId}`;
+    const signInUrl = `/signin?redirectTo=${encodeURIComponent(currentUrl)}`;
+    redirect(signInUrl);
+  }
 
   // Fetch candidate details first
   const { data: candidate, error: candidateError } = await supabase
@@ -57,6 +86,23 @@ export default async function CandidatePage2(props: Props) {
     elections: election
   };
 
+  // Check if current user has already voted (only if authenticated)
+  let hasUserVoted = false;
+  let userVoteSession = null;
+
+  if (user) {
+    const { data: voteSession } = await supabase
+      .from('vote_sessions')
+      .select('id, confirmation_code, completed_at')
+      .eq('user_id', user.id)
+      .eq('election_id', electionId)
+      .eq('session_type', 'candidates')
+      .maybeSingle();
+
+    hasUserVoted = !!voteSession?.completed_at;
+    userVoteSession = voteSession;
+  }
+
   // Get candidate's initials for avatar fallback
   const getInitials = (name: string) => {
     return name
@@ -90,7 +136,6 @@ export default async function CandidatePage2(props: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back Navigation */}
         <div className="mb-6">
           <Link href={`/elections/${electionId}`}>
             <Button variant="ghost" className="gap-2 hover:bg-white/60">
@@ -247,39 +292,99 @@ export default async function CandidatePage2(props: Props) {
             <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
               <CardContent className="pt-6">
                 <div className="space-y-3">
-                  <Link
-                    href={`/elections/${electionId}/vote`}
-                    className="w-full"
-                  >
-                    <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                      <Vote className="h-4 w-4 mr-2" />
-                      Cast Your Vote
-                    </Button>
-                  </Link>
+                  {/* Voting Action */}
+                  {user ? (
+                    hasUserVoted ? (
+                      <div className="space-y-2">
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center justify-center text-green-800">
+                            <Vote className="h-4 w-4 mr-2" />
+                            <span className="font-medium">
+                              You have already voted
+                            </span>
+                          </div>
+                          {userVoteSession?.confirmation_code && (
+                            <p className="text-xs text-green-600 text-center mt-2">
+                              Confirmation: {userVoteSession.confirmation_code}
+                            </p>
+                          )}
+                        </div>
+                        <Link
+                          href={`/elections/${electionId}/vote/candidates/confirmation?code=${userVoteSession?.confirmation_code}`}
+                          className="w-full"
+                        >
+                          <Button
+                            variant="outline"
+                            className="w-full border-green-300 text-green-700 hover:bg-green-50"
+                          >
+                            View Vote Confirmation
+                          </Button>
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="text-center">
+                          <h5 className="font-medium text-blue-900 mb-2">
+                            Ready to Vote
+                          </h5>
+                          <p className="text-sm text-blue-700 mb-3">
+                            Cast your vote for {candidate.full_name}
+                          </p>
+                          <Link
+                            href={`/elections/${electionId}/vote/candidates`}
+                            className="w-full"
+                          >
+                            <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg">
+                              <Vote className="h-4 w-4 mr-2" />
+                              Cast Your Vote
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                      <div className="text-center">
+                        <h5 className="font-medium text-emerald-900 mb-2">
+                          Authentication Required
+                        </h5>
+                        <p className="text-sm text-emerald-700 mb-3">
+                          Sign in to vote for {candidate.full_name}
+                        </p>
+                        <Link
+                          href={`/signin?redirectTo=${encodeURIComponent(`/elections/${electionId}/candidate/${candidateId}`)}`}
+                          className="w-full"
+                        >
+                          <Button className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 shadow-lg">
+                            <Vote className="h-4 w-4 mr-2" />
+                            Sign In to Vote
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  )}
 
+                  {/* View All Candidates */}
                   <Link href={`/elections/${electionId}`} className="w-full">
-                    <Button variant="outline" className="w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full border-2 hover:bg-gray-50"
+                    >
+                      <User className="h-4 w-4 mr-2" />
                       View All Candidates
                     </Button>
                   </Link>
 
-                  {/* <Button
-                    variant="ghost"
-                    className="w-full gap-2"
-                    onClick={() => {
-                      if (typeof window !== 'undefined') {
-                        navigator.share?.({
-                          title: `${candidate.full_name} - Candidate Profile`,
-                          text: `Check out ${candidate.full_name}'s candidacy for ${candidate.position}`,
-                          url: window.location.href
-                        }) ||
-                          navigator.clipboard?.writeText(window.location.href);
-                      }
-                    }}
-                  >
-                    <Mail className="h-4 w-4" />
-                    Share Candidate
-                  </Button> */}
+                  {/* View Election Details */}
+                  <Link href={`/elections/${electionId}`} className="w-full">
+                    <Button
+                      variant="ghost"
+                      className="w-full text-gray-600 hover:text-gray-800"
+                    >
+                      <CalendarDays className="h-4 w-4 mr-2" />
+                      Election Details
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

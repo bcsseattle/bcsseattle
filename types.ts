@@ -1,6 +1,9 @@
 import { z } from 'zod';
-import type { Tables } from '@/types_db';
+import type { Tables, Database } from '@/types_db';
 import { User } from '@supabase/supabase-js';
+
+// Re-export Database type for convenience
+export type { Database };
 
 export const MemberRegistrationFormSchema = z.object({
   fullName: z.string().min(1, 'Name is required'),
@@ -100,6 +103,7 @@ export const DonationFormSchema = z
     }
   });
 
+// Database table types
 export type Subscription = Tables<'subscriptions'>;
 export type Product = Tables<'products'>;
 export type Price = Tables<'prices'>;
@@ -111,11 +115,27 @@ export type Invoice = Tables<'invoices'>;
 export type EmailLogs = Tables<'email_logs'>;
 export type SMSNotifications = Tables<'sms_notifications'>;
 export type Program = Tables<'programs'>;
+
+// Election and voting types
 export type Election = Tables<'elections'>;
 export type Candidate = Tables<'candidates'>;
 export type Vote = Tables<'votes'>;
+export type VoteSession = Tables<'vote_sessions'>;
+export type VoteConfirmation = Tables<'vote_confirmations'>;
 export type Nomination = Tables<'nominations'>;
 export type ElectionPosition = Tables<'election_positions'>;
+export type Initiative = Tables<'initiatives'>;
+
+// Database enum types
+export type VoteOption = Database['public']['Enums']['vote_option'];
+export type VoteSessionType = Database['public']['Enums']['vote_session_type'];
+export type ElectionStatus = Database['public']['Enums']['election_status'];
+export type ElectionType = Database['public']['Enums']['election_type'];
+
+// Insert types for database operations
+export type VoteInsert = Database['public']['Tables']['votes']['Insert'];
+export type VoteConfirmationInsert = Database['public']['Tables']['vote_confirmations']['Insert'];
+export type VoteSessionInsert = Database['public']['Tables']['vote_sessions']['Insert'];
 
 export type UpdateDonationParams = Partial<Donation> & { donation_id: string };
 
@@ -170,6 +190,20 @@ export const NominateFormSchema = z.object({
       if (!file) return true;
       return file.type?.startsWith('image/');
     }, 'Only image files are allowed')
+});
+
+export const VotingFormSchema = z.object({
+  candidateVotes: z.record(z.string(), z.string().optional()),
+  initiativeVotes: z.record(z.string(), z.enum(['yes', 'no', 'abstain']).optional())
+});
+
+// Separate voting schemas
+export const CandidateVotingFormSchema = z.object({
+  candidateVotes: z.record(z.string(), z.string().optional())
+});
+
+export const InitiativeVotingFormSchema = z.object({
+  initiativeVotes: z.record(z.string(), z.enum(['yes', 'no', 'abstain']).optional())
 });
 
 

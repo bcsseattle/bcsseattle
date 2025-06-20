@@ -3,8 +3,584 @@
 import { z } from 'zod';
 import { getErrorRedirect, getStatusRedirect } from 'utils/helpers';
 import { createClient } from '@/utils/supabase/server';
-import { Candidate, NominateFormSchema } from '@/types';
+import {
+  Candidate,
+  NominateFormSchema,
+  VoteInsert,
+  VoteSessionInsert,
+  VoteConfirmationInsert,
+  Election,
+  Initiative,
+  VoteOption,
+  VoteSessionType
+} from '@/types';
 import { createCandidate } from '@/utils/supabase/admin';
+import crypto from 'crypto';
+
+// Helper function to generate confirmation code
+function generateConfirmationCode(): string {
+  return crypto.randomBytes(16).toString('hex').toUpperCase();
+}
+
+// Helper function to get client IP from headers
+function getClientIP(headers: Headers): string {
+  const forwarded = headers.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return headers.get('x-real-ip') || 'unknown';
+}
+
+// Voting related types
+interface CandidateVote {
+  candidateId: string;
+  position: string;
+}
+
+interface InitiativeVote {
+  initiativeId: string;
+  vote: VoteOption;
+}
+
+interface VotingResult {
+  success: boolean;
+  confirmationCode?: string;
+  votesCast?: number;
+  sessionId?: string;
+  error?: string;
+}
+
+// Voting handlers following the same pattern as membership handlers
+export async function submitCandidateVotes(
+  candidateVotes: CandidateVote[],
+  electionId: string,
+  headers?: Headers
+): Promise<VotingResult> {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    // Validate election exists and is active
+    const { data: election, error: electionError } = await supabase
+      .from('elections')
+      .select('id, start_date, end_date')
+      .eq('id', electionId)
+      .single();
+
+    if (electionError || !election) {
+      return { success: false, error: 'Election not found' };
+    }
+
+    // Check if voting is open
+    const now = new Date();
+    const startDate = new Date(election.start_date);
+    const endDate = new Date(election.end_date);
+
+    if (now < startDate || now > endDate) {
+      return { success: false, error: 'Voting is not currently open for this election' };
+    }
+
+    // Check if user has already voted for candidates
+    const { data: existingSession } = await supabase
+      .from('vote_sessions')
+      .select('id, completed_at')
+      .eq('user_id', user.id)
+      .eq('election_id', electionId)
+      .eq('session_type', 'candidates')
+      .single();
+
+    if (existingSession?.completed_at) {
+      return { success: false, error: 'You have already voted for candidates in this election' };
+    }
+
+    // Validate candidate votes
+    if (candidateVotes.length > 0) {
+      const candidateIds = candidateVotes.map(v => v.candidateId);
+      const { data: validCandidates } = await supabase
+        .from('candidates')
+        .select('id, position')
+        .eq('election_id', electionId)
+        .in('id', candidateIds);
+
+      const validCandidateIds = validCandidates?.map(c => c.id) || [];
+      const invalidCandidates = candidateIds.filter(id => !validCandidateIds.includes(id));
+
+      if (invalidCandidates.length > 0) {
+        return { success: false, error: `Invalid candidate IDs: ${invalidCandidates.join(', ')}` };
+      }
+
+      // Check for duplicate positions
+      const positions = candidateVotes.map(v => v.position);
+      const uniquePositions = new Set(positions);
+      if (positions.length !== uniquePositions.size) {
+        return { success: false, error: 'Cannot vote for multiple candidates in the same position' };
+      }
+    }
+
+    // Generate confirmation code
+    const confirmationCode = generateConfirmationCode();
+    const clientIP = headers ? getClientIP(headers) : 'unknown';
+    const userAgent = headers?.get('user-agent') || 'unknown';
+
+    // Create or update vote session
+    let sessionId: string;
+    if (existingSession) {
+      sessionId = existingSession.id;
+      await supabase
+        .from('vote_sessions')
+        .update({
+          confirmation_code: confirmationCode,
+          votes_cast: candidateVotes.length
+        })
+        .eq('id', sessionId);
+    } else {
+      const { data: newSession, error: sessionError } = await supabase
+        .from('vote_sessions')
+        .insert({
+          user_id: user.id,
+          election_id: electionId,
+          session_type: 'candidates' as VoteSessionType,
+          confirmation_code: confirmationCode,
+          votes_cast: candidateVotes.length
+        })
+        .select('id')
+        .single();
+
+      if (sessionError || !newSession) {
+        return { success: false, error: 'Failed to create vote session' };
+      }
+      sessionId = newSession.id;
+    }
+
+    // Delete existing votes if updating
+    if (existingSession) {
+      await supabase
+        .from('votes')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('election_id', electionId)
+        .eq('vote_type', 'candidates');
+    }
+
+    // Insert candidate votes
+    if (candidateVotes.length > 0) {
+      const votesToInsert: VoteInsert[] = candidateVotes.map(vote => ({
+        user_id: user.id,
+        election_id: electionId,
+        candidate_id: vote.candidateId,
+        session_id: sessionId,
+        vote_type: 'candidates' as VoteSessionType,
+        voted_at: new Date().toISOString(),
+        ip_address: clientIP,
+        user_agent: userAgent
+      }));
+
+      const { error: voteError } = await supabase
+        .from('votes')
+        .insert(votesToInsert);
+
+      if (voteError) {
+        return { success: false, error: 'Failed to record votes' };
+      }
+    }
+
+    // Mark session as completed
+    await supabase
+      .from('vote_sessions')
+      .update({ completed_at: new Date().toISOString() })
+      .eq('id', sessionId);
+
+    return {
+      success: true,
+      confirmationCode,
+      votesCast: candidateVotes.length,
+      sessionId
+    };
+
+  } catch (error) {
+    console.error('Error in submitCandidateVotes:', error);
+    return { success: false, error: 'An unexpected error occurred' };
+  }
+}
+
+export async function submitInitiativeVotes(
+  initiativeVotes: InitiativeVote[],
+  electionId: string,
+  headers?: Headers
+): Promise<VotingResult> {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    // Validate election exists and is active
+    const { data: election, error: electionError } = await supabase
+      .from('elections')
+      .select('id, start_date, end_date')
+      .eq('id', electionId)
+      .single();
+
+    if (electionError || !election) {
+      return { success: false, error: 'Election not found' };
+    }
+
+    // Check if voting is open
+    const now = new Date();
+    const startDate = new Date(election.start_date);
+    const endDate = new Date(election.end_date);
+
+    if (now < startDate || now > endDate) {
+      return { success: false, error: 'Voting is not currently open for this election' };
+    }
+
+    // Check if user has already voted for initiatives
+    const { data: existingSession } = await supabase
+      .from('vote_sessions')
+      .select('id, completed_at')
+      .eq('user_id', user.id)
+      .eq('election_id', electionId)
+      .eq('session_type', 'initiatives')
+      .single();
+
+    if (existingSession?.completed_at) {
+      return { success: false, error: 'You have already voted for initiatives in this election' };
+    }
+
+    // Validate initiative votes
+    if (initiativeVotes.length > 0) {
+      const initiativeIds = initiativeVotes.map(v => v.initiativeId);
+      const { data: validInitiatives } = await supabase
+        .from('initiatives')
+        .select('id, title')
+        .eq('election_id', electionId)
+        .in('id', initiativeIds);
+
+      const validInitiativeIds = validInitiatives?.map(i => i.id) || [];
+      const invalidInitiatives = initiativeIds.filter(id => !validInitiativeIds.includes(id));
+
+      if (invalidInitiatives.length > 0) {
+        return { success: false, error: `Invalid initiative IDs: ${invalidInitiatives.join(', ')}` };
+      }
+
+      // Check for duplicates
+      const uniqueInitiatives = new Set(initiativeIds);
+      if (initiativeIds.length !== uniqueInitiatives.size) {
+        return { success: false, error: 'Cannot vote multiple times for the same initiative' };
+      }
+    }
+
+    // Generate confirmation code
+    const confirmationCode = generateConfirmationCode();
+    const clientIP = headers ? getClientIP(headers) : 'unknown';
+    const userAgent = headers?.get('user-agent') || 'unknown';
+
+    // Create or update vote session
+    let sessionId: string;
+    if (existingSession) {
+      sessionId = existingSession.id;
+      await supabase
+        .from('vote_sessions')
+        .update({
+          confirmation_code: confirmationCode,
+          votes_cast: initiativeVotes.length
+        })
+        .eq('id', sessionId);
+    } else {
+      const { data: newSession, error: sessionError } = await supabase
+        .from('vote_sessions')
+        .insert({
+          user_id: user.id,
+          election_id: electionId,
+          session_type: 'initiatives' as VoteSessionType,
+          confirmation_code: confirmationCode,
+          votes_cast: initiativeVotes.length
+        })
+        .select('id')
+        .single();
+
+      if (sessionError || !newSession) {
+        return { success: false, error: 'Failed to create vote session' };
+      }
+      sessionId = newSession.id;
+    }
+
+    // Delete existing votes if updating
+    if (existingSession) {
+      await supabase
+        .from('votes')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('election_id', electionId)
+        .eq('vote_type', 'initiatives');
+    }
+
+    // Insert initiative votes
+    if (initiativeVotes.length > 0) {
+      const votesToInsert: VoteInsert[] = initiativeVotes.map(vote => ({
+        user_id: user.id,
+        election_id: electionId,
+        initiative_id: vote.initiativeId,
+        vote_value: vote.vote,
+        session_id: sessionId,
+        vote_type: 'initiatives' as VoteSessionType,
+        voted_at: new Date().toISOString(),
+        ip_address: clientIP,
+        user_agent: userAgent
+      }));
+
+      const { error: voteError } = await supabase
+        .from('votes')
+        .insert(votesToInsert);
+
+      if (voteError) {
+        return { success: false, error: 'Failed to record votes' };
+      }
+    }
+
+    // Mark session as completed
+    await supabase
+      .from('vote_sessions')
+      .update({ completed_at: new Date().toISOString() })
+      .eq('id', sessionId);
+
+    return {
+      success: true,
+      confirmationCode,
+      votesCast: initiativeVotes.length,
+      sessionId
+    };
+
+  } catch (error) {
+    console.error('Error in submitInitiativeVotes:', error);
+    return { success: false, error: 'An unexpected error occurred' };
+  }
+}
+
+export async function submitCombinedVotes(
+  candidateVotes: CandidateVote[],
+  initiativeVotes: InitiativeVote[],
+  electionId: string,
+  headers?: Headers
+): Promise<VotingResult> {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    // Validate election exists and is active
+    const { data: election, error: electionError } = await supabase
+      .from('elections')
+      .select('id, start_date, end_date')
+      .eq('id', electionId)
+      .single();
+
+    if (electionError || !election) {
+      return { success: false, error: 'Election not found' };
+    }
+
+    // Check if voting is open
+    const now = new Date();
+    const startDate = new Date(election.start_date);
+    const endDate = new Date(election.end_date);
+
+    if (now < startDate || now > endDate) {
+      return { success: false, error: 'Voting is not currently open for this election' };
+    }
+
+    // Check if user has already voted
+    const { data: existingVotes } = await supabase
+      .from('votes')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('election_id', electionId)
+      .limit(1);
+
+    if (existingVotes && existingVotes.length > 0) {
+      return { success: false, error: 'You have already voted in this election' };
+    }
+
+    // Validate votes (reuse validation logic from separate functions)
+    const totalVotes = candidateVotes.length + initiativeVotes.length;
+    const confirmationCode = generateConfirmationCode();
+    const clientIP = headers ? getClientIP(headers) : 'unknown';
+    const userAgent = headers?.get('user-agent') || 'unknown';
+
+    // Insert all votes
+    const votesToInsert: VoteInsert[] = [];
+
+    // Add candidate votes
+    candidateVotes.forEach(vote => {
+      votesToInsert.push({
+        user_id: user.id,
+        election_id: electionId,
+        candidate_id: vote.candidateId,
+        vote_type: 'combined' as VoteSessionType,
+        voted_at: new Date().toISOString(),
+        ip_address: clientIP,
+        user_agent: userAgent
+      });
+    });
+
+    // Add initiative votes
+    initiativeVotes.forEach(vote => {
+      votesToInsert.push({
+        user_id: user.id,
+        election_id: electionId,
+        initiative_id: vote.initiativeId,
+        vote_value: vote.vote,
+        vote_type: 'combined' as VoteSessionType,
+        voted_at: new Date().toISOString(),
+        ip_address: clientIP,
+        user_agent: userAgent
+      });
+    });
+
+    // Insert votes
+    const { error: voteError } = await supabase
+      .from('votes')
+      .insert(votesToInsert);
+
+    if (voteError) {
+      return { success: false, error: 'Failed to record votes' };
+    }
+
+    // Create confirmation record
+    const confirmationData: VoteConfirmationInsert = {
+      user_id: user.id,
+      election_id: electionId,
+      confirmation_code: confirmationCode,
+      votes_cast: totalVotes,
+      confirmed_at: new Date().toISOString(),
+      session_type: 'combined' as VoteSessionType
+    };
+
+    await supabase
+      .from('vote_confirmations')
+      .insert(confirmationData);
+
+    return {
+      success: true,
+      confirmationCode,
+      votesCast: totalVotes
+    };
+
+  } catch (error) {
+    console.error('Error in submitCombinedVotes:', error);
+    return { success: false, error: 'An unexpected error occurred' };
+  }
+}
+
+export async function getVotingStatus(electionId: string, sessionType?: VoteSessionType) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { hasVoted: false, error: 'Authentication required' };
+    }
+
+    if (sessionType && sessionType !== 'combined') {
+      // Get session-based voting status
+      const { data: session } = await supabase
+        .from('vote_sessions')
+        .select('confirmation_code, votes_cast, completed_at')
+        .eq('user_id', user.id)
+        .eq('election_id', electionId)
+        .eq('session_type', sessionType)
+        .single();
+
+      const { data: votes } = await supabase
+        .from('votes')
+        .select(`
+          id,
+          candidate_id,
+          initiative_id,
+          vote_value,
+          voted_at,
+          candidates(full_name, position),
+          initiatives(title)
+        `)
+        .eq('user_id', user.id)
+        .eq('election_id', electionId)
+        .eq('vote_type', sessionType);
+
+      return {
+        hasVoted: !!session?.completed_at,
+        votes: votes || [],
+        session: session || null
+      };
+    } else {
+      // Get combined voting status
+      const { data: votes } = await supabase
+        .from('votes')
+        .select(`
+          id,
+          candidate_id,
+          initiative_id,
+          vote_value,
+          voted_at,
+          candidates(full_name, position),
+          initiatives(title)
+        `)
+        .eq('user_id', user.id)
+        .eq('election_id', electionId);
+
+      const { data: confirmation } = await supabase
+        .from('vote_confirmations')
+        .select('confirmation_code, votes_cast, confirmed_at')
+        .eq('user_id', user.id)
+        .eq('election_id', electionId)
+        .single();
+
+      return {
+        hasVoted: votes && votes.length > 0,
+        votes: votes || [],
+        confirmation: confirmation || null
+      };
+    }
+  } catch (error) {
+    console.error('Error in getVotingStatus:', error);
+    return { hasVoted: false, error: 'Failed to fetch voting status' };
+  }
+}
+
+function validatePhotoFile(file: File): {
+  valid: boolean;
+  error?: string;
+} {
+  // Check file size (5MB max)
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) {
+    return { valid: false, error: 'File size must be less than 5MB' };
+  }
+
+  // Check file type
+  const allowedTypes = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/gif',
+    'image/webp'
+  ];
+  if (!allowedTypes.includes(file.type)) {
+    return {
+      valid: false,
+      error: 'Please select a valid image file (JPEG, PNG, GIF, or WebP)'
+    };
+  }
+
+  return { valid: true };
+}
 
 async function uploadPhotoFile(
   photoFile: File,
@@ -69,7 +645,7 @@ export async function nominateCandidate(
   userId?: string
 ) {
   try {
-    debugger;
+    // debugger;
     const supabase = await createClient();
     const {
       data: { user }
@@ -148,34 +724,6 @@ export async function nominateCandidate(
       'An unexpected error occurred. Please try again.'
     );
   }
-}
-
-function validatePhotoFile(file: File): {
-  valid: boolean;
-  error?: string;
-} {
-  // Check file size (5MB max)
-  const maxSize = 5 * 1024 * 1024; // 5MB
-  if (file.size > maxSize) {
-    return { valid: false, error: 'File size must be less than 5MB' };
-  }
-
-  // Check file type
-  const allowedTypes = [
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/gif',
-    'image/webp'
-  ];
-  if (!allowedTypes.includes(file.type)) {
-    return {
-      valid: false,
-      error: 'Please select a valid image file (JPEG, PNG, GIF, or WebP)'
-    };
-  }
-
-  return { valid: true };
 }
 
 async function deleteUploadedPhoto(filePath: string) {

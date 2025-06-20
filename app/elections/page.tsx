@@ -4,8 +4,19 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import dayjs from '@/libs/dayjs';
+import { useServerFeatureFlag } from '@/utils/server-feature-flags';
+import {
+  FEATURE_FLAGS,
+  createFeatureFlagArray
+} from '@/utils/feature-flag-constants';
 
-export default async function ElectionsPage() {
+interface Props {
+  searchParams: Promise<{ configoverride?: string }>;
+}
+
+export default async function ElectionsPage(props: Props) {
+  const searchParams = await props.searchParams;
+
   const supabase = await createClient();
 
   const {
@@ -13,21 +24,39 @@ export default async function ElectionsPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return redirect('/signin');
+    // Redirect to sign-in with the current page as the return URL
+    const currentUrl = '/elections';
+    const signInUrl = `/signin?redirectTo=${encodeURIComponent(currentUrl)}`;
+    return redirect(signInUrl);
   }
 
-  const { data: member } = await supabase
-    .from('members')
-    .select('*')
-    .eq('user_id', user?.id)
-    .maybeSingle();
+  // Define the feature flags we need for this page
+  const requiredFlags = createFeatureFlagArray(
+    FEATURE_FLAGS.SKIP_MEMBERSHIP_CHECK,
+    FEATURE_FLAGS.ENABLE_DEBUG_MODE
+  );
 
-  if (member?.status === 'inactive') {
-    return redirect('/register');
-  }
+  // Check multiple feature flags in one call with full type safety
+  const featureFlags = await useServerFeatureFlag(
+    requiredFlags,
+    searchParams.configoverride
+  );
 
-  if (!member?.isApproved) {
-    return redirect(`/members/${member?.id}/pending`);
+  // Skip member status checks if override is present
+  if (!featureFlags[FEATURE_FLAGS.SKIP_MEMBERSHIP_CHECK]) {
+    const { data: member } = await supabase
+      .from('members')
+      .select('*')
+      .eq('user_id', user?.id)
+      .maybeSingle();
+
+    if (member?.status === 'inactive') {
+      return redirect('/register');
+    }
+
+    if (!member?.isApproved) {
+      return redirect(`/members/${member?.id}/pending`);
+    }
   }
 
   const { data: elections, error } = await supabase

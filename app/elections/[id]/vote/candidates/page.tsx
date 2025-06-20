@@ -1,12 +1,12 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
-import VotingClient from '@/components/elections/voting-client';
+import CandidateVotingClient from '@/components/elections/candidate-voting-client';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-export default async function VotePage(props: Props) {
+export default async function CandidateVotePage(props: Props) {
   const params = await props.params;
   const { id } = params;
 
@@ -18,7 +18,7 @@ export default async function VotePage(props: Props) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/signin?next=' + encodeURIComponent(`/elections/${id}/vote`));
+    redirect('/signin?next=' + encodeURIComponent(`/elections/${id}/vote/candidates`));
   }
 
   // Get election details
@@ -42,15 +42,16 @@ export default async function VotePage(props: Props) {
     redirect(`/elections/${id}`);
   }
 
-  // Check if user has already voted
-  const { data: existingVotes } = await supabase
-    .from('votes')
-    .select('id')
+  // Check if user has already voted for candidates
+  const { data: existingSession } = await supabase
+    .from('vote_sessions')
+    .select('id, completed_at')
     .eq('user_id', user.id)
     .eq('election_id', id)
-    .limit(1);
+    .eq('session_type', 'candidates')
+    .single();
 
-  const hasVoted = !!(existingVotes && existingVotes.length > 0);
+  const hasVoted = !!existingSession?.completed_at;
 
   // Get candidates for this election
   const { data: candidates } = await supabase
@@ -58,13 +59,6 @@ export default async function VotePage(props: Props) {
     .select('*')
     .eq('election_id', id)
     .order('position');
-
-  // Get initiatives for this election
-  const { data: initiatives } = await supabase
-    .from('initiatives')
-    .select('*')
-    .eq('election_id', id)
-    .order('ballot_order');
 
   // Get position order for the election type
   async function getPositionOrder() {
@@ -136,10 +130,9 @@ export default async function VotePage(props: Props) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <VotingClient
+      <CandidateVotingClient
         election={election}
         candidates={candidates || []}
-        initiatives={initiatives || []}
         positionOrder={positionOrder}
         hasVoted={hasVoted}
         userId={user.id}

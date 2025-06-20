@@ -69,6 +69,7 @@ export async function registerMember(
     }
 
     await sendWelecomEmail(user);
+    await sendNewMemberJoinedEmail(user);
 
     return getStatusRedirect(
       '/membership-fee',
@@ -86,7 +87,24 @@ export async function registerMember(
 }
 export async function sendWelecomEmail(User: User) {
   const api_url = process.env.NEXT_PUBLIC_SITE_URL + '/api/send-email/welcome';
-  debugger;
+  // debugger;
+  try {
+    const response = await fetch(api_url, {
+      method: 'POST',
+      body: JSON.stringify({
+        fullName: User.user_metadata.full_name,
+        email: User.email
+      })
+    });
+    return response;
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+  }
+}
+
+export async function sendNewMemberJoinedEmail(User: User) {
+  const api_url = process.env.NEXT_PUBLIC_SITE_URL + '/api/send-email/new-member-joined';
+  // debugger;
   try {
     const response = await fetch(api_url, {
       method: 'POST',

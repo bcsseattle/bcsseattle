@@ -194,8 +194,10 @@ export async function signInWithPassword(formData: FormData) {
       path: '/'
     });
     try {
+      // Remove leading slash from redirectTo if it exists to avoid double slashes
+      const cleanRedirectTo = redirectTo?.startsWith('/') ? redirectTo : `/${redirectTo}`;
       redirectPath = getStatusRedirect(
-        `/${redirectTo ?? 'community-funds'}`,
+        cleanRedirectTo || '/community-funds',
         'Success!',
         'You are now signed in.'
       );
