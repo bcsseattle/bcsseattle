@@ -74,8 +74,8 @@ export default async function RecentFunds({
   members = [],
   columns = [],
   stripeCustomerId,
-  month,
-  year
+  month = currentMonth.toString(),
+  year = currentYear.toString()
 }: {
   members?: any[];
   columns?: ColumnDef<Data>[];
