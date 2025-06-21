@@ -202,19 +202,21 @@ export default async function ElectionDetailPage(props: Props) {
     candidates || []
   );
 
-  const now = new Date();
-  const start = new Date(election.start_date);
-  const end = new Date(election.end_date);
+  // Use consistent UTC for all date comparisons to avoid timezone issues
+  const nowUtc = dayjs.utc();
+  const startUtc = dayjs.utc(election.start_date);
+  const endUtc = dayjs.utc(election.end_date);
 
-  const isVotingOpen = now >= start && now <= end;
-  const isUpcoming = now < start;
-  const isClosed = now > end;
+  const isVotingOpen = (nowUtc.isAfter(startUtc) || nowUtc.isSame(startUtc)) && (nowUtc.isBefore(endUtc) || nowUtc.isSame(endUtc));
+  const isUpcoming = nowUtc.isBefore(startUtc);
+  const isClosed = nowUtc.isAfter(endUtc);
 
+  // Fix timezone issue by ensuring consistent UTC comparison
   const isNominationOpen =
     election.nomination_start &&
     election.nomination_end &&
-    new Date(election.nomination_start) <= now &&
-    now <= new Date(election.nomination_end);
+    dayjs.utc(election.nomination_start).isBefore(nowUtc) &&
+    nowUtc.isBefore(dayjs.utc(election.nomination_end));
 
   // Helper function to get election status
   function getElectionStatus() {
@@ -274,8 +276,8 @@ export default async function ElectionDetailPage(props: Props) {
                 <div>
                   <p className="font-medium text-blue-900">Nomination Period</p>
                   <p className="text-sm text-blue-700">
-                    {dayjs(election.nomination_start).format('MMM D, h:mm A')} →{' '}
-                    {dayjs(election.nomination_end).format('MMM D, h:mm A')}
+                    {dayjs.utc(election.nomination_start).tz('America/Los_Angeles').format('MMM D, h:mm A')} →{' '}
+                    {dayjs.utc(election.nomination_end).tz('America/Los_Angeles').format('MMM D, h:mm A')}
                   </p>
                 </div>
               </div>
@@ -286,8 +288,8 @@ export default async function ElectionDetailPage(props: Props) {
               <div>
                 <p className="font-medium text-green-900">Voting Period</p>
                 <p className="text-sm text-green-700">
-                  {dayjs(start).format('MMM D, h:mm A')} →{' '}
-                  {dayjs(end).format('MMM D, h:mm A')}
+                  {dayjs.utc(election.start_date).tz('America/Los_Angeles').format('MMM D, h:mm A')} →{' '}
+                  {dayjs.utc(election.end_date).tz('America/Los_Angeles').format('MMM D, h:mm A')}
                 </p>
               </div>
             </div>

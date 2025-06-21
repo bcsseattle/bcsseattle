@@ -89,8 +89,8 @@ export default async function ElectionsPage(props: Props) {
                   {election.description}
                 </p>
                 <div className="text-sm text-gray-500 mt-1">
-                  {dayjs(election.start_date).format('MMM D')} –{' '}
-                  {dayjs(election.end_date).format('MMM D, YYYY')}
+                  {dayjs.utc(election.start_date).tz('America/Los_Angeles').format('MMM D')} –{' '}
+                  {dayjs.utc(election.end_date).tz('America/Los_Angeles').format('MMM D, YYYY')}
                 </div>
                 <div className="mt-4">
                   <Link href={`/elections/${election.id}`}>
