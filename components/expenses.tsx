@@ -1,13 +1,10 @@
+import { formatCurrency } from '@/utils/helpers';
+
 export function Expenses({ expenses = [] }: { expenses: any[] }) {
   return (
     <div className="space-y-8">
       {expenses?.map((expense) => {
-        const amountString = new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: expense.currency!,
-          minimumFractionDigits: 0
-        }).format((expense?.amount || 0) / 100);
-
+        const amountString = formatCurrency(expense?.amount || 0);
         return (
           <div className="flex items-center" key={expense.id}>
             {expense.date}

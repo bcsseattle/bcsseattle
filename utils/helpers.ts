@@ -133,12 +133,58 @@ export const getErrorRedirect = (
     arbitraryParams
   );
 
-export const getPriceString = (amountPerPerHead: number) => {
+export const getPriceString = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0
-  }).format(amountPerPerHead / 100);
+  }).format(amount / 100);
+};
+
+// For amounts that are already in dollars (not cents)
+// export const formatCurrency = (amount: number) => {
+//   return new Intl.NumberFormat('en-US', {
+//     style: 'currency',
+//     currency: 'USD',
+//     minimumFractionDigits: 2,
+//     maximumFractionDigits: 2
+//   }).format(amount);
+// };
+
+// For amounts stored in your specific format where 62.95 becomes 6200.95
+export const formatCurrency = (amount: number) => {
+  // Convert to string to avoid floating point precision issues
+  const amountStr = amount.toString();
+  
+  // If amount is 6200.95, we want to get 62.95
+  // Remove the last two digits before decimal and treat them as cents
+  const dotIndex = amountStr.indexOf('.');
+  
+  if (dotIndex === -1) {
+    // No decimal, treat as regular cents (6295 -> 62.95)
+    const dollars = amount / 100;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(dollars);
+  }
+  
+  // Has decimal (6200.95 -> 62.95)
+  const wholePart = amountStr.substring(0, dotIndex);
+  const decimalPart = amountStr.substring(dotIndex + 1);
+  
+  // Convert 6200.95 to 62.0095, then format
+  const dollarsStr = `${Math.floor(amount / 100)}.${decimalPart}`;
+  const dollars = parseFloat(dollarsStr);
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(dollars);
 };
 
 export const paymentMethodMap: { [key: string]: string } = {
