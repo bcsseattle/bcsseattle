@@ -37,7 +37,8 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -57,7 +58,14 @@ export function DataTable<TData, TValue>({
   year
 }: DataTableProps<TData, TValue>) {
   const router = useRouter();
+  const pathname = usePathname();
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  // Reset loading state when data changes
+  React.useEffect(() => {
+    setIsLoading(false);
+  }, [data]);
 
   const table = useReactTable({
     data,
@@ -104,8 +112,9 @@ export function DataTable<TData, TValue>({
                     <Select
                       onValueChange={(value) => {
                         field.onChange(value); // Call onChange with new value
+                        setIsLoading(true);
                         router.push(
-                          `/community-funds?month=${value}&year=${form.getValues('year')}`
+                          `${pathname}?month=${value}&year=${form.getValues('year')}`
                         );
                       }}
                       defaultValue={field.value}
@@ -138,8 +147,9 @@ export function DataTable<TData, TValue>({
                     <Select
                       onValueChange={(value) => {
                         field.onChange(value); // Call onChange with new value
+                        setIsLoading(true);
                         router.push(
-                          `/community-funds?month=${form.getValues('month')}&year=${value}`
+                          `${pathname}?month=${form.getValues('month')}&year=${value}`
                         );
                       }}
                       defaultValue={field.value}
@@ -185,7 +195,18 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              // Show skeleton rows while loading
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={`skeleton-${index}`}>
+                  {columns.map((_, colIndex) => (
+                    <TableCell key={`skeleton-cell-${colIndex}`}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
