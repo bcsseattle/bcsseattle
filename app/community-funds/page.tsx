@@ -19,8 +19,18 @@ import {
 } from '@/utils/supabase/admin';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import Loading from '../loading';
 
-export default async function CommunityFunds() {
+type SearchParams = Promise<{ [key: string]: string | undefined }>;
+
+export default async function CommunityFunds(props: {
+  searchParams: SearchParams;
+}) {
+  const searchParams = await props.searchParams;
+  const month = searchParams?.month ?? (new Date().getMonth() + 1).toString();
+  const year = searchParams?.year ?? new Date().getFullYear().toString();
+
   const supabase = await createClient();
 
   const {
@@ -45,9 +55,14 @@ export default async function CommunityFunds() {
     return redirect('/register');
   }
 
+  if (!member?.isApproved) {
+    return redirect(`/members/${member?.id}/pending`);
+  }
+
   const { data: expenses } = await supabase
     .from('expenses')
     .select('*')
+    .eq('is_private', false)
     .order('created_at', { ascending: false });
 
   const { data: funds } = await supabase
@@ -55,16 +70,19 @@ export default async function CommunityFunds() {
     .select('*')
     .neq('status', 'cancelled')
     .neq('status', 'failed')
+    .neq('is_private', true)
     .order('created_at', { ascending: false });
 
   const { data: donations } = await getDonations();
 
-  const totalDonations = donations?.reduce(
+  const donationsOutsideStripe = donations?.filter(
+    (donation) => !Boolean(donation.stripe_payment_id)
+  );
+
+  const totalDonations = donationsOutsideStripe?.reduce(
     (acc: number, donation: any) => acc + donation.amount,
     0
   );
-
-  console.log('totalDonations', totalDonations);
 
   const fundsInBank = funds?.reduce(
     (acc: number, fund: any) => acc + fund.amount,
@@ -140,7 +158,9 @@ export default async function CommunityFunds() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{collectedFunds}</div>
+            <Suspense fallback={<Loading />}>
+              <div className="text-2xl font-bold">{collectedFunds}</div>
+            </Suspense>
           </CardContent>
         </Card>
 
@@ -212,10 +232,19 @@ export default async function CommunityFunds() {
         </Card>
       </div>
       <div className="col-span-4">
-        <RecentDonations donations={donations || []} />
+        <Suspense fallback={<Loading />}>
+          <RecentDonations donations={donations || []} />
+        </Suspense>
       </div>
       <div className="col-span-4">
-        <RecentFunds members={members as any} columns={columns} />
+        <Suspense fallback={<Loading />}>
+          <RecentFunds
+            members={members as any}
+            columns={columns}
+            month={month}
+            year={year}
+          />
+        </Suspense>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
         <Card className="col-span-4">

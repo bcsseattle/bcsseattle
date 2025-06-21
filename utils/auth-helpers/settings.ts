@@ -24,6 +24,7 @@ export const getViewTypes = () => {
   if (allowPassword) {
     viewTypes = [
       ...viewTypes,
+      'verify_otp',
       'password_signin',
       'forgot_password',
       'update_password',

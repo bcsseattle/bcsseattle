@@ -71,16 +71,52 @@ export async function signInWithEmail(formData: FormData) {
       error.message
     );
   } else if (data) {
-    await cookieStore.set('preferredSignInView', 'email_signin', { path: '/' });
+    await cookieStore.set('preferredSignInView', 'email_signin', {
+      path: '/signin/verify_otp'
+    });
     redirectPath = getStatusRedirect(
-      '/signin/email_signin',
+      '/signin/verify_otp',
       'Success!',
-      'Please check your email for a magic link. You may now close this tab.',
-      true
+      'Please check your email for an OTP code.',
+      true,
+      `email=${email}`
     );
   } else {
     redirectPath = getErrorRedirect(
-      '/signin/email_signin',
+      '/signin/email_sigin',
+      'Hmm... Something went wrong.',
+      'You could not be signed in.'
+    );
+  }
+
+  return redirectPath;
+}
+
+export async function verifyOtp(formData: FormData) {
+  const cookieStore = await cookies();
+  const email = String(formData.get('email')).trim();
+  const otp = String(formData.get('otp')).trim();
+  let redirectPath: string;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token: otp,
+    type: 'email'
+  });
+
+  if (error) {
+    redirectPath = getErrorRedirect(
+      '/signin/otp_signin',
+      'You could not be signed in.',
+      error.message
+    );
+  } else if (data) {
+    await cookieStore.set('preferredSignInView', 'otp_signin', { path: '/' });
+    redirectPath = getStatusRedirect('/', 'Success!', 'You are now signed in.');
+  } else {
+    redirectPath = getErrorRedirect(
+      '/signin/otp_signin',
       'Hmm... Something went wrong.',
       'You could not be signed in.'
     );
@@ -158,8 +194,10 @@ export async function signInWithPassword(formData: FormData) {
       path: '/'
     });
     try {
+      // Remove leading slash from redirectTo if it exists to avoid double slashes
+      const cleanRedirectTo = redirectTo?.startsWith('/') ? redirectTo : `/${redirectTo}`;
       redirectPath = getStatusRedirect(
-        `/${redirectTo ?? 'community-funds'}`,
+        cleanRedirectTo || '/community-funds',
         'Success!',
         'You are now signed in.'
       );

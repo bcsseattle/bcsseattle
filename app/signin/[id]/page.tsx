@@ -16,19 +16,17 @@ import ForgotPassword from '@/components/ui/AuthForms/ForgotPassword';
 import UpdatePassword from '@/components/ui/AuthForms/UpdatePassword';
 import SignUp from '@/components/ui/AuthForms/Signup';
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import OTPVerify from '@/components/ui/AuthForms/OTPVerify';
 
-export default async function SignIn(
-  props: {
-    params: Promise<{ id: string }>;
-    searchParams: Promise<{ disable_button: boolean, redirectTo?: string }>;
-  }
-) {
+export default async function SignIn(props: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{
+    disable_button: boolean;
+    redirectTo?: string;
+    email?: string;
+  }>;
+}) {
   const searchParams = await props.searchParams;
   const params = await props.params;
   const { allowOauth, allowEmail, allowPassword } = getAuthTypes();
@@ -87,6 +85,13 @@ export default async function SignIn(
             {viewProp === 'email_signin' && (
               <EmailSignIn
                 allowPassword={allowPassword}
+                redirectMethod={redirectMethod}
+                disableButton={searchParams.disable_button}
+              />
+            )}
+            {viewProp === 'verify_otp' && (
+              <OTPVerify
+                email={searchParams.email}
                 redirectMethod={redirectMethod}
                 disableButton={searchParams.disable_button}
               />

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  Candidate,
   Donation,
   Donor,
   EmailLogs,
@@ -572,19 +573,24 @@ const getStripePayments = async (params?: {
   customerId?: string;
   dateRange?: Stripe.RangeQueryParam;
 }) => {
-  const { customerId, dateRange } = params || {};
+  try {
+    const { customerId, dateRange } = params || {};
 
-  const payments = await stripe.paymentIntents
-    .list({
-      customer: customerId,
-      limit: 100,
-      created: {
-        gte: dateRange?.gte ?? 1718491540, // 2024-06-15,
-        lte: dateRange?.lte ?? Math.floor(Date.now() / 1000)
-      }
-    })
-    .autoPagingToArray({ limit: 1000 });
-  return payments;
+    const payments = await stripe.paymentIntents
+      .list({
+        customer: customerId,
+        limit: 100,
+        created: {
+          gte: dateRange?.gte ?? 1718491540, // 2024-06-15,
+          lte: dateRange?.lte ?? Math.floor(Date.now() / 1000)
+        }
+      })
+      .autoPagingToArray({ limit: 1000 });
+    return { data: payments, error: null };
+  } catch (error) {
+    console.error('Error fetching stripe payments:', error);
+    return { data: null, error: 'Error fetching stripe payments' };
+  }
 };
 
 const getTotalCustomerSpent = async (params?: {
@@ -656,12 +662,17 @@ const updateFuneralSignup = async (
 };
 
 const getDonations = async () => {
-  const { data, error } = await supabaseAdmin.from('donations').select(`
+  const { data, error } = await supabaseAdmin
+    .from('donations')
+    .select(
+      `
      *,
       donors (
         *
       )
-    `);
+    `
+    )
+    .eq('is_private', false);
 
   if (error) {
     console.error('Error fetching donations:', error);
@@ -840,6 +851,42 @@ const upsertEmailLogs = async (emailLog: Partial<EmailLogs>) => {
   }
 };
 
+const createCandidate = async (
+  candidateDetails: any
+): Promise<{
+  data: any | null;
+  error: PostgrestError | null | string;
+}> => {
+  try {
+    const { data, error: insertError } = await supabaseAdmin
+      .from('candidates')
+      .insert({
+        full_name: candidateDetails.full_name,
+        position: candidateDetails.position,
+        bio: candidateDetails.bio,
+        photo_url: candidateDetails.photo_url,
+        election_id: candidateDetails.election_id,
+        user_id: candidateDetails.user_id,
+        manifesto: candidateDetails.manifesto
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Candidate insert error:', insertError);
+      throw new Error(`Candidate insert failed: ${insertError.message}`);
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error nominating candidate:', error);
+    return {
+      data: null,
+      error: (error as Error).message || 'Error nominating candidate'
+    };
+  }
+};
+
 export {
   upsertProductRecord,
   upsertPriceRecord,
@@ -865,5 +912,6 @@ export {
   createInvoice,
   upsertEmailLogs,
   retrieveSmsNotification,
-  updateSmsNotification
+  updateSmsNotification,
+  createCandidate
 };

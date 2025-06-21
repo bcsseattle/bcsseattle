@@ -83,6 +83,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       <RecentFunds
         members={member ? [member] : []}
         columns={individualColumns}
+        stripeCustomerId={stripeCustomerId}
       />
     </div>
   );

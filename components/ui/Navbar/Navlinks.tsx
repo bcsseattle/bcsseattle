@@ -108,12 +108,13 @@ export default function Navlinks({ user, member }: NavlinksProps) {
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
-        {member && member?.status === 'active' && (
+        {member && member?.status === 'active' && member?.isApproved && (
           <>
             <NavigationMenuItem>
               <NavigationMenuTrigger>Membership</NavigationMenuTrigger>
               <NavigationMenuContent>
                 <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
+                  <ListItem href="/elections" title="Elections"></ListItem>
                   <ListItem href="/account" title="Account"></ListItem>
                   <ListItem
                     href="/contribute"

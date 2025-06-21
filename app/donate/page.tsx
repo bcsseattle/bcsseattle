@@ -1,8 +1,13 @@
 // import { getRedirectMethod } from '@/utils/auth-helpers/settings';
 import { createClient } from '@/utils/supabase/server';
 import DonateForm from '@/components/forms/donate-form';
+import { DonationPurpose } from '@/types';
 
-export default async function Page() {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+export default async function Page(props: { searchParams: SearchParams }) {
+  const searchParams = await props.searchParams;
+  const purpose = searchParams?.purpose ?? 'general-purpose';
   // const redirectMethod = getRedirectMethod();
   const supabase = await createClient();
 
@@ -30,11 +35,22 @@ export default async function Page() {
     donor = data;
   }
 
+  const { data: programs } = await supabase
+    .from('programs')
+    .select('*')
+    .eq('active', true);
+
   return (
     <section className="my-8">
       <div className="flex justify-center height-screen-helper">
         <div className="flex flex-col justify-between p-3">
-          <DonateForm user={user} product={product as any} donor={donor} />
+          <DonateForm
+            user={user}
+            product={product as any}
+            donor={donor}
+            programs={programs ?? []}
+            defaultPurpose={purpose as DonationPurpose}
+          />
         </div>
       </div>
     </section>

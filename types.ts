@@ -1,6 +1,9 @@
 import { z } from 'zod';
-import type { Tables } from '@/types_db';
+import type { Tables, Database } from '@/types_db';
 import { User } from '@supabase/supabase-js';
+
+// Re-export Database type for convenience
+export type { Database };
 
 export const MemberRegistrationFormSchema = z.object({
   fullName: z.string().min(1, 'Name is required'),
@@ -38,6 +41,17 @@ export const FuneralFundFormSchema = z.object({
   additionalComments: z.string().optional()
 });
 
+export const DONATION_PURPOSES = [
+  'general-purpose',
+  'funeral-and-burial',
+  'new-member-support',
+  'youth-programs',
+  'social-events'
+] as const;
+
+export const DonationPurposeEnum = z.enum(DONATION_PURPOSES);
+export type DonationPurpose = z.infer<typeof DonationPurposeEnum>;
+
 export const DonationFormSchema = z
   .object({
     frequency: z.enum(['one_time', 'month', 'year']),
@@ -45,12 +59,7 @@ export const DonationFormSchema = z
     amount: z.string().refine((val) => !Number.isNaN(Number(val)), {
       message: 'Amount must be a valid number'
     }),
-    purpose: z.enum([
-      'general-purpose',
-      'funeral-and-burial',
-      'new-member-support',
-      'youth-programs'
-    ]),
+    purpose: DonationPurposeEnum,
     donorType: z.enum(['individual', 'organization']),
     donorName: z.string().optional(),
     organizationName: z.string().optional(),
@@ -94,6 +103,7 @@ export const DonationFormSchema = z
     }
   });
 
+// Database table types
 export type Subscription = Tables<'subscriptions'>;
 export type Product = Tables<'products'>;
 export type Price = Tables<'prices'>;
@@ -104,9 +114,29 @@ export type Organization = Tables<'organization'>;
 export type Invoice = Tables<'invoices'>;
 export type EmailLogs = Tables<'email_logs'>;
 export type SMSNotifications = Tables<'sms_notifications'>;
+export type Program = Tables<'programs'>;
+
+// Election and voting types
+export type Election = Tables<'elections'>;
+export type Candidate = Tables<'candidates'>;
+export type Vote = Tables<'votes'>;
+export type VoteSession = Tables<'vote_sessions'>;
+export type VoteConfirmation = Tables<'vote_confirmations'>;
+export type ElectionPosition = Tables<'election_positions'>;
+export type Initiative = Tables<'initiatives'>;
+
+// Database enum types
+export type VoteOption = Database['public']['Enums']['vote_option'];
+export type VoteSessionType = Database['public']['Enums']['vote_session_type'];
+export type ElectionStatus = Database['public']['Enums']['election_status'];
+export type ElectionType = Database['public']['Enums']['election_type'];
+
+// Insert types for database operations
+export type VoteInsert = Database['public']['Tables']['votes']['Insert'];
+export type VoteConfirmationInsert = Database['public']['Tables']['vote_confirmations']['Insert'];
+export type VoteSessionInsert = Database['public']['Tables']['vote_sessions']['Insert'];
 
 export type UpdateDonationParams = Partial<Donation> & { donation_id: string };
-
 
 export interface ProductWithPrices extends Product {
   prices: Price[];
@@ -136,5 +166,48 @@ export type DonationByDonor = Partial<Donation> & {
 
 export interface DateRange {
   startDate: number; // Unix timestamp
-  endDate: number;   // Unix timestamp
+  endDate: number; // Unix timestamp
+}
+
+export const NominateFormSchema = z.object({
+  fullName: z.string().min(2, 'Full name is required'),
+  position: z.string().min(1, 'Position is required'),
+  bio: z.string().optional(),
+  manifesto: z.string().optional(),
+  photoFile: z
+    .any() // Changed from instanceof(File) to any for debugging
+    .optional()
+    .refine((file) => {
+      if (!file) return true;
+      return file instanceof File || file instanceof Blob;
+    }, 'Please select a valid image file')
+    .refine((file) => {
+      if (!file) return true;
+      return file.size <= 15 * 1024 * 1024;
+    }, 'Max file size is 15MB')
+    .refine((file) => {
+      if (!file) return true;
+      return file.type?.startsWith('image/');
+    }, 'Only image files are allowed')
+});
+
+export const VotingFormSchema = z.object({
+  candidateVotes: z.record(z.string(), z.string().optional()),
+  initiativeVotes: z.record(z.string(), z.enum(['yes', 'no', 'abstain']).optional())
+});
+
+// Separate voting schemas
+export const CandidateVotingFormSchema = z.object({
+  candidateVotes: z.record(z.string(), z.string().optional())
+});
+
+export const InitiativeVotingFormSchema = z.object({
+  initiativeVotes: z.record(z.string(), z.enum(['yes', 'no', 'abstain']).optional())
+});
+
+
+export interface Position {
+  position: string;
+  description?: string | null;
+  display_order: number;
 }

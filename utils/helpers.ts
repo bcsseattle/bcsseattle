@@ -155,7 +155,8 @@ export const purposeTitleMap: { [key: string]: string } = {
   'general-purpose': 'General Purpose',
   'funeral-and-burial': 'Funeral and Burial',
   'new-member-support': 'New Member Support',
-  'youth-programs': 'Youth Programs'
+  'youth-programs': 'Youth Programs',
+  'social-events': 'Social Events',
 };
 
 export function formatPhoneNumber(phoneNumber: string) {

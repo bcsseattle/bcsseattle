@@ -69,7 +69,7 @@ export default function ForgotPassword({
       {allowEmail && (
         <p>
           <Link href="/signin/email_signin" className="font-light text-sm">
-            Sign in via magic link
+            Sign in via OTP code
           </Link>
         </p>
       )}
