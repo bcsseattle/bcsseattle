@@ -65,9 +65,8 @@ export async function registerMember(
     const { data, error } = await createMember(createMemberDetails);
     if (error) {
       console.error('Error creating member:', error);
-      // throw new Error('Failed to create member');
+      throw new Error('Failed to create member');
     }
-
     await sendWelecomEmail(user);
     await sendNewMemberJoinedEmail(user);
 

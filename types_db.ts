@@ -9,30 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      audit_logs: {
-        Row: {
-          action: string
-          created_at: string | null
-          id: string
-          meta: Json | null
-          user_id: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string | null
-          id?: string
-          meta?: Json | null
-          user_id?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string | null
-          id?: string
-          meta?: Json | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       candidates: {
         Row: {
           bio: string | null
@@ -667,33 +643,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      nominations: {
-        Row: {
-          created_at: string | null
-          election_id: string
-          id: string
-          message: string | null
-          nominee_user_id: string
-          position: string
-        }
-        Insert: {
-          created_at?: string | null
-          election_id: string
-          id?: string
-          message?: string | null
-          nominee_user_id: string
-          position: string
-        }
-        Update: {
-          created_at?: string | null
-          election_id?: string
-          id?: string
-          message?: string | null
-          nominee_user_id?: string
-          position?: string
-        }
-        Relationships: []
       }
       organization: {
         Row: {

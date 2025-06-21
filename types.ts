@@ -122,7 +122,6 @@ export type Candidate = Tables<'candidates'>;
 export type Vote = Tables<'votes'>;
 export type VoteSession = Tables<'vote_sessions'>;
 export type VoteConfirmation = Tables<'vote_confirmations'>;
-export type Nomination = Tables<'nominations'>;
 export type ElectionPosition = Tables<'election_positions'>;
 export type Initiative = Tables<'initiatives'>;
 

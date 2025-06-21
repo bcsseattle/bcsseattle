@@ -513,7 +513,33 @@ export default async function ElectionDetailPage(props: Props) {
             </div>
           )}
 
-          {/* Results Section */}
+          {/* Results Section - Live Results for Active Elections */}
+          {isVotingOpen && (
+            <div className="w-full p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold text-blue-900">
+                    Live Results
+                  </h4>
+                  <p className="text-sm text-blue-700">
+                    View real-time election results while voting is open
+                  </p>
+                </div>
+                <Link href={`/elections/${election.id}/results`}>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    <Trophy className="w-5 h-5 mr-2" />
+                    View Live Results
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Results Section - Final Results for Closed Elections */}
           {isClosed && (
             <div className="w-full p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <div className="flex items-center justify-between">
