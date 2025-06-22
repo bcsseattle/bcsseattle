@@ -248,15 +248,19 @@ export type Database = {
       }
       elections: {
         Row: {
+          candidate_voting_end: string | null
+          candidate_voting_start: string | null
           created_at: string | null
           created_by: string | null
           description: string | null
+          enable_separate_voting_periods: boolean | null
           end_date: string
           id: string
           is_active: boolean | null
           nomination_end: string | null
           nomination_start: string | null
           settings: Json | null
+          show_unopposed_status: boolean | null
           start_date: string
           status: Database["public"]["Enums"]["election_status"] | null
           title: string
@@ -264,15 +268,19 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          candidate_voting_end?: string | null
+          candidate_voting_start?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          enable_separate_voting_periods?: boolean | null
           end_date: string
           id?: string
           is_active?: boolean | null
           nomination_end?: string | null
           nomination_start?: string | null
           settings?: Json | null
+          show_unopposed_status?: boolean | null
           start_date: string
           status?: Database["public"]["Enums"]["election_status"] | null
           title: string
@@ -280,15 +288,19 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          candidate_voting_end?: string | null
+          candidate_voting_start?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          enable_separate_voting_periods?: boolean | null
           end_date?: string
           id?: string
           is_active?: boolean | null
           nomination_end?: string | null
           nomination_start?: string | null
           settings?: Json | null
+          show_unopposed_status?: boolean | null
           start_date?: string
           status?: Database["public"]["Enums"]["election_status"] | null
           title?: string

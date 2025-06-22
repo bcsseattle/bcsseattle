@@ -5,19 +5,37 @@ import { useElectionResults } from '@/hooks/useElectionResults';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Trophy, TrendingUp, BarChart3 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { RefreshCw, Trophy, TrendingUp, BarChart3, Crown, Building, Vote } from 'lucide-react';
 import { 
   ResultsOverview, 
   CandidateResults, 
   InitiativeResults 
 } from '@/components/elections/results/results-components';
 import { ElectionDashboard } from '@/components/elections/results/election-dashboard';
+import { VotingExplainer } from '@/components/elections/results/voting-explainer';
+import { getElectionTypeDescription } from '@/utils/election-types';
+import { ElectionType } from '@/types';
 
 export default function ElectionResultsPage() {
   const params = useParams();
   const id = params.id as string;
   
   const { results, loading, error, lastUpdated, refetch } = useElectionResults(id);
+
+  // Get type-specific icon for the page
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'leadership':
+        return Crown;
+      case 'board':
+        return Building;
+      case 'initiative':
+        return Vote;
+      default:
+        return Trophy;
+    }
+  };
 
   if (loading) {
     return (
@@ -60,30 +78,41 @@ export default function ElectionResultsPage() {
       <div className="container mx-auto py-8">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-center text-gray-500">No results found for this election.</p>
+            <p>No results available for this election.</p>
           </CardContent>
         </Card>
       </div>
     );
   }
 
+  const electionType = results.election.type as ElectionType;
+  const TypeIcon = getTypeIcon(results.election.type);
+  const typeDescription = getElectionTypeDescription(electionType);
+
   return (
     <div className="container mx-auto py-8 space-y-6">
-      {/* Header */}
+      {/* Enhanced Page Header with Type Information */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{results.election.title}</h1>
-          <p className="text-muted-foreground mt-1">{results.election.description}</p>
+        <div className="flex items-center gap-3">
+          <TypeIcon className="h-8 w-8 text-muted-foreground" />
+          <div>
+            <h1 className="text-3xl font-bold">Election Results</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-muted-foreground">{typeDescription}</p>
+              <Badge variant="outline" className="capitalize">
+                {results.election.type} Election
+              </Badge>
+            </div>
+          </div>
         </div>
-        <Button 
-          onClick={() => refetch()} 
-          variant="outline"
-          size="sm"
-        >
+        <Button onClick={() => refetch()} variant="outline" size="sm">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
       </div>
+
+      {/* Type-aware Voting Explainer */}
+      <VotingExplainer results={results} />
 
       {/* Dashboard */}
       <ElectionDashboard results={results} lastUpdated={lastUpdated} />
@@ -143,6 +172,17 @@ export default function ElectionResultsPage() {
                         {new Date(results.election.endDate).toLocaleString()}
                       </p>
                     </div>
+                    {results.election.candidateVotingEnd && (
+                      <div>
+                        <p className="text-sm font-medium">Candidate Voting End</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(results.election.candidateVotingEnd).toLocaleString()}
+                        </p>
+                        {!results.votingStatus.candidateVotingOpen && (
+                          <p className="text-xs text-orange-600">Closed early</p>
+                        )}
+                      </div>
+                    )}
                     <div>
                       <p className="text-sm font-medium">Election Type</p>
                       <p className="text-sm text-muted-foreground capitalize">

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
+import { isCandidateVotingOpen, shouldShowUnopposedStatus } from '@/utils/election-config';
+import dayjs from '@/libs/dayjs';
 
 interface CandidateResult {
   id: string;
@@ -38,6 +40,15 @@ interface ElectionResults {
     startDate: string;
     endDate: string;
     type: string;
+    candidateVotingStart?: string | null;
+    candidateVotingEnd?: string | null;
+    enableSeparateVotingPeriods?: boolean;
+    showUnopposedStatus?: boolean;
+  };
+  votingStatus: {
+    candidateVotingOpen: boolean;
+    initiativeVotingOpen: boolean;
+    candidatesElectedUnopposed: boolean;
   };
   statistics: {
     totalVoters: number;
@@ -77,6 +88,13 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    // Calculate voting status for separate candidate/initiative periods
+    const nowUtc = dayjs.utc();
+    const candidateVotingOpen = await isCandidateVotingOpen(id, nowUtc);
+    const initiativeVotingOpen = nowUtc.isAfter(dayjs.utc(election.start_date)) && 
+                                nowUtc.isBefore(dayjs.utc(election.end_date));
+    const candidatesElectedUnopposed = await shouldShowUnopposedStatus(id, candidateVotingOpen, true); // We'll check if candidates exist later
 
     // Get overall vote statistics using the database function
     const { data: voteStats, error: statsError } = await supabase
@@ -270,7 +288,16 @@ export async function GET(
         status: election.status,
         startDate: election.start_date,
         endDate: election.end_date,
-        type: election.type
+        type: election.type,
+        candidateVotingStart: election.candidate_voting_start,
+        candidateVotingEnd: election.candidate_voting_end,
+        enableSeparateVotingPeriods: election.enable_separate_voting_periods,
+        showUnopposedStatus: election.show_unopposed_status
+      },
+      votingStatus: {
+        candidateVotingOpen,
+        initiativeVotingOpen,
+        candidatesElectedUnopposed: candidatesElectedUnopposed && candidateResults.length > 0
       },
       statistics: {
         totalVoters: stats.total_voters,

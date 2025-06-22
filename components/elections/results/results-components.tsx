@@ -5,14 +5,19 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, TrendingUp, Users, Vote, BarChart3 } from 'lucide-react';
+import { Trophy, TrendingUp, Users, Vote, BarChart3, Crown, Building } from 'lucide-react';
 import { ElectionResults } from '@/hooks/useElectionResults';
+import { getElectionTypeDescription, supportsUnopposedCandidates } from '@/utils/election-types';
+import { ElectionType } from '@/types';
 
 interface ResultsOverviewProps {
   results: ElectionResults;
 }
 
 export function ResultsOverview({ results }: ResultsOverviewProps) {
+  const electionType = results.election.type as ElectionType;
+  const supportsUnopposed = supportsUnopposedCandidates(electionType);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'voting_open':
@@ -39,21 +44,90 @@ export function ResultsOverview({ results }: ResultsOverviewProps) {
     }
   };
 
+  // Get type-specific icon and styling
+  const getElectionTypeIcon = (type: ElectionType) => {
+    switch (type) {
+      case 'leadership':
+        return Crown;
+      case 'board':
+        return Building;
+      case 'initiative':
+        return Vote;
+      default:
+        return Users;
+    }
+  };
+
+  const TypeIcon = getElectionTypeIcon(electionType);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{results.election.title}</h1>
-          <p className="text-muted-foreground mt-1">{results.election.description}</p>
+          <div className="flex items-center gap-3 mb-2">
+            <TypeIcon className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">{results.election.title}</h1>
+              <p className="text-sm text-muted-foreground capitalize">
+                {getElectionTypeDescription(electionType)}
+              </p>
+            </div>
+          </div>
+          <p className="text-muted-foreground">{results.election.description}</p>
         </div>
-        <Badge className={getStatusColor(results.election.status)}>
-          {getStatusText(results.election.status)}
-        </Badge>
+        <div className="flex flex-col gap-2 items-end">
+          <Badge className={getStatusColor(results.election.status)}>
+            {getStatusText(results.election.status)}
+          </Badge>
+          {electionType && (
+            <Badge variant="outline" className="capitalize">
+              {electionType} Election
+            </Badge>
+          )}
+        </div>
       </div>
 
-      {/* Statistics Cards */}
+      {/* Enhanced stats cards with type-aware content */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {electionType === 'initiative' ? 'Ballot Items' : 'Positions'}
+            </CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{results.positions.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {electionType === 'initiative' ? 'initiatives to vote on' : 'available positions'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {electionType === 'initiative' ? 'Options' : 'Candidates'}
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {electionType === 'initiative' 
+                ? results.initiativeResults.length * 3 // Yes, No, Abstain options
+                : results.candidateResults.length
+              }
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {supportsUnopposed && results.votingStatus.candidatesElectedUnopposed 
+                ? 'including unopposed' 
+                : electionType === 'initiative' ? 'total options' : 'running for office'
+              }
+            </p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Voters</CardTitle>
@@ -106,6 +180,84 @@ export function ResultsOverview({ results }: ResultsOverviewProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Voting Status Section - Show when separate voting periods are enabled */}
+      {results.election.enableSeparateVotingPeriods && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Vote className="h-5 w-5" />
+              Voting Status
+            </CardTitle>
+            <CardDescription>
+              This election has separate voting periods for different ballot items
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                <div>
+                  <p className="font-medium">Candidate Voting</p>
+                  <p className="text-sm text-muted-foreground">
+                    {results.votingStatus.candidateVotingOpen ? 'Currently accepting votes' : 'No longer accepting votes'}
+                  </p>
+                </div>
+                <Badge variant={results.votingStatus.candidateVotingOpen ? 'default' : 'secondary'}>
+                  {results.votingStatus.candidateVotingOpen ? 'Open' : 'Closed'}
+                </Badge>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                <div>
+                  <p className="font-medium">Initiative Voting</p>
+                  <p className="text-sm text-muted-foreground">
+                    {results.votingStatus.initiativeVotingOpen ? 'Currently accepting votes' : 'No longer accepting votes'}
+                  </p>
+                </div>
+                <Badge variant={results.votingStatus.initiativeVotingOpen ? 'default' : 'secondary'}>
+                  {results.votingStatus.initiativeVotingOpen ? 'Open' : 'Closed'}
+                </Badge>
+              </div>
+
+              {results.votingStatus.candidatesElectedUnopposed && (
+                <div className="flex items-center justify-between p-3 bg-blue-100 rounded-lg border border-blue-200">
+                  <div>
+                    <p className="font-medium text-blue-900">Leadership Positions</p>
+                    <p className="text-sm text-blue-700">Candidate voting closed early</p>
+                  </div>
+                  <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                    <Trophy className="w-3 h-3 mr-1" />
+                    Elected Unopposed
+                  </Badge>
+                </div>
+              )}
+            </div>
+
+            {/* Show candidate voting period details if available */}
+            {results.election.candidateVotingEnd && (
+              <div className="mt-4 pt-4 border-t bg-blue-50 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-900">Candidate Voting Period</p>
+                    <p className="text-sm text-blue-700">
+                      {results.election.candidateVotingStart ? 
+                        new Date(results.election.candidateVotingStart).toLocaleString() : 
+                        new Date(results.election.startDate).toLocaleString()
+                      } → {new Date(results.election.candidateVotingEnd).toLocaleString()}
+                    </p>
+                    {!results.votingStatus.candidateVotingOpen && (
+                      <p className="text-xs text-blue-600 mt-1 font-medium">
+                        💡 Candidate voting was closed before the general election end time to allow candidates to be elected unopposed
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
@@ -125,6 +277,24 @@ export function CandidateResults({ results }: CandidateResultsProps) {
 
   return (
     <div className="space-y-6">
+      {/* Show unopposed status banner if applicable */}
+      {results.votingStatus.candidatesElectedUnopposed && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Trophy className="h-6 w-6 text-blue-600" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900">All Candidates Elected Unopposed</h3>
+                <p className="text-sm text-blue-700">
+                  Candidate voting was closed early to allow unopposed candidates to be elected to their positions. 
+                  All leadership positions have been filled without requiring a competitive vote.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {Object.entries(groupedCandidates).map(([position, candidates]) => (
         <Card key={position}>
           <CardHeader>

@@ -39,6 +39,15 @@ export interface ElectionResults {
     startDate: string;
     endDate: string;
     type: string;
+    candidateVotingStart?: string | null;
+    candidateVotingEnd?: string | null;
+    enableSeparateVotingPeriods?: boolean;
+    showUnopposedStatus?: boolean;
+  };
+  votingStatus: {
+    candidateVotingOpen: boolean;
+    initiativeVotingOpen: boolean;
+    candidatesElectedUnopposed: boolean;
   };
   statistics: {
     totalVoters: number;
