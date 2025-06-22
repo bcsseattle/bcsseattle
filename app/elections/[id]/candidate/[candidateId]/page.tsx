@@ -76,7 +76,7 @@ export default async function CandidatePage2(props: Props) {
   // Fetch election details separately
   const { data: election, error: electionError } = await supabase
     .from('elections')
-    .select('title, description, start_date, end_date, status')
+    .select('title, description, start_date, end_date, status, candidate_voting_end, enable_separate_voting_periods, show_unopposed_status')
     .eq('id', candidate.election_id!!)
     .single();
 
@@ -102,6 +102,25 @@ export default async function CandidatePage2(props: Props) {
     hasUserVoted = !!voteSession?.completed_at;
     userVoteSession = voteSession;
   }
+
+  // Check if candidate voting has ended
+  const isCandidateVotingEnded = () => {
+    if (!election) return false;
+    
+    const now = new Date();
+    const generalEndDate = new Date(election.end_date);
+    
+    // If separate voting periods are enabled, check candidate-specific end date
+    if (election.enable_separate_voting_periods && election.candidate_voting_end) {
+      const candidateEndDate = new Date(election.candidate_voting_end);
+      return now > candidateEndDate;
+    }
+    
+    // Otherwise, use general election end date
+    return now > generalEndDate;
+  };
+
+  const candidateVotingEnded = isCandidateVotingEnded();
 
   // Get candidate's initials for avatar fallback
   const getInitials = (name: string) => {
@@ -264,9 +283,30 @@ export default async function CandidatePage2(props: Props) {
                     </div>
                   )}
 
-                  {candidateWithElection.elections?.end_date && (
+                  {/* Show candidate-specific end date if different from general election */}
+                  {candidateWithElection.elections?.enable_separate_voting_periods && 
+                   candidateWithElection.elections?.candidate_voting_end ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Candidate Voting Ends:</span>
+                      <span className="font-medium">
+                        {formatDate(candidateWithElection.elections.candidate_voting_end)}
+                      </span>
+                    </div>
+                  ) : candidateWithElection.elections?.end_date && (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Voting Ends:</span>
+                      <span className="font-medium">
+                        {formatDate(candidateWithElection.elections.end_date)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Show general election end date if candidate voting ends earlier */}
+                  {candidateWithElection.elections?.enable_separate_voting_periods && 
+                   candidateWithElection.elections?.candidate_voting_end &&
+                   candidateWithElection.elections?.end_date && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Election Ends:</span>
                       <span className="font-medium">
                         {formatDate(candidateWithElection.elections.end_date)}
                       </span>
@@ -276,11 +316,18 @@ export default async function CandidatePage2(props: Props) {
                   {candidateWithElection.elections?.status && (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Status:</span>
-                      <Badge variant="outline" className="capitalize">
-                        {candidateWithElection.elections.status.replace(
-                          '_',
-                          ' '
-                        )}
+                      <Badge 
+                        variant="outline" 
+                        className={`capitalize ${
+                          candidateVotingEnded 
+                            ? 'border-gray-300 text-gray-600' 
+                            : 'border-green-300 text-green-700'
+                        }`}
+                      >
+                        {candidateVotingEnded 
+                          ? 'Candidate Voting Closed' 
+                          : candidateWithElection.elections.status.replace('_', ' ')
+                        }
                       </Badge>
                     </div>
                   )}
@@ -321,6 +368,23 @@ export default async function CandidatePage2(props: Props) {
                           </Button>
                         </Link>
                       </div>
+                    ) : candidateVotingEnded ? (
+                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="text-center">
+                          <div className="flex items-center justify-center text-gray-600 mb-2">
+                            <Award className="h-4 w-4 mr-2" />
+                            <span className="font-medium">Candidate Voting Closed</span>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-3">
+                            Voting for candidates has ended for this election
+                          </p>
+                          <Link href={`/elections/${electionId}/candidate`} className="w-full">
+                            <Button variant="outline" className="w-full">
+                              View Election Results
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
                     ) : (
                       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <div className="text-center">
@@ -342,6 +406,23 @@ export default async function CandidatePage2(props: Props) {
                         </div>
                       </div>
                     )
+                  ) : candidateVotingEnded ? (
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="text-center">
+                        <div className="flex items-center justify-center text-gray-600 mb-2">
+                          <Award className="h-4 w-4 mr-2" />
+                          <span className="font-medium">Candidate Voting Closed</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Voting for candidates has ended for this election
+                        </p>
+                        <Link href={`/elections/${electionId}/candidate`} className="w-full">
+                          <Button variant="outline" className="w-full">
+                            View Election Results
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
                   ) : (
                     <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
                       <div className="text-center">

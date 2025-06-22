@@ -32,13 +32,20 @@ export default async function CandidateVotePage(props: Props) {
     notFound();
   }
 
-  // Check if voting is open
+  // Check if candidate voting is open
   const now = new Date();
   const start = new Date(election.start_date);
   const end = new Date(election.end_date);
-  const isVotingOpen = now >= start && now <= end;
+  
+  // Check candidate-specific voting period if separate periods are enabled
+  let isCandidateVotingOpen = now >= start && now <= end;
+  
+  if (election.enable_separate_voting_periods && election.candidate_voting_end) {
+    const candidateEnd = new Date(election.candidate_voting_end);
+    isCandidateVotingOpen = now >= start && now <= candidateEnd;
+  }
 
-  if (!isVotingOpen) {
+  if (!isCandidateVotingOpen) {
     redirect(`/elections/${id}`);
   }
 
