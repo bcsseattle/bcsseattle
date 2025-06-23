@@ -111,68 +111,67 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   const totalPositions = Object.keys(candidatesByPosition).length;
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <Link href={`/elections/${id}`}>
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Election
-              </Button>
-            </Link>
+    <div className="container mx-auto py-3 sm:py-8 space-y-3 sm:space-y-6 px-3 sm:px-4">
+      {/* Header - Minimalist Mobile */}
+      <div className="space-y-3 sm:space-y-4">
+        <div className="flex items-center justify-between">
+          <Link href={`/elections/${id}`}>
+            <Button variant="ghost" size="sm" className="text-xs sm:text-sm -ml-2">
+              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <span className="hidden sm:inline">Back</span>
+            </Button>
+          </Link>
+          
+          {/* Mobile: Show status in header */}
+          <div className="sm:hidden">
+            {votingEnded ? (
+              <Badge variant="secondary" className="text-xs">Results</Badge>
+            ) : (
+              <Badge variant="outline" className="text-xs">Voting Open</Badge>
+            )}
           </div>
-          <h1 className="text-3xl font-bold">Candidates</h1>
-          <p className="text-muted-foreground">{election.title}</p>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <Badge variant="outline">Leadership</Badge>
+        <div className="space-y-1 sm:space-y-2">
+          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold">Candidates</h1>
+          <p className="text-xs sm:text-base text-muted-foreground line-clamp-1 sm:line-clamp-none">{election.title}</p>
+        </div>
+        
+        {/* Desktop: Show badges */}
+        <div className="hidden sm:flex items-center gap-2">
+          <Badge variant="outline" className="text-xs">Leadership</Badge>
           {votingEnded && (
-            <Badge variant="secondary">Final Results</Badge>
+            <Badge variant="secondary" className="text-xs">Final Results</Badge>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-2xl font-bold">{totalCandidates}</p>
-                <p className="text-sm text-muted-foreground">Total Candidates</p>
-              </div>
-            </div>
-          </CardContent>
+      {/* Summary Stats - Simplified for Mobile */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <Card className="p-2 sm:p-6">
+          <div className="text-center">
+            <Users className="h-3 w-3 sm:h-5 sm:w-5 text-blue-600 mx-auto mb-1" />
+            <p className="text-sm sm:text-2xl font-bold">{totalCandidates}</p>
+            <p className="text-[10px] sm:text-sm text-muted-foreground">Candidates</p>
+          </div>
         </Card>
         
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <Trophy className="h-5 w-5 text-yellow-600" />
-              <div>
-                <p className="text-2xl font-bold">{totalPositions}</p>
-                <p className="text-sm text-muted-foreground">Positions</p>
-              </div>
-            </div>
-          </CardContent>
+        <Card className="p-2 sm:p-6">
+          <div className="text-center">
+            <Trophy className="h-3 w-3 sm:h-5 sm:w-5 text-yellow-600 mx-auto mb-1" />
+            <p className="text-sm sm:text-2xl font-bold">{totalPositions}</p>
+            <p className="text-[10px] sm:text-sm text-muted-foreground">Positions</p>
+          </div>
         </Card>
         
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm font-medium">
-                  {votingEnded ? 'Voting Closed' : 'Voting Open'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Election Status
-                </p>
-              </div>
-            </div>
-          </CardContent>
+        <Card className="p-2 sm:p-6">
+          <div className="text-center">
+            <Clock className="h-3 w-3 sm:h-5 sm:w-5 text-green-600 mx-auto mb-1" />
+            <p className="text-xs sm:text-sm font-medium">
+              {votingEnded ? 'Closed' : 'Open'}
+            </p>
+            <p className="text-[10px] sm:text-sm text-muted-foreground">Status</p>
+          </div>
         </Card>
       </div>
 
@@ -187,99 +186,111 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-8">
           {Object.entries(candidatesByPosition).map(([position, positionCandidates]: [string, CandidateWithResults[]]) => (
-            <div key={position} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold">{position}</h2>
-                <Badge variant="outline">
-                  {positionCandidates.length} candidate{positionCandidates.length !== 1 ? 's' : ''}
-                </Badge>
+            <div key={position} className="space-y-2 sm:space-y-4">
+              {/* Position Header - Cleaner Mobile */}
+              <div className="space-y-1 sm:space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                  <h2 className="text-base sm:text-xl lg:text-2xl font-semibold">{position}</h2>
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <Badge variant="outline" className="text-[10px] sm:text-xs">
+                      {positionCandidates.length} candidate{positionCandidates.length !== 1 ? 's' : ''}
+                    </Badge>
+                    {!votingEnded && positionCandidates.length === 1 && (election.show_unopposed_status !== false) && (
+                      <Badge variant="secondary" className="text-[10px] sm:text-xs">Unopposed</Badge>
+                    )}
+                  </div>
+                </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Candidate Cards - Mobile: Single column with compact design */}
+              <div className="space-y-2 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-4 sm:space-y-0">
                 {positionCandidates.map((candidate: CandidateWithResults) => (
-                  <Card key={candidate.id} className="relative">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start space-x-4">
-                        <Avatar className="h-16 w-16">
+                  <Card key={candidate.id} className="overflow-hidden">
+                    {/* Mobile: Compact horizontal layout */}
+                    <div className="p-3 sm:p-4">
+                      <div className="flex sm:block space-x-3 sm:space-x-0 items-start sm:items-center">
+                        {/* Avatar - Smaller on mobile */}
+                        <Avatar className="h-10 w-10 sm:h-16 sm:w-16 sm:mx-auto flex-shrink-0">
                           <AvatarImage src={candidate.photo_url || undefined} alt={candidate.full_name} />
-                          <AvatarFallback className="text-lg">
+                          <AvatarFallback className="text-xs sm:text-lg">
                             {candidate.full_name.split(' ').map((n: string) => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-lg">{candidate.full_name}</CardTitle>
-                          <p className="text-sm text-muted-foreground">{position}</p>
+                        
+                        <div className="flex-1 min-w-0 sm:mt-3 sm:text-center">
+                          {/* Name - Truncated on mobile */}
+                          <h3 className="font-semibold text-sm sm:text-base lg:text-lg truncate sm:whitespace-normal">
+                            {candidate.full_name}
+                          </h3>
                           
-                          <div className="flex items-center gap-2 mt-2">
+                          {/* Mobile: Show position only, Desktop: show badges below */}
+                          <p className="text-xs text-muted-foreground sm:hidden truncate">{position}</p>
+                          
+                          {/* Status Badges - More compact for mobile */}
+                          <div className="flex flex-wrap items-center gap-1 mt-1 sm:mt-2 sm:justify-center">
                             {votingEnded && (
                               <>
                                 {candidate.is_winner && (
-                                  <Badge variant="default" className="flex items-center gap-1">
-                                    <Trophy className="h-3 w-3" />
-                                    Elected
+                                  <Badge variant="default" className="text-[10px] sm:text-xs flex items-center gap-1">
+                                    <Trophy className="h-2 w-2 sm:h-3 sm:w-3" />
+                                    <span className="sm:hidden">Won</span>
+                                    <span className="hidden sm:inline">Elected</span>
                                   </Badge>
                                 )}
-                                {candidate.vote_count !== undefined && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {candidate.vote_count} votes ({candidate.percentage}%)
+                                {candidate.vote_count !== undefined && candidate.vote_count > 0 && (
+                                  <Badge variant="outline" className="text-[10px] sm:text-xs">
+                                    {candidate.vote_count}
                                   </Badge>
                                 )}
-                                {candidate.ranking && candidate.ranking > 1 && !candidate.is_winner && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    #{candidate.ranking}
+                                {candidate.percentage !== undefined && candidate.percentage > 0 && (
+                                  <Badge variant="secondary" className="text-[10px] sm:text-xs">
+                                    {candidate.percentage}%
                                   </Badge>
                                 )}
                               </>
                             )}
-                            
-                            {!votingEnded && 
-                             positionCandidates.length === 1 && 
-                             (election.show_unopposed_status !== false) && (
-                              <Badge variant="outline">Elected Unopposed</Badge>
-                            )}
                           </div>
+                          
+                          {/* Vote percentage bar - Desktop only */}
+                          {votingEnded && candidate.percentage !== undefined && candidate.percentage > 0 && (
+                            <div className="hidden sm:block mt-2">
+                              <div className="w-full bg-muted rounded-full h-1.5">
+                                <div 
+                                  className={`h-1.5 rounded-full transition-all duration-500 ${
+                                    candidate.is_winner ? 'bg-green-600' : 'bg-blue-600'
+                                  }`}
+                                  style={{ width: `${candidate.percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </CardHeader>
-                    
-                    <CardContent className="pt-0">
+                      
+                      {/* Bio - Hidden on mobile, collapsed on tablet, full on desktop */}
                       {candidate.bio && (
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                          {candidate.bio}
-                        </p>
+                        <div className="hidden sm:block mt-3 sm:mt-4">
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 lg:line-clamp-3">
+                            {candidate.bio}
+                          </p>
+                        </div>
                       )}
                       
-                      <div className="flex items-center gap-2">
-                        {candidate.manifesto && (
+                      {/* Manifesto Button - Icon only on mobile */}
+                      {candidate.manifesto && (
+                        <div className="mt-2 sm:mt-4">
                           <Link href={candidate.manifesto} target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" size="sm" className="flex items-center gap-1">
-                              <FileText className="h-3 w-3" />
-                              Manifesto
-                              <ExternalLink className="h-3 w-3" />
+                            <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                              <FileText className="h-3 w-3 sm:mr-2" />
+                              <span className="hidden sm:inline">View Manifesto</span>
+                              <ExternalLink className="h-3 w-3 ml-1 sm:ml-2" />
                             </Button>
                           </Link>
-                        )}
-                      </div>
-                      
-                      {votingEnded && candidate.percentage !== undefined && candidate.percentage > 0 && (
-                        <div className="mt-4 space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span>Vote Share</span>
-                            <span>{candidate.percentage}%</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full transition-all duration-500 ${
-                                candidate.is_winner ? 'bg-green-600' : 'bg-blue-600'
-                              }`}
-                              style={{ width: `${candidate.percentage}%` }}
-                            />
-                          </div>
                         </div>
                       )}
-                    </CardContent>
+                    </div>
                   </Card>
                 ))}
               </div>

@@ -11,7 +11,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Candidate, Election, ElectionPosition, Position } from '@/types';
 import { Users, Crown, Trophy, Award } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 import { getCandidateResults } from '@/utils/election-config';
 
 interface Props {
@@ -137,47 +136,49 @@ export default async function Candidates({
             )}
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-3 sm:space-y-6">
             {groupCandidatesByPosition(candidates ?? []).map(
               ({ position, positionData, candidates: positionCandidates, isUnopposed }) => (
-                <div key={position} className="space-y-4">
-                  {/* Enhanced Position Header with Description */}
-                  <div className="border-b border-gray-200 pb-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-sm">
+                <div key={position} className="space-y-2 sm:space-y-3">
+                  {/* Mobile-Optimized Position Header */}
+                  <div className="border-b border-gray-200 pb-2 sm:pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-0 mb-1 sm:mb-2">
+                      <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+                        <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-xs sm:text-sm">
                             {positionData?.display_order || '?'}
                           </span>
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900">
-                          {position}
-                        </h3>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm sm:text-xl font-semibold text-gray-900 leading-tight">
+                            {position}
+                          </h3>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs whitespace-nowrap">
                           {positionCandidates.length} candidate
                           {positionCandidates.length !== 1 ? 's' : ''}
                         </Badge>
                         {candidatesElectedUnopposed && isUnopposed && (
-                          <Badge variant="default" className="bg-green-600 text-white">
-                            <Crown className="w-3 h-3 mr-1" />
+                          <Badge variant="default" className="bg-green-600 text-white text-[10px] sm:text-xs whitespace-nowrap">
+                            <Crown className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />
                             Unopposed
                           </Badge>
                         )}
                       </div>
                     </div>
 
-                    {/* Position Description */}
+                    {/* Position Description - Hidden on mobile */}
                     {positionData?.description && (
-                      <div className="ml-11 text-sm text-gray-600 leading-relaxed">
+                      <div className="hidden sm:block ml-11 text-sm text-gray-600 leading-relaxed">
                         {positionData.description}
                       </div>
                     )}
                   </div>
 
-                  {/* Candidates Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Candidates Grid - Mobile: Single column, tighter spacing */}
+                  <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
                     {positionCandidates.map((candidate) => {
                       const showElected = candidatesElectedUnopposed && isUnopposed;
                       
@@ -193,98 +194,94 @@ export default async function Candidates({
                           href={`/elections/${election.id}/candidate/${candidate.id}`}
                         >
                           <Card className="hover:shadow-md transition-shadow border-l-4 border-l-blue-200 relative">
-                            <CardContent className="p-4">
-                              {/* Election Status Badges */}
-                              <div className="absolute top-2 right-2 flex flex-col gap-1">
-                                {/* Elected badge for winners */}
-                                {isWinner && (
-                                  <Badge
-                                    variant="default"
-                                    className="bg-green-600 text-white shadow-md"
-                                  >
-                                    <Crown className="w-3 h-3 mr-1" />
-                                    Elected
-                                  </Badge>
-                                )}
-                                {/* Unopposed badge */}
-                                {showElected && (
-                                  <Badge
-                                    variant="default"
-                                    className="bg-blue-600 text-white shadow-md"
-                                  >
-                                    <Trophy className="w-3 h-3 mr-1" />
-                                    Unopposed
-                                  </Badge>
-                                )}
-                                {/* Vote count badge */}
-                                {hasVoteResults && candidateResult && (
-                                  <Badge
-                                    variant="outline"
-                                    className="bg-white/90 text-gray-700 shadow-sm"
-                                  >
-                                    {candidateResult.voteCount} vote{candidateResult.voteCount !== 1 ? 's' : ''}
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              <div className="flex items-start gap-4">
-                                <Avatar className="h-24 w-24 border-4 border-white shadow-lg rounded-full overflow-hidden">
-                                  <AvatarImage
-                                    src={candidate.photo_url || ''}
-                                    alt={candidate.full_name}
-                                    className="object-cover w-full h-full rounded-full"
-                                  />
-                                  <AvatarFallback className="text-xl font-semibold bg-gradient-to-br from-blue-500 to-indigo-600 text-white w-full h-full flex items-center justify-center rounded-full">
-                                    {getInitials(candidate.full_name)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-gray-900 truncate">
-                                    {candidate.full_name}
-                                    {isWinner && (
-                                      <Crown className="w-4 h-4 ml-2 inline text-green-600" />
-                                    )}
-                                    {showElected && !isWinner && (
-                                      <Trophy className="w-4 h-4 ml-2 inline text-blue-600" />
-                                    )}
-                                  </h4>
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    <Badge variant="secondary" className="text-xs">
+                            <CardContent className="p-3 sm:p-4">
+                              {/* Mobile: Horizontal Layout, Desktop: Vertical centered */}
+                              <div className="flex sm:flex-col gap-3 sm:gap-2 items-start sm:items-center">
+                                {/* Avatar - Smaller on mobile */}
+                                <div className="h-12 w-12 sm:h-20 sm:w-20 border-2 sm:border-4 border-white shadow-lg rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                  {candidate.photo_url ? (
+                                    <img
+                                      src={candidate.photo_url}
+                                      alt={candidate.full_name}
+                                      className="object-cover w-full h-full rounded-full"
+                                    />
+                                  ) : (
+                                    <span className="text-sm sm:text-lg font-semibold text-white">
+                                      {getInitials(candidate.full_name)}
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                <div className="flex-1 min-w-0 sm:w-full sm:text-center">
+                                  {/* Name and Status */}
+                                  <div className="space-y-1 sm:space-y-1.5">
+                                    <h4 className="font-semibold text-sm sm:text-base text-gray-900 leading-tight">
+                                      {candidate.full_name}
+                                    </h4>
+                                    
+                                    {/* Mobile: Show position, Desktop: Hide (already in header) */}
+                                    <p className="text-xs text-gray-500 sm:hidden leading-tight">
                                       {candidate.position}
-                                    </Badge>
-                                    {isWinner && (
-                                      <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-300">
-                                        Winner
-                                      </Badge>
-                                    )}
-                                    {showElected && !isWinner && (
-                                      <Badge variant="default" className="text-xs bg-blue-100 text-blue-800 border-blue-300">
-                                        Unopposed
-                                      </Badge>
-                                    )}
-                                    {hasVoteResults && candidateResult && positionResults.length > 1 && (
-                                      <Badge variant="outline" className="text-xs">
-                                        #{positionResults.findIndex(r => r.candidateId === candidate.id) + 1}
-                                      </Badge>
-                                    )}
+                                    </p>
+                                    
+                                    {/* Status Badges - Compact for mobile */}
+                                    <div className="flex flex-wrap gap-1 sm:justify-center">
+                                      {/* Winner badge */}
+                                      {isWinner && (
+                                        <Badge variant="default" className="text-[10px] sm:text-xs bg-green-600 text-white whitespace-nowrap">
+                                          <Crown className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />
+                                          <span className="sm:hidden">Won</span>
+                                          <span className="hidden sm:inline">Elected</span>
+                                        </Badge>
+                                      )}
+                                      
+                                      {/* Unopposed badge */}
+                                      {showElected && !isWinner && (
+                                        <Badge variant="default" className="text-[10px] sm:text-xs bg-blue-600 text-white whitespace-nowrap">
+                                          <Trophy className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />
+                                          <span className="sm:hidden">Unop.</span>
+                                          <span className="hidden sm:inline">Unopposed</span>
+                                        </Badge>
+                                      )}
+                                      
+                                      {/* Vote count badge */}
+                                      {hasVoteResults && candidateResult && (
+                                        <Badge variant="outline" className="text-[10px] sm:text-xs whitespace-nowrap">
+                                          {candidateResult.voteCount}
+                                          <span className="hidden sm:inline">
+                                            {' '}vote{candidateResult.voteCount !== 1 ? 's' : ''}
+                                          </span>
+                                        </Badge>
+                                      )}
+                                      
+                                      {/* Ranking badge */}
+                                      {hasVoteResults && candidateResult && positionResults.length > 1 && (
+                                        <Badge variant="secondary" className="text-[10px] sm:text-xs whitespace-nowrap">
+                                          #{positionResults.findIndex(r => r.candidateId === candidate.id) + 1}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Candidate ID - Smaller on mobile */}
+                                    <p className="text-[10px] sm:text-xs text-gray-400">
+                                      ID: {candidate.id.slice(0, 8)}...
+                                    </p>
                                   </div>
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Candidate ID: {candidate.id.slice(0, 8)}...
-                                  </p>
                                 </div>
                               </div>
 
+                              {/* Bio - Hidden on mobile to reduce clutter */}
                               {candidate.bio && (
-                                <div className="mt-4 pt-3 border-t border-gray-100">
-                                  <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
+                                <div className="hidden sm:block mt-3 pt-2 border-t border-gray-100">
+                                  <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
                                     {candidate.bio}
                                   </p>
                                 </div>
                               )}
                               
-                              {/* Results summary */}
+                              {/* Results summary - Simplified for mobile */}
                               {hasVoteResults && candidateResult && positionResults.length > 1 && (
-                                <div className="mt-3 pt-3 border-t border-gray-100">
+                                <div className="hidden sm:block mt-2 pt-2 border-t border-gray-100">
                                   <div className="flex items-center justify-between text-xs text-gray-500">
                                     <span>
                                       Rank: #{positionResults.findIndex(r => r.candidateId === candidate.id) + 1} of {positionResults.length}
@@ -308,25 +305,28 @@ export default async function Candidates({
         )}
       </CardContent>
 
-      {/* Additional Election Info */}
-      <CardFooter className="bg-gray-50 rounded-b-lg">
-        <div className="w-full space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Total Positions:</span>
-            <Badge variant="outline">{positionOrder.length}</Badge>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Total Candidates:</span>
-            <Badge variant="outline">{candidates?.length || 0}</Badge>
-          </div>
-          {candidates && candidates.length > 0 && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Competition Ratio:</span>
-              <Badge variant="outline">
-                {(candidates.length / positionOrder.length).toFixed(1)}:1
-              </Badge>
+      {/* Mobile-Optimized Election Info */}
+      <CardFooter className="bg-gray-50 rounded-b-lg p-3 sm:p-6">
+        <div className="w-full">
+          {/* Mobile: Horizontal layout, Desktop: Vertical */}
+          <div className="grid grid-cols-3 gap-2 sm:space-y-2 sm:grid-cols-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm">
+              <span className="text-gray-600 text-[10px] sm:text-sm leading-tight">Positions:</span>
+              <Badge variant="outline" className="text-[10px] sm:text-xs mt-0.5 sm:mt-0 whitespace-nowrap">{positionOrder.length}</Badge>
             </div>
-          )}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm">
+              <span className="text-gray-600 text-[10px] sm:text-sm leading-tight">Candidates:</span>
+              <Badge variant="outline" className="text-[10px] sm:text-xs mt-0.5 sm:mt-0 whitespace-nowrap">{candidates?.length || 0}</Badge>
+            </div>
+            {candidates && candidates.length > 0 && (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm">
+                <span className="text-gray-600 text-[10px] sm:text-sm leading-tight">Ratio:</span>
+                <Badge variant="outline" className="text-[10px] sm:text-xs mt-0.5 sm:mt-0 whitespace-nowrap">
+                  {(candidates.length / positionOrder.length).toFixed(1)}:1
+                </Badge>
+              </div>
+            )}
+          </div>
         </div>
       </CardFooter>
     </Card>
