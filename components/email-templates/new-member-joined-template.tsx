@@ -25,7 +25,11 @@ export const NewMemberJoinedTemplate = ({
   email = '',
   membershipType = 'Standard',
   signupDate = new Date().toLocaleDateString()
-}: NewMemberJoinedTemplateProps) => (
+}: NewMemberJoinedTemplateProps) => {
+  // Handle cases where name might be undefined or empty
+  const displayName = name && name.trim() ? name : email.split('@')[0] || 'New Member';
+  
+  return (
   <Html>
     <Head>
       <Preview>New Member Joined BCS Seattle</Preview>
@@ -40,15 +44,15 @@ export const NewMemberJoinedTemplate = ({
             height={100}
           />
 
-          <Heading>New Member Alert</Heading>
+          <Heading>New Member Registration</Heading>
           <Text style={paragraph}>Dear Admin,</Text>
           <Text style={paragraph}>
-            A new member has joined BCS Seattle! Here are the details:
+            A new member has registered and is awaiting approval. Please review their information below:
           </Text>
 
           <Section style={memberDetails}>
             <Text style={detailItem}>
-              <strong>Name:</strong> {name}
+              <strong>Name:</strong> {displayName}
             </Text>
             <Text style={detailItem}>
               <strong>Email:</strong> {email}
@@ -59,15 +63,18 @@ export const NewMemberJoinedTemplate = ({
             <Text style={detailItem}>
               <strong>Signup Date:</strong> {signupDate}
             </Text>
+            <Text style={{...detailItem, color: '#d69e2e', fontWeight: 'bold'}}>
+              <strong>Status:</strong> Pending Approval
+            </Text>
           </Section>
 
           <Link style={button} href={`${baseUrl}/admin/members`}>
-            View Member Dashboard
+            Review & Approve Member
           </Link>
 
           <Text style={paragraph}>
-            Please reach out to welcome the new member and provide them with any
-            necessary onboarding information.
+            This member requires approval before they can access member-only features. 
+            Please review their information and approve their membership to complete their onboarding.
           </Text>
 
           <Text style={footer}>BCS Seattle Admin Notification System</Text>
@@ -76,6 +83,7 @@ export const NewMemberJoinedTemplate = ({
     </Body>
   </Html>
 );
+}
 
 const main = {
   backgroundColor: '#f6f9fc',

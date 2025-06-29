@@ -7,12 +7,13 @@ import { Member } from '@/types';
 interface Props {
   user: User | null | undefined;
   member: Member | null | undefined;
+  isAdmin?: boolean;
 }
-export default function TopNavigation({ user, member }: Props) {
+export default function TopNavigation({ user, member, isAdmin }: Props) {
   return (
     <div>
       <NavigationMenu>
-        <Navlinks user={user} member={member} />
+        <Navlinks user={user} member={member} isAdmin={isAdmin} />
       </NavigationMenu>
     </div>
   );

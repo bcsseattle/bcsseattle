@@ -19,6 +19,7 @@ import {
 import { Button } from '../button';
 import { User } from '@supabase/supabase-js';
 import { Member } from '@/types';
+import { Shield, Users, Vote, Settings } from 'lucide-react';
 
 const components: { title: string; href: string; description: string }[] = [
   { title: 'What we do', href: '/what-we-do', description: '' },
@@ -30,9 +31,10 @@ const components: { title: string; href: string; description: string }[] = [
 interface NavlinksProps {
   user: User | null | undefined;
   member: Member | null | undefined;
+  isAdmin?: boolean;
 }
 
-export default function Navlinks({ user, member }: NavlinksProps) {
+export default function Navlinks({ user, member, isAdmin }: NavlinksProps) {
   const router = getRedirectMethod() === 'client' ? useRouter() : null;
   const currentPath = usePathname();
 
@@ -108,6 +110,33 @@ export default function Navlinks({ user, member }: NavlinksProps) {
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
+        
+        {/* Show admin menu only for admin users */}
+        {user && isAdmin && (
+          <NavigationMenuItem>
+            <NavigationMenuTrigger>
+              <Shield className="h-4 w-4 mr-2" />
+              Admin
+            </NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
+                <ListItem href="/admin/members" title="Member Management">
+                  <Users className="h-4 w-4 mr-2 inline" />
+                  Review and approve member applications
+                </ListItem>
+                <ListItem href="/admin/elections" title="Election Management">
+                  <Vote className="h-4 w-4 mr-2 inline" />
+                  Manage elections and voting
+                </ListItem>
+                <ListItem href="/admin/settings" title="Settings">
+                  <Settings className="h-4 w-4 mr-2 inline" />
+                  System configuration and settings
+                </ListItem>
+              </ul>
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+        )}
+        
         {/* Show membership menu only for users with active approved membership */}
         {user && member && (member?.status === 'active' || member?.isApproved) && (
           <>
