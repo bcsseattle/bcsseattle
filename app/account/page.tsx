@@ -19,64 +19,97 @@ export default async function Account(props: { searchParams: SearchParams }) {
     data: { user }
   } = await supabase.auth.getUser();
 
-  const { data: userDetails } = await supabase
-    .from('users')
-    .select('*')
-    .single();
-
-  const { data: subscription, error } = await supabase
-    .from('subscriptions')
-    .select('*, prices(*, products(*))')
-    .eq('status', 'active')
-    .maybeSingle();
-
-  if (error) {
-    console.log(error);
-  }
-
   if (!user) {
     return redirect(`/signin?redirectTo=${redirectTo}`);
   }
 
-  const { data: member } = await supabase
-    .from('members')
-    .select('*')
-    .eq('user_id', user?.id)
-    .maybeSingle();
+  // Run user-related queries in parallel for better performance
+  const [
+    { data: userDetails },
+    { data: subscriptions, error: subscriptionError },
+    { data: member }
+  ] = await Promise.all([
+    supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle(),
+    supabase
+      .from('subscriptions')
+      .select('*, prices(*, products(*))')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('created', { ascending: false }),
+    supabase
+      .from('members')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle()
+  ]);
+
+  if (subscriptionError) {
+    console.error('Subscription query error:', subscriptionError);
+  }
 
   if (!member) {
     return redirect('/register');
   }
 
-  if (member?.status === 'inactive') {
+  if (member.status === 'inactive') {
     return redirect('/register');
   }
 
+  // Fetch donor and donations data in parallel if needed
   const { data: donor } = await supabase
     .from('donors')
     .select('*')
-    .eq('user_id', user?.id)
+    .eq('user_id', user.id)
     .maybeSingle();
 
   let donations: Donation[] = [];
-  if (donor) {
-    const { data } = await supabase
+  if (donor?.id) {
+    const { data: donationData, error: donationError } = await supabase
       .from('donations')
       .select('*')
-      .eq('donor_id', donor?.id);
-    donations = data ? data : [];
+      .eq('donor_id', donor.id)
+      .order('donation_date', { ascending: false }); // Order by donation_date (most recent first)
+    
+    if (donationError) {
+      console.error('Donations query error:', donationError);
+    } else {
+      donations = donationData || [];
+    }
   }
 
   return (
     <section className="my-8">
-      <div className="space-y-4">
-        {donations && donations.length > 0 && (
-          <DonationReceiptForm donations={donations} />
-        )}
-        <ReceiptForm member={member} />
-        <CustomerPortalForm subscription={subscription} />
-        <NameForm userName={userDetails?.full_name ?? ''} />
-        <EmailForm userEmail={user.email} />
+      <div className="max-w-4xl mx-auto px-4">
+        <h1 className="text-2xl font-bold mb-6">Account Settings</h1>
+        <div className="space-y-6">
+          {donations.length > 0 && (
+            <DonationReceiptForm donations={donations} />
+          )}
+          <ReceiptForm member={member} />
+          {subscriptions && subscriptions.length > 0 && (
+            <div className="space-y-4">
+              {subscriptions.length > 1 && (
+                <h2 className="text-lg font-semibold">Active Subscriptions</h2>
+              )}
+              {subscriptions.map((sub, index) => (
+                <div key={sub.id} className="space-y-2">
+                  {subscriptions.length > 1 && (
+                    <h3 className="text-md font-medium text-gray-700">
+                      Subscription {index + 1}
+                    </h3>
+                  )}
+                  <CustomerPortalForm subscription={sub} />
+                </div>
+              ))}
+            </div>
+          )}
+          <NameForm userName={userDetails?.full_name ?? ''} />
+          <EmailForm userEmail={user.email ?? ''} />
+        </div>
       </div>
     </section>
   );
