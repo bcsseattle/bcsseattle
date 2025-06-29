@@ -76,7 +76,7 @@ export default async function CandidatePage2(props: Props) {
   // Fetch election details separately
   const { data: election, error: electionError } = await supabase
     .from('elections')
-    .select('title, description, start_date, end_date, status, candidate_voting_end, enable_separate_voting_periods, show_unopposed_status')
+    .select('title, description, start_date, end_date, status')
     .eq('id', candidate.election_id!!)
     .single();
 
@@ -110,13 +110,7 @@ export default async function CandidatePage2(props: Props) {
     const now = new Date();
     const generalEndDate = new Date(election.end_date);
     
-    // If separate voting periods are enabled, check candidate-specific end date
-    if (election.enable_separate_voting_periods && election.candidate_voting_end) {
-      const candidateEndDate = new Date(election.candidate_voting_end);
-      return now > candidateEndDate;
-    }
-    
-    // Otherwise, use general election end date
+    // Use general election end date for candidate voting
     return now > generalEndDate;
   };
 
@@ -283,30 +277,9 @@ export default async function CandidatePage2(props: Props) {
                     </div>
                   )}
 
-                  {/* Show candidate-specific end date if different from general election */}
-                  {candidateWithElection.elections?.enable_separate_voting_periods && 
-                   candidateWithElection.elections?.candidate_voting_end ? (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Candidate Voting Ends:</span>
-                      <span className="font-medium">
-                        {formatDate(candidateWithElection.elections.candidate_voting_end)}
-                      </span>
-                    </div>
-                  ) : candidateWithElection.elections?.end_date && (
+                  {candidateWithElection.elections?.end_date && (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Voting Ends:</span>
-                      <span className="font-medium">
-                        {formatDate(candidateWithElection.elections.end_date)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Show general election end date if candidate voting ends earlier */}
-                  {candidateWithElection.elections?.enable_separate_voting_periods && 
-                   candidateWithElection.elections?.candidate_voting_end &&
-                   candidateWithElection.elections?.end_date && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Election Ends:</span>
                       <span className="font-medium">
                         {formatDate(candidateWithElection.elections.end_date)}
                       </span>

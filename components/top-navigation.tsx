@@ -6,7 +6,7 @@ import { Member } from '@/types';
 
 interface Props {
   user: User | null | undefined;
-  member: Member;
+  member: Member | null | undefined;
 }
 export default function TopNavigation({ user, member }: Props) {
   return (

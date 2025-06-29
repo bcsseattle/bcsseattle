@@ -43,7 +43,10 @@ export default async function SignIn(props: {
     const preferredSignInView =
       (await cookies()).get('preferredSignInView')?.value || null;
     viewProp = getDefaultSignInView(preferredSignInView);
-    return redirect(`/signin/${viewProp}`);
+    const redirectQuery = searchParams?.redirectTo 
+      ? `?redirectTo=${encodeURIComponent(searchParams.redirectTo)}`
+      : '';
+    return redirect(`/signin/${viewProp}${redirectQuery}`);
   }
 
   // Check if the user is already logged in and redirect to the account page if so
@@ -54,7 +57,9 @@ export default async function SignIn(props: {
   } = await supabase.auth.getUser();
 
   if (user && viewProp !== 'update_password') {
-    return redirect('/');
+    // If user is already logged in, redirect to the intended destination or home
+    const redirectTo = searchParams?.redirectTo || '/';
+    return redirect(redirectTo);
   } else if (!user && viewProp === 'update_password') {
     return redirect('/signin');
   }
@@ -87,6 +92,7 @@ export default async function SignIn(props: {
                 allowPassword={allowPassword}
                 redirectMethod={redirectMethod}
                 disableButton={searchParams.disable_button}
+                redirectTo={searchParams?.redirectTo}
               />
             )}
             {viewProp === 'verify_otp' && (
@@ -94,6 +100,7 @@ export default async function SignIn(props: {
                 email={searchParams.email}
                 redirectMethod={redirectMethod}
                 disableButton={searchParams.disable_button}
+                redirectTo={searchParams?.redirectTo}
               />
             )}
             {viewProp === 'forgot_password' && (

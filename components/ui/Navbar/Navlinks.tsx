@@ -29,7 +29,7 @@ const components: { title: string; href: string; description: string }[] = [
 
 interface NavlinksProps {
   user: User | null | undefined;
-  member: Member;
+  member: Member | null | undefined;
 }
 
 export default function Navlinks({ user, member }: NavlinksProps) {
@@ -40,7 +40,7 @@ export default function Navlinks({ user, member }: NavlinksProps) {
     <NavigationMenu>
       <NavigationMenuList>
         <NavigationMenuItem
-          className={member?.status === 'active' ? 'hidden sm:block' : ''}
+          className={member?.status === 'active' && member?.isApproved ? 'hidden sm:block' : ''}
         >
           <NavigationMenuTrigger>About us</NavigationMenuTrigger>
           <NavigationMenuContent>
@@ -108,7 +108,8 @@ export default function Navlinks({ user, member }: NavlinksProps) {
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
-        {member && member?.status === 'active' && member?.isApproved && (
+        {/* Show membership menu only for users with active approved membership */}
+        {user && member && (member?.status === 'active' || member?.isApproved) && (
           <>
             <NavigationMenuItem>
               <NavigationMenuTrigger>Membership</NavigationMenuTrigger>
@@ -143,9 +144,10 @@ export default function Navlinks({ user, member }: NavlinksProps) {
           </>
         )}
 
-        {!user && (
+        {/* Show "For members" if user is not logged in OR if they don't have an active approved membership */}
+        {(!user || !member || (member?.status !== 'active' && !member?.isApproved)) && (
           <NavigationMenuItem>
-            <ListItem href="/signin" title="For members"></ListItem>
+            <ListItem href="/signin?redirectTo=%2Faccount" title="For members"></ListItem>
           </NavigationMenuItem>
         )}
         <NavigationMenuItem>

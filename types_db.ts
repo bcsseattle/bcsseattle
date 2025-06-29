@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          meta: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          meta?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          meta?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       candidates: {
         Row: {
           bio: string | null
@@ -248,19 +272,15 @@ export type Database = {
       }
       elections: {
         Row: {
-          candidate_voting_end: string | null
-          candidate_voting_start: string | null
           created_at: string | null
           created_by: string | null
           description: string | null
-          enable_separate_voting_periods: boolean | null
           end_date: string
           id: string
           is_active: boolean | null
           nomination_end: string | null
           nomination_start: string | null
           settings: Json | null
-          show_unopposed_status: boolean | null
           start_date: string
           status: Database["public"]["Enums"]["election_status"] | null
           title: string
@@ -268,19 +288,15 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          candidate_voting_end?: string | null
-          candidate_voting_start?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
-          enable_separate_voting_periods?: boolean | null
           end_date: string
           id?: string
           is_active?: boolean | null
           nomination_end?: string | null
           nomination_start?: string | null
           settings?: Json | null
-          show_unopposed_status?: boolean | null
           start_date: string
           status?: Database["public"]["Enums"]["election_status"] | null
           title: string
@@ -288,19 +304,15 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          candidate_voting_end?: string | null
-          candidate_voting_start?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
-          enable_separate_voting_periods?: boolean | null
           end_date?: string
           id?: string
           is_active?: boolean | null
           nomination_end?: string | null
           nomination_start?: string | null
           settings?: Json | null
-          show_unopposed_status?: boolean | null
           start_date?: string
           status?: Database["public"]["Enums"]["election_status"] | null
           title?: string
@@ -656,6 +668,33 @@ export type Database = {
           },
         ]
       }
+      nominations: {
+        Row: {
+          created_at: string | null
+          election_id: string
+          id: string
+          message: string | null
+          nominee_user_id: string
+          position: string
+        }
+        Insert: {
+          created_at?: string | null
+          election_id: string
+          id?: string
+          message?: string | null
+          nominee_user_id: string
+          position: string
+        }
+        Update: {
+          created_at?: string | null
+          election_id?: string
+          id?: string
+          message?: string | null
+          nominee_user_id?: string
+          position?: string
+        }
+        Relationships: []
+      }
       organization: {
         Row: {
           address: string | null
@@ -894,6 +933,7 @@ export type Database = {
           billing_address: Json | null
           full_name: string | null
           id: string
+          is_admin: boolean
           payment_method: Json | null
         }
         Insert: {
@@ -901,6 +941,7 @@ export type Database = {
           billing_address?: Json | null
           full_name?: string | null
           id: string
+          is_admin?: boolean
           payment_method?: Json | null
         }
         Update: {
@@ -908,6 +949,7 @@ export type Database = {
           billing_address?: Json | null
           full_name?: string | null
           id?: string
+          is_admin?: boolean
           payment_method?: Json | null
         }
         Relationships: []

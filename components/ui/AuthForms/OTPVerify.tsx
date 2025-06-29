@@ -12,12 +12,14 @@ interface OTPVerifyProps {
   redirectMethod: string;
   disableButton?: boolean;
   email?: string;
+  redirectTo?: string;
 }
 
 export default function OTPVerify({
   email,
   redirectMethod,
-  disableButton
+  disableButton,
+  redirectTo
 }: OTPVerifyProps) {
   const router = redirectMethod === 'client' ? useRouter() : null;
   const [loading, setLoading] = useState(false);
@@ -66,6 +68,9 @@ export default function OTPVerify({
               onChange={(e) => setOtp(e.target.value)}
             />
           </div>
+          {redirectTo && (
+            <input type="hidden" name="redirectTo" value={redirectTo} />
+          )}
 
           <Button
             variant="default"
