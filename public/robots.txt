@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /*?_rsc=
+Disallow: /*&_rsc=
+Disallow: /signin
+Disallow: /signin/
