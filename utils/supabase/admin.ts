@@ -539,6 +539,33 @@ const getStripeAvailableBalance = async () => {
   return balance;
 };
 
+// Balance of the linked bank account (refreshed weekly by /api/cron/refresh-bank-balance),
+// plus Stripe payouts that hadn't landed yet when the bank reported that balance.
+const getBankBalance = async () => {
+  const accountId = process.env.STRIPE_BANK_ACCOUNT_ID;
+  if (!accountId) return null;
+
+  const { balance } =
+    await stripe.financialConnections.accounts.retrieve(accountId);
+  if (!balance) return null;
+
+  // ponytail: last 100 payouts covers a week-old balance; page if payouts get that frequent
+  const { data: payouts } = await stripe.payouts.list({ limit: 100 });
+  const inTransit = payouts
+    .filter(
+      (p) =>
+        p.status === 'pending' ||
+        p.status === 'in_transit' ||
+        (p.status === 'paid' && p.arrival_date > balance.as_of)
+    )
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  return {
+    amount: (balance.current.usd ?? 0) + inTransit,
+    asOf: balance.as_of
+  };
+};
+
 const getStripeRecentTransactions = async () => {
   let allTransactions: any[] = [];
   let hasMore = true;
@@ -900,6 +927,7 @@ export {
   retrieveMember,
   manageSubscriptionStatusChange,
   getStripeAvailableBalance,
+  getBankBalance,
   getStripeRecentTransactions,
   getStripePayments,
   getTotalCustomerSpent,

@@ -10,7 +10,9 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
+import { getPriceString } from '@/utils/helpers';
 import {
+  getBankBalance,
   getDonations,
   getStripeAvailableBalance,
   // getStripeCustomers,
@@ -89,11 +91,14 @@ export default async function CommunityFunds(props: {
     0
   );
 
-  const { available, pending } = await getStripeAvailableBalance();
-  const transactions = await getStripeRecentTransactions();
+  const [{ available, pending }, transactions, bank] = await Promise.all([
+    getStripeAvailableBalance(),
+    getStripeRecentTransactions(),
+    getBankBalance()
+  ]);
 
-  const availableAmount = available?.[0]?.amount;
-  const pendingAmount = pending?.[0]?.amount;
+  const stripeAmount =
+    (available?.[0]?.amount ?? 0) + (pending?.[0]?.amount ?? 0);
   const totalExpenses =
     expenses?.reduce((acc: number, expense: any) => acc + expense.amount, 0) ??
     0;
@@ -104,46 +109,28 @@ export default async function CommunityFunds(props: {
       0
     ) ?? 0;
 
-  const collectedAmount =
-    availableAmount +
-    pendingAmount +
-    (fundsInBank || 0) +
-    totalDonations +
-    totalStripeFees;
-  // availableAmount > pendingAmount ? availableAmount : pendingAmount;
+  // Real bank balance once linked (scripts/link-bank-account.mjs); until then, estimate from records.
+  const bankAmount =
+    bank?.amount ?? (fundsInBank || 0) + (totalDonations || 0) - totalExpenses;
+  const bankAsOf = bank
+    ? `As of ${new Date(bank.asOf * 1000).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      })}`
+    : 'Estimated from records';
 
-  const collectedFunds = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: available?.[0].currency!,
-    minimumFractionDigits: 0
-  }).format(collectedAmount / 100);
-
-  const expensesString = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0
-  }).format(totalExpenses / 100);
-
-  const availableFunds = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: available?.[0].currency!,
-    minimumFractionDigits: 0
-  }).format((collectedAmount - totalStripeFees - totalExpenses) / 100);
-
-  const stripeFeesString = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0
-  }).format(totalStripeFees / 100);
+  const bankBalance = getPriceString(bankAmount);
+  const expensesString = getPriceString(totalExpenses);
+  const availableFunds = getPriceString(bankAmount + stripeAmount);
+  const stripeBalance = getPriceString(stripeAmount);
+  const stripeFeesString = getPriceString(totalStripeFees);
 
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Collected Funds
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Bank Balance</CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -158,9 +145,8 @@ export default async function CommunityFunds(props: {
             </svg>
           </CardHeader>
           <CardContent>
-            <Suspense fallback={<Loading />}>
-              <div className="text-2xl font-bold">{collectedFunds}</div>
-            </Suspense>
+            <div className="text-2xl font-bold">{bankBalance}</div>
+            <p className="text-xs text-muted-foreground">{bankAsOf}</p>
           </CardContent>
         </Card>
 
@@ -228,6 +214,9 @@ export default async function CommunityFunds(props: {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{availableFunds}</div>
+            <p className="text-xs text-muted-foreground">
+              Bank + {stripeBalance} in Stripe
+            </p>
           </CardContent>
         </Card>
       </div>
