@@ -9,6 +9,7 @@ import {
   deletePriceRecord,
   updateDonation
 } from '@/utils/supabase/admin';
+import { updateFundraiserDonation } from '@/utils/supabase/fundraiser';
 import { sendPaymentFailedEmail } from '@/utils/membership/handlers';
 import { handleUpcomingInvoice } from '@/utils/stripe/server';
 
@@ -77,7 +78,16 @@ export async function POST(req: Request) {
         case 'checkout.session.completed':
           const checkoutSession = event.data.object as Stripe.Checkout.Session;
           const metadata = checkoutSession.metadata;
-          if (metadata?.type === 'donation') {
+          if (metadata?.type === 'fundraiser_donation') {
+            const amount = checkoutSession.amount_total ? checkoutSession.amount_total / 100 : 0;
+            await updateFundraiserDonation({
+              payment_intent_id: checkoutSession.payment_intent as string,
+              fundraiser_id: metadata.fundraiser_id,
+              donation_id: metadata.donation_id,
+              payment_status: 'completed',
+              amount
+            });
+          } else if (metadata?.type === 'donation') {
             await updateDonation({
               stripe_payment_id: checkoutSession.payment_intent as string,
               donation_id: metadata.donation_id,

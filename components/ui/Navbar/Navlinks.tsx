@@ -110,6 +110,20 @@ export default function Navlinks({ user, member, isAdmin }: NavlinksProps) {
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
+
+        <NavigationMenuItem>
+          <NavigationMenuLink asChild>
+            <NextLink 
+              href="/fundraisers" 
+              className={cn(
+                navigationMenuTriggerStyle(),
+                "bg-transparent hover:bg-accent"
+              )}
+            >
+              Fundraisers
+            </NextLink>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
         
         {/* Show admin menu only for admin users */}
         {user && isAdmin && (
@@ -127,6 +141,10 @@ export default function Navlinks({ user, member, isAdmin }: NavlinksProps) {
                 <ListItem href="/admin/elections" title="Election Management">
                   <Vote className="h-4 w-4 mr-2 inline" />
                   Manage elections and voting
+                </ListItem>
+                <ListItem href="/fundraisers/admin/new" title="Fundraiser Management">
+                  <Shield className="h-4 w-4 mr-2 inline" />
+                  Create and manage fundraisers
                 </ListItem>
                 <ListItem href="/admin/settings" title="Settings">
                   <Settings className="h-4 w-4 mr-2 inline" />

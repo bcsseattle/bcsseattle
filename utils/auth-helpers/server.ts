@@ -18,6 +18,18 @@ export async function redirectToPath(path: string) {
   return redirect(path);
 }
 
+export async function getSession() {
+  const supabase = await createClient();
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    return session;
+  } catch (error) {
+    console.error('Error:', error);
+    return null;
+  }
+}
+
 export async function SignOut(formData: FormData) {
   const pathName = String(formData.get('pathName')).trim();
 

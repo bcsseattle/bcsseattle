@@ -84,6 +84,7 @@ export const DonationFormSchema = z
     bankName: z.string().optional(),
     isAnonymous: z.boolean().optional().default(false),
     nonCashDescription: z.string().optional(),
+    message: z.string().optional(),
     userId: z.string().optional()
   })
   .superRefine((data, ctx) => {
@@ -125,11 +126,18 @@ export type VoteConfirmation = Tables<'vote_confirmations'>;
 export type ElectionPosition = Tables<'election_positions'>;
 export type Initiative = Tables<'initiatives'>;
 
+// Fundraiser types
+export type Fundraiser = Tables<'fundraisers'>;
+export type FundraiserUpdate = Tables<'fundraiser_updates'>;
+export type FundraiserDonation = Tables<'fundraiser_donations'>;
+
 // Database enum types
 export type VoteOption = Database['public']['Enums']['vote_option'];
 export type VoteSessionType = Database['public']['Enums']['vote_session_type'];
 export type ElectionStatus = Database['public']['Enums']['election_status'];
 export type ElectionType = Database['public']['Enums']['election_type'];
+export type FundraiserStatus = Database['public']['Enums']['fundraiser_status'];
+export type FundraiserCategory = Database['public']['Enums']['fundraiser_category'];
 
 // Insert types for database operations
 export type VoteInsert = Database['public']['Tables']['votes']['Insert'];
@@ -211,3 +219,13 @@ export interface Position {
   description?: string | null;
   display_order: number;
 }
+
+export const FundraiserFormSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().min(1, 'Description is required'),
+  goal_amount: z.number().positive('Goal amount must be positive'),
+  category: z.enum(['general', 'emergency', 'medical', 'education', 'community', 'funeral', 'zakat', 'other']),
+  beneficiary: z.string().optional(),
+  ends_at: z.string().datetime().optional(),
+  image_url: z.string().url('Invalid image URL').optional()
+});

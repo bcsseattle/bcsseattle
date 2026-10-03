@@ -152,39 +152,19 @@ export const getPriceString = (amount: number) => {
 // };
 
 // For amounts stored in your specific format where 62.95 becomes 6200.95
-export const formatCurrency = (amount: number) => {
-  // Convert to string to avoid floating point precision issues
-  const amountStr = amount.toString();
-  
-  // If amount is 6200.95, we want to get 62.95
-  // Remove the last two digits before decimal and treat them as cents
-  const dotIndex = amountStr.indexOf('.');
-  
-  if (dotIndex === -1) {
-    // No decimal, treat as regular cents (6295 -> 62.95)
-    const dollars = amount / 100;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(dollars);
+export const formatCurrency = (amount: number | null | undefined) => {
+  // Handle null/undefined case
+  if (amount === null || amount === undefined) {
+    return '$0.00';
   }
   
-  // Has decimal (6200.95 -> 62.95)
-  const wholePart = amountStr.substring(0, dotIndex);
-  const decimalPart = amountStr.substring(dotIndex + 1);
-  
-  // Convert 6200.95 to 62.0095, then format
-  const dollarsStr = `${Math.floor(amount / 100)}.${decimalPart}`;
-  const dollars = parseFloat(dollarsStr);
-  
+  // Format the decimal amount directly
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }).format(dollars);
+  }).format(amount);
 };
 
 export const paymentMethodMap: { [key: string]: string } = {
