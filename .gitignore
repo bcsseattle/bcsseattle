@@ -45,3 +45,6 @@ certificates
 .env.local-staging
 tsconfig.tsbuildinfo
 backup.sql
+
+# graphify
+graphify-out/
