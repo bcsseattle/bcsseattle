@@ -2,7 +2,7 @@
 
 import { FundraiserCard } from './fundraiser-card';
 
-import { Fundraiser } from '@/types/fundraiser';
+import { Fundraiser } from '@/types';
 
 interface FundraiserListProps {
   fundraisers: Fundraiser[];

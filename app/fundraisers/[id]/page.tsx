@@ -4,9 +4,7 @@ import { FundraiserDetails } from '@/components/fundraisers/fundraiser-details';
 import { getSession } from '@/utils/auth-helpers/server';
 
 interface PageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 async function getFundraiser(id: string) {

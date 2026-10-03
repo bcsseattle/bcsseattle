@@ -6,9 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 interface PageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 async function getFundraiser(id: string) {
@@ -29,14 +27,14 @@ async function getFundraiser(id: string) {
 }
 
 export default async function DonatePage({ params }: PageProps) {
+  const { id } = await params;
   // Check for active session first
   const session = await getSession();
   if (!session) {
     // Redirect to sign in, but remember where they were trying to go
-    redirect(`/signin?redirectTo=/fundraisers/${params.id}/donate`);
+    redirect(`/signin?redirectTo=/fundraisers/${id}/donate`);
   }
 
-  const { id } = await params;
   const fundraiser = await getFundraiser(id);
 
   if (!fundraiser) {

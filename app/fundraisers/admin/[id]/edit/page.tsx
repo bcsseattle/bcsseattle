@@ -4,9 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { FundraiserUpdateForm } from '@/components/fundraisers/admin/fundraiser-update-form';
 
 interface PageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 async function getFundraiser(id: string) {
