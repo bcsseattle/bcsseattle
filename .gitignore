@@ -39,3 +39,9 @@ yarn-error.log*
 
 # certificates
 certificates
+
+# local secrets and artifacts
+.env.test
+.env.local-staging
+tsconfig.tsbuildinfo
+backup.sql
