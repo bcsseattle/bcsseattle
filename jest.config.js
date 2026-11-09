@@ -7,9 +7,10 @@ const createJestConfig = nextJest({
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.node.js'],
   testEnvironment: 'jest-environment-node',
-  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
+  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/.next-e2e/', '<rootDir>/node_modules/', '<rootDir>/e2e/'],
+  // Bare 'utils/…' imports resolve from the project root, as in tsconfig.
+  modulePaths: ['<rootDir>'],
   moduleNameMapper: {
     '^@/components/(.*)$': '<rootDir>/components/$1',
     '^@/utils/(.*)$': '<rootDir>/utils/$1',
