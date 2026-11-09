@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
-import Logo from '@/components/icons/Logo';
+import Logo from '@/components/icons/LogoSvg';
 import Link from 'next/link';
 import TopNavigation from '@/components/top-navigation';
 
@@ -39,7 +39,7 @@ export default async function Navbar() {
         {/* No fixed width: w-96 made phones scroll sideways (BUG-050). */}
         <div className="self-center justify-start min-w-0">
           <Link href={'/'} className="flex items-center">
-            <Logo className="object-cover h-20 sm:h-36 shrink-0" />
+            <Logo className="h-20 w-20 sm:h-36 sm:w-36 shrink-0" />
             {/* Not a heading: it's on every page, which then had two h1s (BUG-051). */}
             <span className="hidden sm:inline text-xl ml-4 text-foreground">
               Baloch Community Services of Seattle

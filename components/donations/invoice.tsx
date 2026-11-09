@@ -11,7 +11,7 @@ import {
 import { InfoBlock } from '../ui/info-block';
 import { Donor, Organization, Donation } from '@/types';
 import { getPriceString } from '@/utils/helpers';
-import Logo from '../icons/Logo';
+import Logo from '../icons/LogoSvg';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -55,7 +55,7 @@ export default function Invoice({ organization, donor, donation }: Props) {
               </div>
             </div>
             <div className="h-72 w-72">
-              <Logo />
+              <Logo className="h-full w-full" />
             </div>
           </div>
         </CardHeader>

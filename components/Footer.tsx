@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Logo from '@/components/icons/Logo';
+import Logo from '@/components/icons/LogoSvg';
 
 export default function Footer() {
   return (
@@ -10,7 +10,7 @@ export default function Footer() {
             href="/"
             className="flex items-center flex-initial font-bold md:mr-24"
           >
-            <Logo className="h-32" />
+            <Logo className="h-32 w-32" />
           </Link>
         </div>
         <div className="col-span-1 lg:col-span-2">
