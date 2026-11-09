@@ -7,10 +7,10 @@ const createJestConfig = nextJest({
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testEnvironment: 'jest-environment-jsdom',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.node.js'],
+  testEnvironment: 'jest-environment-node',
   testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/components/(.*)$': '<rootDir>/components/$1',
     '^@/utils/(.*)$': '<rootDir>/utils/$1',
     '^@/types$': '<rootDir>/types.ts',
@@ -28,24 +28,6 @@ const customJestConfig = {
   testMatch: [
     '<rootDir>/__tests__/**/*.{js,jsx,ts,tsx}',
     '<rootDir>/**/*.{test,spec}.{js,jsx,ts,tsx}',
-  ],
-  projects: [
-    {
-      displayName: 'client',
-      testEnvironment: 'jest-environment-jsdom',
-      testMatch: ['<rootDir>/__tests__/frontend/**/*.{js,jsx,ts,tsx}'],
-      setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-    },
-    {
-      displayName: 'server',
-      testEnvironment: 'jest-environment-node',
-      testMatch: [
-        '<rootDir>/__tests__/api/**/*.{js,jsx,ts,tsx}',
-        '<rootDir>/__tests__/database/**/*.{js,jsx,ts,tsx}',
-        '<rootDir>/__tests__/integration/**/*.{js,jsx,ts,tsx}',
-      ],
-      setupFilesAfterEnv: ['<rootDir>/jest.setup.node.js'],
-    },
   ],
 }
 
