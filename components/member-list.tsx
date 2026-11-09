@@ -71,7 +71,7 @@ export default function MemberList({
                   <TableCell className="font-medium">
                     <Link
                       href={`/members/${member.id}`}
-                      className="text-blue-500 hover:text-blue-700 focus:text-blue-700 active:text-blue-800"
+                      className="text-accent hover:text-foreground focus:text-foreground active:text-foreground"
                     >
                       {member.fullName}
                     </Link>
@@ -92,7 +92,7 @@ export default function MemberList({
                     {subscription?.status === 'active' ? (
                       `${priceString} / ${price?.interval}`
                     ) : (
-                      <span className="text-red-700">
+                      <span className="text-badge-red-text">
                         Yet to choose contribution plan
                       </span>
                     )}

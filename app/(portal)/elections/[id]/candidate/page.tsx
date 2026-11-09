@@ -151,7 +151,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
       <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <Card className="p-2 sm:p-6">
           <div className="text-center">
-            <Users className="h-3 w-3 sm:h-5 sm:w-5 text-blue-600 mx-auto mb-1" />
+            <Users className="h-3 w-3 sm:h-5 sm:w-5 text-accent mx-auto mb-1" />
             <p className="text-sm sm:text-2xl font-bold">{totalCandidates}</p>
             <p className="text-[10px] sm:text-sm text-muted-foreground">Candidates</p>
           </div>
@@ -159,7 +159,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
         
         <Card className="p-2 sm:p-6">
           <div className="text-center">
-            <Trophy className="h-3 w-3 sm:h-5 sm:w-5 text-yellow-600 mx-auto mb-1" />
+            <Trophy className="h-3 w-3 sm:h-5 sm:w-5 text-badge-orange-text mx-auto mb-1" />
             <p className="text-sm sm:text-2xl font-bold">{totalPositions}</p>
             <p className="text-[10px] sm:text-sm text-muted-foreground">Positions</p>
           </div>
@@ -167,7 +167,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
         
         <Card className="p-2 sm:p-6">
           <div className="text-center">
-            <Clock className="h-3 w-3 sm:h-5 sm:w-5 text-green-600 mx-auto mb-1" />
+            <Clock className="h-3 w-3 sm:h-5 sm:w-5 text-badge-green-text mx-auto mb-1" />
             <p className="text-xs sm:text-sm font-medium">
               {votingEnded ? 'Closed' : 'Open'}
             </p>
@@ -260,7 +260,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
                               <div className="w-full bg-muted rounded-full h-1.5">
                                 <div 
                                   className={`h-1.5 rounded-full transition-all duration-500 ${
-                                    candidate.is_winner ? 'bg-green-600' : 'bg-blue-600'
+                                    'bg-primary'
                                   }`}
                                   style={{ width: `${candidate.percentage}%` }}
                                 />

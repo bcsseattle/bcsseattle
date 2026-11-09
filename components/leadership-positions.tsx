@@ -26,21 +26,21 @@ export default function LeadershipPositions({
   return (
     <Card className="bg-inherit bg-none border-none">
       <CardHeader className="flex flex-row gap-2 items-center pb-2">
-        <Trophy className="text-gray-600 w-5 h-5 flex-shrink-0" />
+        <Trophy className="text-muted-foreground w-5 h-5 flex-shrink-0" />
         <CardTitle>Leadership Positions</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {positionData.map((item) => (
           <div key={item.position} className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">
+            <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-primary-foreground font-semibold text-sm">
                 {item.display_order}
               </span>
             </div>
             <div className="flex-1 space-y-1">
-              <h4 className="font-semibold text-gray-900">{item.position}</h4>
+              <h4 className="font-semibold text-foreground">{item.position}</h4>
               {item.description && (
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {item.description}
                 </p>
               )}

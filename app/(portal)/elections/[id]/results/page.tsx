@@ -53,9 +53,9 @@ export default function ElectionResultsPage() {
   if (error) {
     return (
       <div className="container mx-auto py-8">
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-badge-red-border bg-badge-red-bg">
           <CardContent className="pt-6">
-            <div className="flex items-center space-x-2 text-red-700">
+            <div className="flex items-center space-x-2 text-badge-red-text">
               <span className="font-medium">Error:</span>
               <span>{error}</span>
             </div>
@@ -179,7 +179,7 @@ export default function ElectionResultsPage() {
                           {new Date(results.election.candidateVotingEnd).toLocaleString()}
                         </p>
                         {!results.votingStatus.candidateVotingOpen && (
-                          <p className="text-xs text-orange-600">Closed early</p>
+                          <p className="text-xs text-badge-orange-text">Closed early</p>
                         )}
                       </div>
                     )}

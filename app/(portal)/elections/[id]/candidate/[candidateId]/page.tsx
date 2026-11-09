@@ -57,10 +57,10 @@ export default async function CandidatePage2(props: Props) {
     return (
       <div className="p-8 text-center">
         <h1 className="text-xl font-semibold mb-2">Candidate Not Found</h1>
-        <p className="text-gray-600 mb-4">
+        <p className="text-muted-foreground mb-4">
           Could not find candidate with ID: {candidateId}
         </p>
-        <p className="text-sm text-red-600 mb-4">
+        <p className="text-sm text-badge-red-text mb-4">
           Error: {candidateError?.message}
         </p>
         <Button variant="outline" asChild><Link href={`/elections/${electionId}`}>
@@ -136,19 +136,19 @@ export default async function CandidatePage2(props: Props) {
   // Get position color for badge
   const getPositionColor = (position: string) => {
     if (position.includes('President'))
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-accent-100 text-foreground border-accent-200';
     if (position.includes('Secretary'))
-      return 'bg-green-100 text-green-800 border-green-200';
+      return 'bg-badge-green-bg text-badge-green-text border-badge-green-border';
     if (position.includes('Treasurer'))
-      return 'bg-purple-100 text-purple-800 border-purple-200';
-    return 'bg-gray-100 text-gray-800 border-gray-200';
+      return 'bg-badge-purple-bg text-badge-purple-text border-badge-purple-border';
+    return 'bg-muted text-foreground border-border';
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-8">
+    <div className="min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <Button variant="ghost" className="gap-2 hover:bg-white/60" asChild><Link href={`/elections/${electionId}`}>
+          <Button variant="ghost" className="gap-2 hover:bg-card/60" asChild><Link href={`/elections/${electionId}`}>
               <ArrowLeft className="h-4 w-4" />
               Back to Election
             </Link></Button>
@@ -159,18 +159,18 @@ export default async function CandidatePage2(props: Props) {
           {/* Left Column - Candidate Info */}
           <div className="lg:col-span-2 space-y-6">
             {/* Header Card */}
-            <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-card/70 backdrop-blur-sm">
               <CardHeader className="pb-6">
                 <div className="flex flex-col sm:flex-row gap-6">
                   {/* Avatar */}
                   <div className="flex-shrink-0">
-                    <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
+                    <Avatar className="h-24 w-24 border-4 border-card shadow-lg">
                       <AvatarImage
                         src={candidate.photo_url || ''}
                         alt={candidate.full_name}
                         className="object-cover"
                       />
-                      <AvatarFallback className="text-xl font-semibold bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                      <AvatarFallback className="text-xl font-semibold">
                         {getInitials(candidate.full_name)}
                       </AvatarFallback>
                     </Avatar>
@@ -178,7 +178,7 @@ export default async function CandidatePage2(props: Props) {
 
                   {/* Name and Position */}
                   <div className="flex-grow">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                    <h1 className="text-3xl font-bold text-foreground mb-2">
                       {candidate.full_name}
                     </h1>
                     <Badge
@@ -190,7 +190,7 @@ export default async function CandidatePage2(props: Props) {
                     </Badge>
 
                     {/* Election Info */}
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-muted-foreground">
                       <CalendarDays className="h-4 w-4 mr-2" />
                       <span>
                         Election: {candidateWithElection.elections?.title}
@@ -205,15 +205,15 @@ export default async function CandidatePage2(props: Props) {
 
             {/* Bio Section */}
             {candidate.bio && (
-              <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+              <Card className="border-0 shadow-lg bg-card/70 backdrop-blur-sm">
                 <CardHeader>
-                  <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                     <User className="h-5 w-5" />
                     About the Candidate
                   </h2>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-foreground leading-relaxed whitespace-pre-wrap">
                     {candidate.bio}
                   </p>
                 </CardContent>
@@ -222,16 +222,16 @@ export default async function CandidatePage2(props: Props) {
 
             {/* Platform & Vision */}
             {candidateWithElection.manifesto && (
-              <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+              <Card className="border-0 shadow-lg bg-card/70 backdrop-blur-sm">
                 <CardHeader>
-                  <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                     <Vote className="h-5 w-5" />
                     Platform & Vision
                   </h2>
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-gray max-w-none">
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-foreground leading-relaxed whitespace-pre-wrap">
                       {candidateWithElection.manifesto}
                     </p>
                   </div>
@@ -243,19 +243,19 @@ export default async function CandidatePage2(props: Props) {
           {/* Right Column - Election Info & Actions */}
           <div className="space-y-6">
             {/* Election Details */}
-            <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-card/70 backdrop-blur-sm">
               <CardHeader>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-foreground">
                   Election Information
                 </h3>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-1">
+                  <h4 className="font-medium text-foreground mb-1">
                     {candidateWithElection.elections?.title}
                   </h4>
                   {candidateWithElection.elections?.description && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       {candidateWithElection.elections.description}
                     </p>
                   )}
@@ -266,7 +266,7 @@ export default async function CandidatePage2(props: Props) {
                 <div className="space-y-3">
                   {candidateWithElection.elections?.start_date && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Voting Starts:</span>
+                      <span className="text-muted-foreground">Voting Starts:</span>
                       <span className="font-medium">
                         {formatDate(candidateWithElection.elections.start_date)}
                       </span>
@@ -275,7 +275,7 @@ export default async function CandidatePage2(props: Props) {
 
                   {candidateWithElection.elections?.end_date && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Voting Ends:</span>
+                      <span className="text-muted-foreground">Voting Ends:</span>
                       <span className="font-medium">
                         {formatDate(candidateWithElection.elections.end_date)}
                       </span>
@@ -284,13 +284,13 @@ export default async function CandidatePage2(props: Props) {
 
                   {candidateWithElection.elections?.status && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Status:</span>
+                      <span className="text-muted-foreground">Status:</span>
                       <Badge 
                         variant="outline" 
                         className={`capitalize ${
                           candidateVotingEnded 
-                            ? 'border-gray-300 text-gray-600' 
-                            : 'border-green-300 text-green-700'
+                            ? 'border-border text-muted-foreground' 
+                            : 'border-badge-green-border text-badge-green-text'
                         }`}
                       >
                         {candidateVotingEnded 
@@ -305,29 +305,29 @@ export default async function CandidatePage2(props: Props) {
             </Card>
 
             {/* Action Buttons */}
-            <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-card/70 backdrop-blur-sm">
               <CardContent className="pt-6">
                 <div className="space-y-3">
                   {/* Voting Action */}
                   {user ? (
                     hasUserVoted ? (
                       <div className="space-y-2">
-                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="flex items-center justify-center text-green-800">
+                        <div className="p-4 bg-badge-green-bg border border-badge-green-border rounded-lg">
+                          <div className="flex items-center justify-center text-badge-green-text">
                             <Vote className="h-4 w-4 mr-2" />
                             <span className="font-medium">
                               You have already voted
                             </span>
                           </div>
                           {userVoteSession?.confirmation_code && (
-                            <p className="text-xs text-green-600 text-center mt-2">
+                            <p className="text-xs text-badge-green-text text-center mt-2">
                               Confirmation: {userVoteSession.confirmation_code}
                             </p>
                           )}
                         </div>
                         <Button
                             variant="outline"
-                            className="w-full border-green-300 text-green-700 hover:bg-green-50" asChild><Link
+                            className="w-full border-badge-green-border text-badge-green-text hover:bg-badge-green-bg" asChild><Link
                           href={`/elections/${electionId}/vote/candidates/confirmation?code=${userVoteSession?.confirmation_code}`}
                           className="w-full"
                         >
@@ -335,13 +335,13 @@ export default async function CandidatePage2(props: Props) {
                           </Link></Button>
                       </div>
                     ) : candidateVotingEnded ? (
-                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="p-4 bg-muted border border-border rounded-lg">
                         <div className="text-center">
-                          <div className="flex items-center justify-center text-gray-600 mb-2">
+                          <div className="flex items-center justify-center text-muted-foreground mb-2">
                             <Award className="h-4 w-4 mr-2" />
                             <span className="font-medium">Candidate Voting Closed</span>
                           </div>
-                          <p className="text-sm text-gray-600 mb-3">
+                          <p className="text-sm text-muted-foreground mb-3">
                             Voting for candidates has ended for this election
                           </p>
                           <Button variant="outline" className="w-full" asChild><Link href={`/elections/${electionId}/candidate`} className="w-full">
@@ -350,15 +350,15 @@ export default async function CandidatePage2(props: Props) {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="p-4 bg-accent-100 border border-accent-200 rounded-lg">
                         <div className="text-center">
-                          <h5 className="font-medium text-blue-900 mb-2">
+                          <h5 className="font-medium text-foreground mb-2">
                             Ready to Vote
                           </h5>
-                          <p className="text-sm text-blue-700 mb-3">
+                          <p className="text-sm text-foreground mb-3">
                             Cast your vote for {candidate.full_name}
                           </p>
-                          <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg" asChild><Link
+                          <Button className="w-full shadow-lg" asChild><Link
                             href={`/elections/${electionId}/vote/candidates`}
                             className="w-full"
                           >
@@ -369,13 +369,13 @@ export default async function CandidatePage2(props: Props) {
                       </div>
                     )
                   ) : candidateVotingEnded ? (
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="p-4 bg-muted border border-border rounded-lg">
                       <div className="text-center">
-                        <div className="flex items-center justify-center text-gray-600 mb-2">
+                        <div className="flex items-center justify-center text-muted-foreground mb-2">
                           <Award className="h-4 w-4 mr-2" />
                           <span className="font-medium">Candidate Voting Closed</span>
                         </div>
-                        <p className="text-sm text-gray-600 mb-3">
+                        <p className="text-sm text-muted-foreground mb-3">
                           Voting for candidates has ended for this election
                         </p>
                         <Button variant="outline" className="w-full" asChild><Link href={`/elections/${electionId}/candidate`} className="w-full">
@@ -384,15 +384,15 @@ export default async function CandidatePage2(props: Props) {
                       </div>
                     </div>
                   ) : (
-                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <div className="p-4 bg-badge-green-bg border border-badge-green-border rounded-lg">
                       <div className="text-center">
-                        <h5 className="font-medium text-emerald-900 mb-2">
+                        <h5 className="font-medium text-badge-green-text mb-2">
                           Authentication Required
                         </h5>
-                        <p className="text-sm text-emerald-700 mb-3">
+                        <p className="text-sm text-badge-green-text mb-3">
                           Sign in to vote for {candidate.full_name}
                         </p>
-                        <Button className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 shadow-lg" asChild><Link
+                        <Button className="w-full shadow-lg" asChild><Link
                           href={`/signin?redirectTo=${encodeURIComponent(`/elections/${electionId}/candidate/${candidateId}`)}`}
                           className="w-full"
                         >
@@ -406,7 +406,7 @@ export default async function CandidatePage2(props: Props) {
                   {/* View All Candidates */}
                   <Button
                       variant="outline"
-                      className="w-full border-2 hover:bg-gray-50" asChild><Link href={`/elections/${electionId}`} className="w-full">
+                      className="w-full border-2 hover:bg-muted" asChild><Link href={`/elections/${electionId}`} className="w-full">
                       <User className="h-4 w-4 mr-2" />
                       View All Candidates
                     </Link></Button>
@@ -414,7 +414,7 @@ export default async function CandidatePage2(props: Props) {
                   {/* View Election Details */}
                   <Button
                       variant="ghost"
-                      className="w-full text-gray-600 hover:text-gray-800" asChild><Link href={`/elections/${electionId}`} className="w-full">
+                      className="w-full text-muted-foreground hover:text-foreground" asChild><Link href={`/elections/${electionId}`} className="w-full">
                       <CalendarDays className="h-4 w-4 mr-2" />
                       Election Details
                     </Link></Button>
@@ -424,11 +424,11 @@ export default async function CandidatePage2(props: Props) {
 
             {/* Nomination Date */}
             {candidate.created_at && (
-              <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+              <Card className="border-0 shadow-lg bg-card/70 backdrop-blur-sm">
                 <CardContent className="pt-6">
                   <div className="text-center">
-                    <p className="text-sm text-gray-600 mb-1">Nominated on</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="text-sm text-muted-foreground mb-1">Nominated on</p>
+                    <p className="font-medium text-foreground">
                       {formatDate(candidate.created_at)}
                     </p>
                   </div>

@@ -132,13 +132,13 @@ export default function InitiativeVotingForm({
   // If user has already voted, show message
   if (hasVoted) {
     return (
-      <Card className="border-green-200 bg-green-50">
+      <Card className="border-badge-green-border bg-badge-green-bg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-800">
+          <CardTitle className="flex items-center gap-2 text-badge-green-text">
             <CheckCircle className="w-5 h-5" />
             Initiative Votes Already Submitted
           </CardTitle>
-          <CardDescription className="text-green-700">
+          <CardDescription className="text-badge-green-text">
             You have already cast your votes for initiatives in this election.
             Thank you for participating!
           </CardDescription>
@@ -172,10 +172,10 @@ export default function InitiativeVotingForm({
       </Card>
 
       {/* Voting Instructions */}
-      <div className="relative w-full rounded-lg border p-4 bg-blue-50 border-blue-200">
+      <div className="relative w-full rounded-lg border p-4 bg-accent-100 border-accent-200">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5" />
-          <div className="text-sm text-blue-800">
+          <AlertTriangle className="h-4 w-4 text-accent mt-0.5" />
+          <div className="text-sm text-foreground">
             <strong>Important:</strong> You can only vote on initiatives once in
             this election. Please review your selections carefully before
             submitting. For each initiative, you can vote Yes, No, or Abstain.
@@ -202,12 +202,12 @@ export default function InitiativeVotingForm({
                 {sortedInitiatives.map((initiative, index) => (
                   <div key={initiative.id} className="space-y-4">
                     {/* Initiative Header */}
-                    <div className="border-l-4 border-blue-500 pl-4 py-2">
-                      <h4 className="font-semibold text-lg text-gray-900 mb-2">
+                    <div className="pl-4 py-2">
+                      <h4 className="font-semibold text-lg text-foreground mb-2">
                         Initiative {index + 1}: {initiative.title}
                       </h4>
                       {initiative.description && (
-                        <p className="text-gray-600 mb-3">
+                        <p className="text-muted-foreground mb-3">
                           {initiative.description}
                         </p>
                       )}
@@ -216,7 +216,7 @@ export default function InitiativeVotingForm({
                           href={initiative.additional_info_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 text-sm underline"
+                          className="text-accent hover:text-foreground text-sm underline"
                         >
                           Learn more about this initiative →
                         </a>
@@ -236,7 +236,7 @@ export default function InitiativeVotingForm({
                               className="grid grid-cols-1 md:grid-cols-4 gap-3"
                             >
                               {/* Skip option */}
-                              <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                              <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted">
                                 <RadioGroupItem
                                   value=""
                                   id={`skip-${initiative.id}`}
@@ -246,10 +246,10 @@ export default function InitiativeVotingForm({
                                   className="flex-1 cursor-pointer"
                                 >
                                   <div className="text-center">
-                                    <div className="text-sm font-medium text-gray-600">
+                                    <div className="text-sm font-medium text-muted-foreground">
                                       Skip
                                     </div>
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-muted-foreground">
                                       No vote
                                     </div>
                                   </div>
@@ -257,7 +257,7 @@ export default function InitiativeVotingForm({
                               </div>
 
                               {/* Yes option */}
-                              <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-green-50 border-green-200">
+                              <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-badge-green-bg border-badge-green-border">
                                 <RadioGroupItem
                                   value="yes"
                                   id={`yes-${initiative.id}`}
@@ -267,11 +267,11 @@ export default function InitiativeVotingForm({
                                   className="flex-1 cursor-pointer"
                                 >
                                   <div className="text-center">
-                                    <div className="flex items-center justify-center gap-1 text-sm font-medium text-green-700">
+                                    <div className="flex items-center justify-center gap-1 text-sm font-medium text-badge-green-text">
                                       <ThumbsUp className="w-4 h-4" />
                                       Yes
                                     </div>
-                                    <div className="text-xs text-green-600">
+                                    <div className="text-xs text-badge-green-text">
                                       Support
                                     </div>
                                   </div>
@@ -279,7 +279,7 @@ export default function InitiativeVotingForm({
                               </div>
 
                               {/* No option */}
-                              <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-red-50 border-red-200">
+                              <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-badge-red-bg border-badge-red-border">
                                 <RadioGroupItem
                                   value="no"
                                   id={`no-${initiative.id}`}
@@ -289,11 +289,11 @@ export default function InitiativeVotingForm({
                                   className="flex-1 cursor-pointer"
                                 >
                                   <div className="text-center">
-                                    <div className="flex items-center justify-center gap-1 text-sm font-medium text-red-700">
+                                    <div className="flex items-center justify-center gap-1 text-sm font-medium text-badge-red-text">
                                       <ThumbsDown className="w-4 h-4" />
                                       No
                                     </div>
-                                    <div className="text-xs text-red-600">
+                                    <div className="text-xs text-badge-red-text">
                                       Oppose
                                     </div>
                                   </div>
@@ -301,7 +301,7 @@ export default function InitiativeVotingForm({
                               </div>
 
                               {/* Abstain option */}
-                              <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                              <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted">
                                 <RadioGroupItem
                                   value="abstain"
                                   id={`abstain-${initiative.id}`}
@@ -311,11 +311,11 @@ export default function InitiativeVotingForm({
                                   className="flex-1 cursor-pointer"
                                 >
                                   <div className="text-center">
-                                    <div className="flex items-center justify-center gap-1 text-sm font-medium text-gray-700">
+                                    <div className="flex items-center justify-center gap-1 text-sm font-medium text-foreground">
                                       <Minus className="w-4 h-4" />
                                       Abstain
                                     </div>
-                                    <div className="text-xs text-gray-600">
+                                    <div className="text-xs text-muted-foreground">
                                       No preference
                                     </div>
                                   </div>
@@ -337,13 +337,13 @@ export default function InitiativeVotingForm({
 
           {/* Vote Summary (shown before final submission) */}
           {showSummary && (
-            <Card className="border-yellow-200 bg-yellow-50">
+            <Card className="border-badge-orange-border bg-badge-orange-bg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-yellow-800">
+                <CardTitle className="flex items-center gap-2 text-badge-orange-text">
                   <AlertTriangle className="w-5 h-5" />
                   Review Your Initiative Votes
                 </CardTitle>
-                <CardDescription className="text-yellow-700">
+                <CardDescription className="text-badge-orange-text">
                   Please review your initiative votes before submitting. Once
                   submitted, you cannot change your votes.
                 </CardDescription>
@@ -353,9 +353,9 @@ export default function InitiativeVotingForm({
                   getVoteSummary().map(({ initiative, vote }, index) => (
                     <div
                       key={index}
-                      className="flex justify-between items-center py-2 border-b border-yellow-200 last:border-b-0"
+                      className="flex justify-between items-center py-2 border-b border-badge-orange-border last:border-b-0"
                     >
-                      <span className="font-medium text-yellow-800">
+                      <span className="font-medium text-badge-orange-text">
                         {initiative?.title}
                       </span>
                       <Badge
@@ -372,7 +372,7 @@ export default function InitiativeVotingForm({
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-4 text-yellow-700">
+                  <div className="text-center py-4 text-badge-orange-text">
                     No initiatives voted on
                   </div>
                 )}
@@ -400,7 +400,7 @@ export default function InitiativeVotingForm({
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-card border-t-transparent rounded-full animate-spin" />
                   Submitting...
                 </div>
               ) : showSummary ? (

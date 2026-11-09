@@ -216,8 +216,8 @@ export default function NominateForm({
       <section className="my-4 max-w-lg mx-auto">
         <Card>
           <CardContent className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Checking nomination status...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Checking nomination status...</p>
           </CardContent>
         </Card>
       </section>
@@ -231,7 +231,7 @@ export default function NominateForm({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
+              <CheckCircle className="w-5 h-5 text-badge-green-text" />
               Already Nominated
             </CardTitle>
             <CardDescription>
@@ -240,16 +240,16 @@ export default function NominateForm({
           </CardHeader>
 
           <CardContent className="space-y-4">
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+            <div className="p-4 bg-badge-green-bg rounded-lg border border-badge-green-border">
               <div className="flex items-center gap-4">
                 {existingNomination.photo_url ? (
                   <img
                     src={existingNomination.photo_url}
                     alt={existingNomination.full_name}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-green-200"
+                    className="w-16 h-16 rounded-full object-cover border-2 border-badge-green-border"
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-green-200 flex items-center justify-center text-green-700 font-semibold">
+                  <div className="w-16 h-16 rounded-full bg-badge-green-bg flex items-center justify-center text-badge-green-text font-semibold">
                     {existingNomination.full_name
                       .split(' ')
                       .map((n: any) => n[0])
@@ -258,22 +258,22 @@ export default function NominateForm({
                   </div>
                 )}
                 <div>
-                  <h3 className="font-semibold text-green-900">
+                  <h3 className="font-semibold text-badge-green-text">
                     {existingNomination.full_name}
                   </h3>
-                  <p className="text-green-700">
+                  <p className="text-badge-green-text">
                     Running for {existingNomination.position}
                   </p>
                 </div>
               </div>
               {existingNomination.bio && (
-                <p className="mt-3 text-sm text-green-800">
+                <p className="mt-3 text-sm text-badge-green-text">
                   {existingNomination.bio}
                 </p>
               )}
             </div>
 
-            <div className="text-sm text-gray-600 space-y-2">
+            <div className="text-sm text-muted-foreground space-y-2">
               <p>
                 <strong>Note:</strong> You can only nominate yourself for one
                 position per election.
@@ -313,7 +313,7 @@ export default function NominateForm({
                 Fill out the form below to nominate yourself for a leadership
                 position in {electionTitle}.
                 <br />
-                <span className="text-amber-600 font-medium mt-2 block">
+                <span className="text-badge-orange-text font-medium mt-2 block">
                   ⚠️ You can only nominate yourself for one position per
                   election.
                 </span>
@@ -360,11 +360,11 @@ export default function NominateForm({
                     </FormControl>
                     <FormDescription>
                       {field.value && getPositionDescription(field.value) && (
-                        <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                          <h3 className="font-bold text-blue-900 mb-2">
+                        <div className="mt-3 p-4 bg-accent-100 border border-accent-200 rounded-lg">
+                          <h3 className="font-bold text-foreground mb-2">
                             Responsibilities of {field.value}
                           </h3>
-                          <p className="text-sm text-blue-800 leading-relaxed">
+                          <p className="text-sm text-foreground leading-relaxed">
                             {getPositionDescription(field.value)}
                           </p>
                         </div>
@@ -385,7 +385,7 @@ export default function NominateForm({
                   <FormItem>
                     <FormLabel htmlFor="bio">
                       Short Bio{' '}
-                      <span className="text-gray-400 text-sm font-normal">
+                      <span className="text-muted-foreground text-sm font-normal">
                         (Optional)
                       </span>
                     </FormLabel>
@@ -412,7 +412,7 @@ export default function NominateForm({
                   <FormItem>
                     <FormLabel htmlFor="manifesto">
                       Your Platform & Vision{' '}
-                      <span className="text-gray-400 text-sm font-normal">
+                      <span className="text-muted-foreground text-sm font-normal">
                         (Optional)
                       </span>
                     </FormLabel>
@@ -441,7 +441,7 @@ export default function NominateForm({
                   <FormItem>
                     <FormLabel>
                       Profile Photo{' '}
-                      <span className="text-gray-400 text-sm font-normal">
+                      <span className="text-muted-foreground text-sm font-normal">
                         (Optional)
                       </span>
                     </FormLabel>
@@ -454,7 +454,7 @@ export default function NominateForm({
                               <img
                                 src={previewUrl}
                                 alt="Preview"
-                                className="w-32 h-32 rounded-full object-cover border-2 border-gray-200"
+                                className="w-32 h-32 rounded-full object-cover border-2 border-border"
                               />
                               <Button
                                 type="button"
@@ -467,8 +467,8 @@ export default function NominateForm({
                               </Button>
                             </div>
                           ) : (
-                            <div className="w-32 h-32 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                              <User className="h-12 w-12 text-gray-400" />
+                            <div className="w-32 h-32 rounded-full bg-muted border-2 border-dashed border-border flex items-center justify-center">
+                              <User className="h-12 w-12 text-muted-foreground" />
                             </div>
                           )}
                         </div>
@@ -477,7 +477,7 @@ export default function NominateForm({
                         <div className="flex items-center justify-center">
                           <label
                             htmlFor="photoFile"
-                            className="cursor-pointer flex items-center space-x-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors"
+                            className="cursor-pointer flex items-center space-x-2 px-4 py-2 bg-accent-100 text-accent rounded-md hover:bg-accent-100 transition-colors"
                           >
                             <Upload className="h-4 w-4" />
                             <span>
@@ -516,7 +516,7 @@ export default function NominateForm({
             </CardFooter>
 
             {submitError && (
-              <p className="text-red-600 text-center mt-2 pb-4" role="alert">
+              <p className="text-badge-red-text text-center mt-2 pb-4" role="alert">
                 {submitError}
               </p>
             )}

@@ -66,9 +66,9 @@ export default async function Page() {
                 width={300}
                 height={400}
               />
-              <div className="absolute inset-0 bg-gray-700 opacity-60 rounded-md"></div>
+              <div className="absolute inset-0 bg-primary opacity-60 rounded-md"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <h2 className="text-white text-2xl font-bold">
+                <h2 className="text-primary-foreground text-2xl font-bold">
                   {resource.name}
                 </h2>
               </div>

@@ -136,13 +136,13 @@ export default function VotingForm({
   // If user has already voted, show message
   if (hasVoted) {
     return (
-      <Card className="border-green-200 bg-green-50">
+      <Card className="border-badge-green-border bg-badge-green-bg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-800">
+          <CardTitle className="flex items-center gap-2 text-badge-green-text">
             <CheckCircle className="w-5 h-5" />
             Vote Already Submitted
           </CardTitle>
-          <CardDescription className="text-green-700">
+          <CardDescription className="text-badge-green-text">
             You have already cast your vote in this election. Thank you for participating!
           </CardDescription>
         </CardHeader>
@@ -174,10 +174,10 @@ export default function VotingForm({
       </Card>
 
       {/* Voting Instructions */}
-      <div className="relative w-full rounded-lg border p-4 bg-blue-50 border-blue-200">
+      <div className="relative w-full rounded-lg border p-4 bg-accent-100 border-accent-200">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5" />
-          <div className="text-sm text-blue-800">
+          <AlertTriangle className="h-4 w-4 text-accent mt-0.5" />
+          <div className="text-sm text-foreground">
             <strong>Important:</strong> You can only vote once in this election. Please review your selections carefully before submitting.
             {election.type === 'leadership' && ' You may choose one candidate per position, or leave positions blank.'}
             {initiatives.length > 0 && ' For initiatives, you can vote Yes, No, or Abstain on each measure.'}
@@ -203,14 +203,14 @@ export default function VotingForm({
                 {orderedPositions.map((position) => (
                   <div key={position.position} className="space-y-4">
                     {/* Position Header */}
-                    <div className="border-b border-gray-200 pb-4">
+                    <div className="border-b border-border pb-4">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-sm">
+                        <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                          <span className="text-primary-foreground font-semibold text-sm">
                             {position.display_order}
                           </span>
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900">
+                        <h3 className="text-xl font-semibold text-foreground">
                           {position.position}
                         </h3>
                         <Badge variant="outline">
@@ -219,7 +219,7 @@ export default function VotingForm({
                         </Badge>
                       </div>
                       {position.description && (
-                        <p className="text-sm text-gray-600 ml-11">
+                        <p className="text-sm text-muted-foreground ml-11">
                           {position.description}
                         </p>
                       )}
@@ -238,19 +238,19 @@ export default function VotingForm({
                               className="space-y-3"
                             >
                               {/* No vote option */}
-                              <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                              <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted">
                                 <RadioGroupItem value="" id={`no-vote-${position.position}`} />
                                 <label 
                                   htmlFor={`no-vote-${position.position}`}
                                   className="flex-1 cursor-pointer"
                                 >
                                   <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                                      <User className="w-6 h-6 text-gray-500" />
+                                    <div className="w-12 h-12 bg-mat rounded-full flex items-center justify-center">
+                                      <User className="w-6 h-6 text-muted-foreground" />
                                     </div>
                                     <div>
-                                      <p className="font-medium text-gray-600">No Vote</p>
-                                      <p className="text-sm text-gray-500">Skip this position</p>
+                                      <p className="font-medium text-muted-foreground">No Vote</p>
+                                      <p className="text-sm text-muted-foreground">Skip this position</p>
                                     </div>
                                   </div>
                                 </label>
@@ -260,7 +260,7 @@ export default function VotingForm({
                               {candidatesByPosition[position.position].map((candidate) => (
                                 <div 
                                   key={candidate.id} 
-                                  className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50"
+                                  className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted"
                                 >
                                   <RadioGroupItem value={candidate.id} id={candidate.id} />
                                   <label 
@@ -273,16 +273,16 @@ export default function VotingForm({
                                           src={candidate.photo_url || ''} 
                                           alt={candidate.full_name}
                                         />
-                                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                                        <AvatarFallback className="">
                                           {getInitials(candidate.full_name)}
                                         </AvatarFallback>
                                       </Avatar>
                                       <div className="flex-1">
-                                        <p className="font-medium text-gray-900">
+                                        <p className="font-medium text-foreground">
                                           {candidate.full_name}
                                         </p>
                                         {candidate.bio && (
-                                          <p className="text-sm text-gray-600 line-clamp-2">
+                                          <p className="text-sm text-muted-foreground line-clamp-2">
                                             {candidate.bio}
                                           </p>
                                         )}
@@ -319,19 +319,19 @@ export default function VotingForm({
                 {initiatives.map((initiative, index) => (
                   <div key={initiative.id} className="space-y-4">
                     {/* Initiative Header */}
-                    <div className="border-l-4 border-blue-500 pl-4 py-2">
-                      <h4 className="font-semibold text-lg text-gray-900 mb-2">
+                    <div className="pl-4 py-2">
+                      <h4 className="font-semibold text-lg text-foreground mb-2">
                         Initiative {index + 1}: {initiative.title}
                       </h4>
                       {initiative.description && (
-                        <p className="text-gray-600 mb-3">{initiative.description}</p>
+                        <p className="text-muted-foreground mb-3">{initiative.description}</p>
                       )}
                       {initiative.additional_info_url && (
                         <a 
                           href={initiative.additional_info_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 text-sm underline"
+                          className="text-accent hover:text-foreground text-sm underline"
                         >
                           Learn more about this initiative →
                         </a>
@@ -350,44 +350,44 @@ export default function VotingForm({
                               value={field.value}
                               className="grid grid-cols-1 md:grid-cols-3 gap-3"
                             >
-                              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-green-50">
+                              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-badge-green-bg">
                                 <RadioGroupItem value="yes" id={`${initiative.id}-yes`} />
                                 <label 
                                   htmlFor={`${initiative.id}-yes`}
                                   className="flex-1 cursor-pointer text-center"
                                 >
-                                  <div className="text-green-700">
+                                  <div className="text-badge-green-text">
                                     <CheckCircle className="w-6 h-6 mx-auto mb-1" />
                                     <p className="font-medium">Yes</p>
-                                    <p className="text-xs text-green-600">Support this initiative</p>
+                                    <p className="text-xs text-badge-green-text">Support this initiative</p>
                                   </div>
                                 </label>
                               </div>
 
-                              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-red-50">
+                              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-badge-red-bg">
                                 <RadioGroupItem value="no" id={`${initiative.id}-no`} />
                                 <label 
                                   htmlFor={`${initiative.id}-no`}
                                   className="flex-1 cursor-pointer text-center"
                                 >
-                                  <div className="text-red-700">
+                                  <div className="text-badge-red-text">
                                     <AlertTriangle className="w-6 h-6 mx-auto mb-1" />
                                     <p className="font-medium">No</p>
-                                    <p className="text-xs text-red-600">Oppose this initiative</p>
+                                    <p className="text-xs text-badge-red-text">Oppose this initiative</p>
                                   </div>
                                 </label>
                               </div>
 
-                              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50">
+                              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted">
                                 <RadioGroupItem value="abstain" id={`${initiative.id}-abstain`} />
                                 <label 
                                   htmlFor={`${initiative.id}-abstain`}
                                   className="flex-1 cursor-pointer text-center"
                                 >
-                                  <div className="text-gray-700">
+                                  <div className="text-foreground">
                                     <Clock className="w-6 h-6 mx-auto mb-1" />
                                     <p className="font-medium">Abstain</p>
-                                    <p className="text-xs text-gray-600">No position</p>
+                                    <p className="text-xs text-muted-foreground">No position</p>
                                   </div>
                                 </label>
                               </div>
@@ -407,13 +407,13 @@ export default function VotingForm({
 
           {/* Vote Summary (shown before final submission) */}
           {showSummary && (
-            <Card className="border-yellow-200 bg-yellow-50">
+            <Card className="border-badge-orange-border bg-badge-orange-bg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-yellow-800">
+                <CardTitle className="flex items-center gap-2 text-badge-orange-text">
                   <AlertTriangle className="w-5 h-5" />
                   Review Your Votes
                 </CardTitle>
-                <CardDescription className="text-yellow-700">
+                <CardDescription className="text-badge-orange-text">
                   Please review your selections before submitting. Once submitted, you cannot change your votes.
                 </CardDescription>
               </CardHeader>
@@ -426,7 +426,7 @@ export default function VotingForm({
                       {/* Candidate Vote Summary */}
                       {candidateVoteSummary.length > 0 && (
                         <div>
-                          <h4 className="font-semibold text-yellow-800 mb-2">Candidate Votes:</h4>
+                          <h4 className="font-semibold text-badge-orange-text mb-2">Candidate Votes:</h4>
                           <div className="space-y-2">
                             {candidateVoteSummary.map(({ position, candidate }) => (
                               <div key={position} className="flex justify-between items-center py-2">
@@ -441,7 +441,7 @@ export default function VotingForm({
                       {/* Initiative Vote Summary */}
                       {initiativeVoteSummary.length > 0 && (
                         <div>
-                          <h4 className="font-semibold text-yellow-800 mb-2">Initiative Votes:</h4>
+                          <h4 className="font-semibold text-badge-orange-text mb-2">Initiative Votes:</h4>
                           <div className="space-y-2">
                             {initiativeVoteSummary.map(({ initiative, vote }) => (
                               <div key={initiative.id} className="flex justify-between items-center py-2">
@@ -456,7 +456,7 @@ export default function VotingForm({
                       )}
 
                       {candidateVoteSummary.length === 0 && initiativeVoteSummary.length === 0 && (
-                        <p className="text-yellow-700 italic">
+                        <p className="text-badge-orange-text italic">
                           You have not selected any votes. Your ballot will be submitted blank.
                         </p>
                       )}
@@ -492,7 +492,7 @@ export default function VotingForm({
               >
                 {isSubmitting ? (
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-t-transparent border-card rounded-full animate-spin" />
                     Submitting...
                   </div>
                 ) : showSummary ? (

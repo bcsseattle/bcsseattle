@@ -39,7 +39,7 @@ export const columns: ColumnDef<Data>[] = [
       return (
         <Link
           href={`/members/${member?.id}`}
-          className="text-blue-500 hover:text-blue-700 focus:text-blue-700 active:text-blue-800"
+          className="text-accent hover:text-foreground focus:text-foreground active:text-foreground"
         >
           {member?.fullName}
         </Link>
