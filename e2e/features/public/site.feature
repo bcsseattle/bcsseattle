@@ -92,3 +92,10 @@ Feature: The public website
     Given I am a visitor who is not signed in
     When I go to "/"
     Then the page should not load Google Analytics without a measurement id
+
+  @P2 @BUG-049
+  Scenario: An unknown address shows the site's own "page not found" page
+    Given I am a visitor who is not signed in
+    When I go to "/no-such-page"
+    Then I should see the heading "Page not found"
+    And I should see a "Go to the home page" button
