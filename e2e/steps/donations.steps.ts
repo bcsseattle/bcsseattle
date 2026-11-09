@@ -7,18 +7,19 @@ import { checkoutCompleted, postWebhook, sessionFromCheckoutUrl } from '../suppo
 import type { E2EWorld } from '../support/world';
 
 type Frequency = 'once' | 'monthly' | 'yearly';
-const FREQUENCY_BUTTON: Record<Frequency, string> = { once: 'One-Time', monthly: 'Monthly', yearly: 'Yearly' };
+const FREQUENCY_BUTTON: Record<Frequency, string> = { once: 'One-time', monthly: 'Monthly', yearly: 'Yearly' };
 
 /** Step 1 of the /donate wizard. `amount` is a preset ("100") or a custom value ("19.99"). */
 async function chooseDonation(page: Page, amountIn: string | number, frequency: Frequency) {
   const amount = String(amountIn); // cucumber turns integer-looking regex captures into numbers
   await page.goto('/donate');
-  await page.getByRole('button', { name: FREQUENCY_BUTTON[frequency], exact: true }).click();
+  // Frequency is a segmented control and the amounts are option cards: radios.
+  await page.getByRole('radio', { name: FREQUENCY_BUTTON[frequency], exact: true }).click();
   if (['100', '200', '250', '500'].includes(amount)) {
-    await page.getByRole('button', { name: `$${amount}`, exact: true }).click();
+    await page.getByRole('radio', { name: new RegExp(`^USD\\s${amount}$`) }).click();
   } else {
-    await page.getByRole('button', { name: 'Custom', exact: true }).click();
-    await page.getByPlaceholder('$1,000').fill(amount);
+    await page.getByRole('radio', { name: 'Other amount', exact: true }).click();
+    await page.getByLabel('Other amount (USD)').fill(amount);
   }
   await page.getByRole('button', { name: 'Continue to your information' }).click();
 }
@@ -51,7 +52,7 @@ async function donateByCard(world: E2EWorld, amount: string, frequency: Frequenc
   world.donation = { id: '', donor_email: email };
   await chooseDonation(world.page, amount, frequency);
   await enterDonor(world, email, phone);
-  await world.page.getByRole('button', { name: /^Donate .* Now$/ }).click();
+  await world.page.getByRole('button', { name: /^Donate USD/ }).click();
   await world.page.waitForURL(/checkout\.stripe\.com/, { waitUntil: 'commit', timeout: 30_000 });
   world.checkoutSessionId = (await sessionFromCheckoutUrl(world.page.url())).id;
   const { data } = await admin
@@ -86,8 +87,7 @@ When('I choose to donate $100 by Zelle and finish', async function (this: E2EWor
   const email = donorEmail(this);
   await chooseDonation(this.page, '100', 'once');
   await enterDonor(this, email);
-  await this.page.getByRole('combobox').filter({ hasText: /Credit Card|Card/ }).click();
-  await this.page.getByRole('option', { name: 'Zelle' }).click();
+  await this.page.getByRole('radio', { name: /^Zelle/ }).click();
   await expect(this.page.getByText('Donate via Zelle')).toBeVisible();
   await this.page.getByRole('button', { name: 'Done', exact: true }).click();
   // The app either redirects (Stripe or ?error=) or settles on the page: give it the chance.

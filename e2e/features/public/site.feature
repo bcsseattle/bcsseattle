@@ -19,7 +19,7 @@ Feature: The public website
       | bylaws   | /about-us/bylaws  | Bylaws of the Baloch Community Services of Seattle |
       | terms    | /terms            | Terms of Service                                   |
       | funeral  | /funeral-burials  | Funeral & Burial                                   |
-      | donate   | /donate           | Donation                                           |
+      | donate   | /donate           | Support BCS Seattle                                |
 
   @P1
   Scenario: The footer leads to the mission page

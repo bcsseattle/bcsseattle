@@ -41,18 +41,12 @@ export default async function Page(props: { searchParams: SearchParams }) {
     .eq('active', true);
 
   return (
-    <section className="my-8">
-      <div className="flex justify-center height-screen-helper">
-        <div className="flex flex-col justify-between p-3">
-          <DonateForm
-            user={user}
-            product={product as any}
-            donor={donor}
-            programs={programs ?? []}
-            defaultPurpose={purpose as DonationPurpose}
-          />
-        </div>
-      </div>
-    </section>
+    <DonateForm
+      user={user}
+      product={product as any}
+      donor={donor}
+      programs={programs ?? []}
+      defaultPurpose={purpose as DonationPurpose}
+    />
   );
 }

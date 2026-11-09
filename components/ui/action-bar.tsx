@@ -5,7 +5,8 @@ import { cn } from '@/utils/cn';
 /**
  * BCS/Action bar (Figma 13:2105): below md, a bar stuck to the bottom of the
  * screen holding an optional summary line and the screen's one primary
- * action, full width. From md up it is an ordinary block in the page, so the
+ * action, full width. From md up it is an ordinary block in the page (the
+ * summary line moves under the action, as on the desktop Donate mock), so the
  * action exists once in the DOM at every width.
  */
 export function ActionBar({
@@ -25,7 +26,7 @@ export function ActionBar({
         className
       )}
     >
-      {summary && <div className="text-caption text-muted-foreground max-md:text-center">{summary}</div>}
+      {summary && <div className="text-caption text-muted-foreground max-md:text-center md:order-last">{summary}</div>}
       {children}
     </div>
   );
