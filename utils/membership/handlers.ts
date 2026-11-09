@@ -26,15 +26,18 @@ import { getTwilio } from '@/utils/twilio/client';
 export async function registerMember(
   values: z.infer<typeof MemberRegistrationFormSchema>
 ) {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
+  // redirect() works by throwing, so it must run outside the try/catch below
+  // (inside, the sign-in redirect was swallowed and shown as an error).
+  const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
 
-    if (!user) {
-      return redirect('/signin');
-    }
+  if (!user) {
+    redirect('/signin');
+  }
+
+  try {
 
     const {
       fullName,
@@ -72,12 +75,6 @@ export async function registerMember(
     }
     await sendWelecomEmail(user);
     await sendNewMemberJoinedEmail(user, createMemberDetails);
-
-    return getStatusRedirect(
-      '/membership-fee',
-      'Success!',
-      'You have successfully registered as a member.'
-    );
   } catch (error) {
     console.error(error);
     return getErrorRedirect(
@@ -86,6 +83,17 @@ export async function registerMember(
       'Your membership account could not be created. You may already be a member. Please contact support.'
     );
   }
+
+  // Navigate from the server: the action's response carries the navigation, so
+  // it doesn't depend on a follow-up router.push in the browser, which in CI
+  // never happened (registration saved, page stayed on /register).
+  redirect(
+    getStatusRedirect(
+      '/membership-fee',
+      'Success!',
+      'You have successfully registered as a member.'
+    )
+  );
 }
 export async function sendWelecomEmail(User: User) {
   const api_url = process.env.NEXT_PUBLIC_SITE_URL + '/api/send-email/welcome';

@@ -38,11 +38,11 @@ interface RegisterFormProps {
 }
 
 export default function RegisterForm({
-  redirectMethod,
   user,
   member
 }: RegisterFormProps) {
-  const router = redirectMethod === 'client' ? useRouter() : null;
+  // Hooks must not be called conditionally.
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof MemberRegistrationFormSchema>>({
     resolver: zodResolver(MemberRegistrationFormSchema),
@@ -63,8 +63,10 @@ export default function RegisterForm({
   async function onSubmit(
     values: z.infer<typeof MemberRegistrationFormSchema>
   ) {
+    // On success the action redirects to /membership-fee itself; it returns a
+    // path only when registration failed (back to /register with the error).
     const res = await registerMember(values);
-    router?.push(res);
+    if (res) router.push(res);
   }
 
   if (!user) {
@@ -260,9 +262,9 @@ export default function RegisterForm({
             <Button
               type="submit"
               className="flex-1 mt-4"
-              disabled={!form.watch('terms')}
+              disabled={!form.watch('terms') || form.formState.isSubmitting}
             >
-              Register as member
+              {form.formState.isSubmitting ? 'Registering…' : 'Register as member'}
             </Button>
           </div>
         </form>
