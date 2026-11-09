@@ -66,21 +66,21 @@ Feature: The site works on phones and with assistive technology
     Given there is an approved member named "Amina"
     When "Amina" signs in using only the keyboard
     Then I should be on the home page
-    And the navigation should offer the "Membership" menu
+    And the navigation should offer the "My account" link
 
   @P2 @serial
   Scenario: The elections page says so when there are no elections
     Given there are no current elections
     And I am signed in as an approved member
     When I go to "/elections"
-    Then I should see "No active elections at the moment."
+    Then I should see "No active elections at the moment"
 
   @P2 @serial
   Scenario: The fundraisers page says so when there are no fundraisers
     Given there are no active fundraisers
     And I am signed in as an approved member
     When I go to the fundraisers page
-    Then I should see "No fundraisers found."
+    Then I should see "No active fundraisers right now"
 
   @P2 @a11y @BUG-066
   Scenario Outline: <path> has no controls nested in each other and no broken lists

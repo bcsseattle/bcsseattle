@@ -12,21 +12,20 @@ Feature: The public website
 
     Examples:
       | page     | path              | heading                                            |
-      | home     | /                 | Our Programs & Services                            |
+      | home     | /                 | How we support the community                       |
       | about    | /about-us         | About Baloch Community Services of Seattle         |
       | mission  | /about-us/mission | Our Mission                                        |
       | vision   | /about-us/vision  | Our Vision                                         |
       | bylaws   | /about-us/bylaws  | Bylaws of the Baloch Community Services of Seattle |
       | terms    | /terms            | Terms of Service                                   |
       | funeral  | /funeral-burials  | Funeral & Burial                                   |
-      | donate   | /donate           | Donation                                           |
+      | donate   | /donate           | Support BCS Seattle                                |
 
   @P1
-  Scenario: The About menu leads to the mission page
+  Scenario: The footer leads to the mission page
     Given I am a visitor who is not signed in
     When I go to "/"
-    And I open the "About us" menu
-    And I choose "Mission" from the menu
+    And I follow the "Mission & vision" link
     Then I should be on the "/about-us/mission" page
 
   @P1 @BUG-031

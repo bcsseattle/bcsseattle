@@ -1,16 +1,19 @@
 'use client';
 
 import { Donation } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { CardHeader, CardTitle } from './ui/card';
+import { StatTile } from './ui/stat-tile';
 import DonationTable from './donations/donation-table';
-import { DollarSign } from 'lucide-react';
 import { purposeTitleMap } from '@/utils/helpers';
 import { formatMoney } from '@/utils/format';
 
 export default function RecentDonations({
-  donations = []
+  donations = [],
+  showTitle = true
 }: {
   donations: Donation[];
+  /** False inside a Panel that has its own title. */
+  showTitle?: boolean;
 }) {
   const totalDonationsForEachPurpose = donations.reduce(
     (
@@ -39,29 +42,17 @@ export default function RecentDonations({
   );
 
   return (
-    <div className="my-6">
-      <CardHeader>
-        <CardTitle>Recent Donations</CardTitle>
-      </CardHeader>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className={showTitle ? 'my-6' : 'flex flex-col gap-4 p-4'}>
+      {showTitle && (
+        <CardHeader>
+          <CardTitle>Recent Donations</CardTitle>
+        </CardHeader>
+      )}
+      {/* Totals per purpose, as StatTiles. */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Object.keys(totalDonationsForEachPurpose).map((purpose) => {
-          const { title, total, donations } =
-            totalDonationsForEachPurpose[purpose];
-          return (
-            <div key={title} className="mb-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{title}</CardTitle>
-                  <DollarSign size={16} className="text-gray-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {formatMoney(total)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          );
+          const { title, total } = totalDonationsForEachPurpose[purpose];
+          return <StatTile key={purpose} label={title ?? purpose} value={formatMoney(total)} />;
         })}
       </div>
       <DonationTable data={donations} />

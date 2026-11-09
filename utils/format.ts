@@ -25,8 +25,9 @@ const moneyFormats = [0, 2].map(
  * A non-breaking space keeps "USD" with its number.
  */
 export function formatMoney(cents: number, { whole = false } = {}): string {
+  // `|| 0` turns -0 into 0, so a zero total never reads "−USD 0.00".
   return moneyFormats[whole ? 0 : 1]
-    .format(cents / 100)
+    .format(cents / 100 || 0)
     .replace('-', MINUS)
     .replace(/USD\s/, `USD${NBSP}`);
 }

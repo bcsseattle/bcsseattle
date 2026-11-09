@@ -44,9 +44,9 @@ When('I open a sign-in link that asks to return to {string}', async function (th
 });
 
 When('I sign out', async function (this: E2EWorld) {
-  await this.page.goto('/');
-  await this.page.getByRole('navigation').getByRole('button', { name: 'Membership', exact: true }).click();
-  await this.page.getByRole('button', { name: 'Sign out' }).click();
+  // Sign out lives at the foot of the member portal sidebar.
+  await this.page.goto('/account');
+  await this.page.getByRole('navigation', { name: 'Member portal' }).getByRole('button', { name: 'Sign out' }).click();
 });
 
 // ---------------------------------------------------------------- sign up / passwords

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -100,19 +100,17 @@ export default function MemberApprovalActions({ member }: MemberApprovalActionsP
           size="sm"
           onClick={() => setShowApproveDialog(true)}
           disabled={isApproving || isRejecting}
-          className="bg-green-600 hover:bg-green-700"
+          variant="outline"
         >
-          <CheckCircle className="h-4 w-4 mr-1" />
           {isApproving ? 'Approving...' : 'Approve'}
         </Button>
         
         <Button
           size="sm"
-          variant="destructive"
+          variant="ghost"
           onClick={() => setShowRejectDialog(true)}
           disabled={isApproving || isRejecting}
         >
-          <XCircle className="h-4 w-4 mr-1" />
           {isRejecting ? 'Rejecting...' : 'Reject'}
         </Button>
 
@@ -131,7 +129,7 @@ export default function MemberApprovalActions({ member }: MemberApprovalActionsP
               <AlertDialogAction
                 onClick={handleApprove}
                 disabled={isApproving}
-                className="bg-green-600 hover:bg-green-700"
+                className={buttonVariants()}
               >
                 {isApproving ? 'Approving...' : 'Approve Member'}
               </AlertDialogAction>
@@ -153,7 +151,7 @@ export default function MemberApprovalActions({ member }: MemberApprovalActionsP
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleReject}
-                className="bg-red-600 hover:bg-red-700"
+                className={buttonVariants({ variant: 'destructive' })}
                 disabled={isRejecting}
               >
                 {isRejecting ? 'Rejecting...' : 'Reject Application'}
@@ -184,7 +182,7 @@ export default function MemberApprovalActions({ member }: MemberApprovalActionsP
         {member.isApproved && member.status === 'active' && (
           <DropdownMenuItem
             onClick={() => setShowRejectDialog(true)}
-            className="text-red-600"
+            className="text-destructive"
           >
             <XCircle className="mr-2 h-4 w-4" />
             Deactivate Member
@@ -193,7 +191,6 @@ export default function MemberApprovalActions({ member }: MemberApprovalActionsP
         {!member.isApproved || member.status === 'inactive' && (
           <DropdownMenuItem
             onClick={() => setShowApproveDialog(true)}
-            className="text-green-600"
           >
             <CheckCircle className="mr-2 h-4 w-4" />
             {member.isApproved ? 'Reactivate Member' : 'Approve Member'}
@@ -218,7 +215,7 @@ export default function MemberApprovalActions({ member }: MemberApprovalActionsP
             <AlertDialogAction
               onClick={handleApprove}
               disabled={isApproving}
-              className="bg-green-600 hover:bg-green-700"
+              className={buttonVariants()}
             >
               {isApproving ? 'Processing...' : (!member.isApproved ? 'Approve' : 'Reactivate')}
             </AlertDialogAction>
@@ -239,7 +236,7 @@ export default function MemberApprovalActions({ member }: MemberApprovalActionsP
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleReject}
-              className="bg-red-600 hover:bg-red-700"
+              className={buttonVariants({ variant: 'destructive' })}
               disabled={isRejecting}
             >
               {isRejecting ? 'Processing...' : 'Deactivate Member'}

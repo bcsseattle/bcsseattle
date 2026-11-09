@@ -86,7 +86,7 @@ module.exports = {
       },
       // Art Gallery text styles (Figma Type 18:490): [size, { lineHeight, fontWeight, letterSpacing }].
       fontSize: {
-        hero: ['3.5rem', { lineHeight: '3.875rem', fontWeight: '400' }], // proposed Display/Hero, serif 56/62
+        hero: ['3.5rem', { lineHeight: '3.875rem', fontWeight: '400', letterSpacing: '-0.01em' }], // proposed Display/Hero, serif 56/62
         'doc-title': ['1.75rem', { lineHeight: '2rem', fontWeight: '400' }], // Document/Title, serif 28/32
         'doc-lead': ['1.125rem', { lineHeight: '1.5rem', fontWeight: '400' }], // Document/Artwork Title Roman, serif 18/24
         display: ['1.875rem', { lineHeight: '2.25rem', fontWeight: '600', letterSpacing: '-0.01em' }], // Title/Display 30/36

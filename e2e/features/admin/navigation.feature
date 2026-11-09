@@ -17,7 +17,6 @@ Feature: Admin pages have no dead ends
   @P1 @BUG-047
   Scenario Outline: No link in the admin area leads to a missing page
     When I go to "<path>"
-    And I open the "Admin" menu
     Then every link on the page should open a page that exists
 
     Examples:
