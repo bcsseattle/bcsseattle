@@ -1,18 +1,18 @@
 export default function Bylaws() {
   return (
-    <section className="mb-32 text-foreground">
-      <div className="max-w-6xl px-4 py-8 mx-auto sm:px-6 sm:pt-24 lg:px-8">
-        <div className="sm:align-center sm:flex sm:flex-col space-y-4">
-          <h1 className="text-2xl font-bold">
+    <section className="pb-8">
+      <div className="max-w-3xl pt-8 lg:pt-16">
+        <div className="flex flex-col space-y-4">
+          <h1 className="text-display text-foreground">
             Bylaws of the Baloch Community Services of Seattle
           </h1>
-          <h2 className="text-xl font-bold">ARTICLE I. NAME OF ORGANIZATION</h2>
+          <h2 className="pt-4 text-section text-foreground">ARTICLE I. NAME OF ORGANIZATION</h2>
           <p>
             The name of the organization shall be{' '}
             <strong>Baloch Community Services of Seattle</strong>, hereinafter
             referred to as <strong>BCS Seattle</strong>.
           </p>
-          <h2 className="text-xl font-bold">ARTICLE II. CORPORATE PURPOSE</h2>
+          <h2 className="pt-4 text-section text-foreground">ARTICLE II. CORPORATE PURPOSE</h2>
           <p>
             <strong>Section 1. Nonprofit Purpose</strong>
           </p>
@@ -64,7 +64,7 @@ export default function Bylaws() {
             in the Greater Seattle area by providing language classes, cultural
             events, social services, and promoting Baloch culture and heritage.
           </p>
-          <h2 className="text-xl font-bold">ARTICLE III. MEMBERSHIP</h2>
+          <h2 className="pt-4 text-section text-foreground">ARTICLE III. MEMBERSHIP</h2>
           <p>
             <strong>Section 1. Eligibility for Membership</strong>
           </p>
@@ -136,7 +136,7 @@ export default function Bylaws() {
             terminated if he or she failed to pay membership dues for three
             consecutive months.
           </p>
-          <h2 className="text-xl font-bold">ARTICLE IV. MEETINGS</h2>
+          <h2 className="pt-4 text-section text-foreground">ARTICLE IV. MEETINGS</h2>
           <p>
             <strong>Section 1. Annual Meetings</strong>
           </p>
@@ -186,7 +186,7 @@ export default function Bylaws() {
             Decisions are made by a majority vote of those present at a meeting
             at which a quorum is present.
           </p>
-          <h2 className="text-xl font-bold">ARTICLE V. BOARD OF DIRECTORS</h2>
+          <h2 className="pt-4 text-section text-foreground">ARTICLE V. BOARD OF DIRECTORS</h2>
           <p>
             <strong>Section 1. General Powers</strong>
           </p>
@@ -244,7 +244,7 @@ export default function Bylaws() {
             The act of a majority of the Directors present at a meeting at which
             a quorum is present shall be the act of the Board of Directors.
           </p>
-          <h2 className="text-xl font-bold">ARTICLE VI. OFFICERS</h2>
+          <h2 className="pt-4 text-section text-foreground">ARTICLE VI. OFFICERS</h2>
           <p>
             <strong>Section 1. Officers</strong>
           </p>
@@ -333,7 +333,7 @@ export default function Bylaws() {
             of Directors and as specified in the detailed officer roles and
             responsibilities outlined in the policies and procedures manual.
           </p>
-          <h2 className="text-xl font-bold">ARTICLE VII. COMMITTEES</h2>
+          <h2 className="pt-4 text-section text-foreground">ARTICLE VII. COMMITTEES</h2>
           <p>
             <strong>Section 1. Committees of Directors</strong>
           </p>
@@ -392,7 +392,7 @@ export default function Bylaws() {
             inconsistent with these Bylaws or with rules adopted by the Board of
             Directors.
           </p>
-          <h2 className="text-xl font-bold">
+          <h2 className="pt-4 text-section text-foreground">
             ARTICLE VIII. CONTRACTS, CHECKS, DEPOSITS AND FUNDS
           </h2>
           <p>
@@ -437,7 +437,7 @@ export default function Bylaws() {
             entail financial or ethical obligations require Board review and
             approval.
           </p>
-          <h2 className="text-xl font-bold">ARTICLE IX. BOOKS AND RECORDS</h2>
+          <h2 className="pt-4 text-section text-foreground">ARTICLE IX. BOOKS AND RECORDS</h2>
           <p>
             <strong>Section 1. Maintenance of Books and Records</strong>
           </p>
@@ -502,7 +502,7 @@ export default function Bylaws() {
             backups and to facilitate easier access when necessary. The
             electronic records shall be managed and backed up by the Secretary.
           </p>
-          <h2 className="text-xl font-bold">ARTICLE X. FISCAL YEAR</h2>
+          <h2 className="pt-4 text-section text-foreground">ARTICLE X. FISCAL YEAR</h2>
           <p>
             <strong>Section 1. Definition of Fiscal Year</strong>
           </p>
@@ -550,7 +550,7 @@ export default function Bylaws() {
               meeting or as stipulated in the bylaws.
             </li>
           </ul>
-          <h2 className="text-xl font-bold">ARTICLE XI. DUES</h2>
+          <h2 className="pt-4 text-section text-foreground">ARTICLE XI. DUES</h2>
           <p>
             The Board of Directors may determine from time to time the amount of
             registration fee, and annual dues payable to the corporation by
@@ -573,7 +573,7 @@ export default function Bylaws() {
             the full membership. Continued membership is contingent upon being
             up-to-date on membership dues.
           </p>
-          <h2 className="text-xl font-bold">
+          <h2 className="pt-4 text-section text-foreground">
             ARTICLE XII. AMENDMENTS TO BYLAWS
           </h2>
           <p>
@@ -623,7 +623,7 @@ export default function Bylaws() {
             documentation must be accessible to all members and available for
             inspection during reasonable business hours.
           </p>
-          <h2 className="text-xl font-bold">
+          <h2 className="pt-4 text-section text-foreground">
             ARTICLE XIII. DISSOLUTION CLAUSE
           </h2>
           <p>

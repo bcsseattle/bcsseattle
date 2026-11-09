@@ -43,7 +43,7 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
   const isMembersOnly = params.slug.includes('asylum');
 
   return (
-    <div className="p-4 relative">
+    <div className="relative pt-8">
       <div
         className="no-print select-none"
         dangerouslySetInnerHTML={{ __html: html }}

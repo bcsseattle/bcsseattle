@@ -3,9 +3,9 @@ import Link from 'next/link';
 
 export default function FundraiserNotFound() {
   return (
-    <div className="container py-10">
+    <div className="py-16">
       <div className="flex flex-col items-center justify-center space-y-4">
-        <h1 className="text-4xl font-bold">Fundraiser Not Found</h1>
+        <h1 className="text-display text-foreground">Fundraiser Not Found</h1>
         <p className="text-muted-foreground">
           The fundraiser you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>

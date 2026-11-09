@@ -38,9 +38,9 @@ export default async function Page() {
   }
   
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold">Immigration Resources</h1>
-      <p className="mt-5">
+    <div className="pb-8 pt-8 lg:pt-16">
+      <h1 className="text-display text-foreground">Immigration Resources</h1>
+      <p className="mt-3 max-w-3xl font-serif text-doc-lead text-foreground">
         The U.S. immigration process can be incredibly complex and difficult to
         navigate. With numerous rules, regulations, and procedures, it’s easy to
         feel overwhelmed. While each person’s journey is unique, the following
