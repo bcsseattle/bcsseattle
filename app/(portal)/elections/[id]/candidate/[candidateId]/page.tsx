@@ -14,6 +14,7 @@ import {
   createFeatureFlagArray
 } from '@/utils/feature-flag-constants';
 import { formatDate } from '@/utils/format';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 type Props = {
   params: Promise<{ id: string; candidateId: string }>;
@@ -139,6 +140,7 @@ export default async function CandidatePage2(props: Props) {
 
   return (
     <div>
+      <BreadcrumbName id={candidateId} name={candidate.full_name} />
       <div className="max-w-4xl">
         <div className="mb-6">
           <BackLink href={`/elections/${electionId}`}>Back to Election</BackLink>

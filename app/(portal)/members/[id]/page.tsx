@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 import { getTotalCustomerSpent } from '@/utils/supabase/admin';
 import RecentFunds from '@/components/recent-funds';
 import { individualColumns } from '@/components/payments/columns';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 type SearchParams = Promise<{ [key: string]: string | undefined }>;
 
@@ -58,6 +59,7 @@ export default async function Page(props: {
 
   return (
     <div className="flex flex-col gap-6">
+      <BreadcrumbName id={params.id} name={member?.fullName} />
       <PageHeader title={member?.fullName} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (

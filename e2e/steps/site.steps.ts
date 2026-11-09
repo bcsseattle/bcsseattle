@@ -209,11 +209,10 @@ Then('every page in the sitemap should open', async function (this: E2EWorld) {
   expect(dead).toEqual([]);
 });
 
-Then('the breadcrumbs should not show any raw IDs', async function (this: E2EWorld) {
+Then('the breadcrumbs should name it {string}, not show its raw ID', async function (this: E2EWorld, name: string) {
   const crumbs = this.page.getByRole('navigation', { name: 'breadcrumb' });
-  await expect(crumbs).toBeVisible();
+  await expect(crumbs).toContainText(name);
   expect(await crumbs.innerText()).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/i);
-  await expect(crumbs).toContainText('Details');
 });
 
 When('I open the phone menu and choose {string}', async function (this: E2EWorld, link: string) {

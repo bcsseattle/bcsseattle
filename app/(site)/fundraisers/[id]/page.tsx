@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import { FundraiserDetails } from '@/components/fundraisers/fundraiser-details';
 import { FundraiserDonors } from '@/components/fundraisers/fundraiser-donors';
 import { getSession } from '@/utils/auth-helpers/server';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -63,6 +64,7 @@ export default async function FundraiserPage({ params }: PageProps) {
 
   return (
     <div className="pb-8 pt-8 lg:pt-16">
+      <BreadcrumbName id={fundraiser.id} name={fundraiser.title} />
       <FundraiserDetails
         fundraiser={fundraiser}
         isAdmin={isAdmin}

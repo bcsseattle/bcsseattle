@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useSyncExternalStore } from 'react';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -61,6 +61,29 @@ const TITLES: Record<string, string> = {
   signup: 'Create account'
 };
 
+// Entity names for ID segments, registered by the pages that load them.
+// Client-only (set in an effect), so nothing is shared between requests.
+const names = new Map<string, string>();
+const listeners = new Set<() => void>();
+let version = 0;
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
+
+/** Names the crumb for an ID segment: <BreadcrumbName id={election.id} name={election.title} />. */
+export function BreadcrumbName({ id, name }: { id: string; name?: string | null }) {
+  useEffect(() => {
+    if (!name || names.get(id) === name) return;
+    names.set(id, name);
+    version++;
+    listeners.forEach((listener) => listener());
+  }, [id, name]);
+  return null;
+}
+
 function title(segment: string) {
   if (TITLES[segment]) return TITLES[segment];
   const words = decodeURIComponent(segment).replace(/[-_]/g, ' ');
@@ -74,13 +97,15 @@ function title(segment: string) {
  */
 export default function Breadcrumbs({ portal = false }: { portal?: boolean }) {
   const paths = usePathname();
+  useSyncExternalStore(subscribe, () => version, () => 0);
   const pathNames = paths.split('/').filter((path) => path);
-  // IDs read as "Details" (BUG-048) and route segments as page titles.
+  // IDs read as their entity's name, or "Details" until a page names them
+  // (never the raw ID: BUG-048). Route segments read as page titles.
   // Prefixes without a page of their own redirect (next.config.js).
   const isId = (segment: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment);
   const breadcrumbss = pathNames.map((path, index) => {
     return {
-      name: isId(path) ? 'Details' : title(path),
+      name: isId(path) ? names.get(path) ?? 'Details' : title(path),
       link: `/${pathNames.slice(0, index + 1).join('/')}`
     };
   });

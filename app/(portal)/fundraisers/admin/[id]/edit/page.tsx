@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { FundraiserUpdateForm } from '@/components/fundraisers/admin/fundraiser-update-form';
 import { PageHeader } from '@/components/portal/page-header';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -39,6 +40,7 @@ export default async function EditFundraiserPage({ params }: PageProps) {
 
   return (
     <div className="max-w-2xl space-y-6">
+      <BreadcrumbName id={fundraiser.id} name={fundraiser.title} />
       <PageHeader
         title="Edit Fundraiser"
         description="Update the details of your fundraising campaign."

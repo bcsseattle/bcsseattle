@@ -4,6 +4,7 @@ import { DonationForm } from '@/components/fundraisers/donation-form';
 import { getSession } from '@/utils/auth-helpers/server';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -63,6 +64,7 @@ export default async function DonatePage({ params }: PageProps) {
 
   return (
     <div className="max-w-2xl pb-8 pt-8 lg:pt-16">
+      <BreadcrumbName id={fundraiser.id} name={fundraiser.title} />
       <div className="mb-6 flex flex-col gap-1">
         <h1 className="text-display text-foreground">Make a Donation</h1>
         <p className="mt-0 text-sm text-muted-foreground">
