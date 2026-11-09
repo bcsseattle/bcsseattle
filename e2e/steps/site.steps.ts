@@ -220,3 +220,12 @@ When('I open the phone menu and choose {string}', async function (this: E2EWorld
   await this.page.getByText('Menu', { exact: true }).click();
   await this.page.getByRole('navigation', { name: 'Mobile' }).getByRole('link', { name: link, exact: true }).click();
 });
+
+Then('an accessibility scan should find no nested controls or broken lists', async function (this: E2EWorld) {
+  // Links inside buttons (or the reverse) and lists nested without <li> (BUG-066).
+  await this.page.waitForLoadState('networkidle');
+  const { violations } = await new AxeBuilder({ page: this.page })
+    .withRules(['nested-interactive', 'list', 'listitem'])
+    .analyze();
+  expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(' | ')}`)).toEqual([]);
+});

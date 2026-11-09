@@ -13,13 +13,11 @@ export default function Page() {
             Please refer to our bylaws.
           </p>
           <div className="mt-10 w-60 self-center">
-            <Button variant="default">
-              <Link
+            <Button variant="default" asChild><Link
                 href="/about-us/bylaws"
               >
                 View Bylaws
-              </Link>
-            </Button>
+              </Link></Button>
           </div>
         </div>
       </div>

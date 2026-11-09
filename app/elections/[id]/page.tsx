@@ -411,15 +411,12 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
                     Submit your nomination for this election
                   </p>
                 </div>
-                <Link href={`/elections/${election.id}/nominate`}>
-                  <Button
+                <Button
                     size="lg"
-                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
-                  >
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg" asChild><Link href={`/elections/${election.id}/nominate`}>
                     <UserPlus className="w-5 h-5 mr-2" />
                     Nominate Yourself
-                  </Button>
-                </Link>
+                  </Link></Button>
               </div>
             </div>
           )}
@@ -452,17 +449,14 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
                     Sign in to cast your vote
                   </p>
                 </div>
-                <Link
+                <Button
+                    size="lg"
+                    className="bg-green-600 hover:bg-green-700 text-white shadow-lg" asChild><Link
                   href={`/signin?redirectTo=${encodeURIComponent(`/elections/${id}`)}`}
                 >
-                  <Button
-                    size="lg"
-                    className="bg-green-600 hover:bg-green-700 text-white shadow-lg"
-                  >
                     <Vote className="w-5 h-5 mr-2" />
                     Sign In to Vote
-                  </Button>
-                </Link>
+                  </Link></Button>
               </div>
             </div>
           )}
@@ -502,17 +496,14 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
                           Elected Unopposed
                         </Badge>
                       ) : !hasCandidateVotes && candidateVotingOpen ? (
-                        <Link
+                        <Button
+                            size="lg"
+                            className="bg-green-600 hover:bg-green-700 text-white shadow-lg" asChild><Link
                           href={`/elections/${election.id}/vote/candidates`}
                         >
-                          <Button
-                            size="lg"
-                            className="bg-green-600 hover:bg-green-700 text-white shadow-lg"
-                          >
                             <Vote className="w-5 h-5 mr-2" />
                             Vote for Candidates
-                          </Button>
-                        </Link>
+                          </Link></Button>
                       ) : !hasCandidateVotes ? (
                         <Badge
                           variant="secondary"
@@ -531,17 +522,14 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
                             Candidates Voted ✓
                           </Badge>
                           {candidateSession?.confirmation_code && (
-                            <Link
-                              href={`/elections/${election.id}/vote/candidates/confirmation?code=${candidateSession.confirmation_code}`}
-                            >
-                              <Button
+                            <Button
                                 variant="outline"
                                 size="sm"
-                                className="border-green-300 text-green-700 hover:bg-green-50"
-                              >
+                                className="border-green-300 text-green-700 hover:bg-green-50" asChild><Link
+                              href={`/elections/${election.id}/vote/candidates/confirmation?code=${candidateSession.confirmation_code}`}
+                            >
                                 View Confirmation
-                              </Button>
-                            </Link>
+                              </Link></Button>
                           )}
                         </div>
                       )}
@@ -564,17 +552,14 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
                     </div>
                     <div className="flex items-center gap-3">
                       {!hasInitiativeVotes ? (
-                        <Link
+                        <Button
+                            size="lg"
+                            className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg" asChild><Link
                           href={`/elections/${election.id}/vote/initiatives`}
                         >
-                          <Button
-                            size="lg"
-                            className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
-                          >
                             <Vote className="w-5 h-5 mr-2" />
                             Vote on Initiatives
-                          </Button>
-                        </Link>
+                          </Link></Button>
                       ) : (
                         <div className="flex items-center gap-3">
                           <Badge
@@ -585,17 +570,14 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
                             Initiatives Voted ✓
                           </Badge>
                           {initiativeSession?.confirmation_code && (
-                            <Link
-                              href={`/elections/${election.id}/vote/initiatives/confirmation?code=${initiativeSession.confirmation_code}`}
-                            >
-                              <Button
+                            <Button
                                 variant="outline"
                                 size="sm"
-                                className="border-purple-300 text-purple-700 hover:bg-purple-50"
-                              >
+                                className="border-purple-300 text-purple-700 hover:bg-purple-50" asChild><Link
+                              href={`/elections/${election.id}/vote/initiatives/confirmation?code=${initiativeSession.confirmation_code}`}
+                            >
                                 View Confirmation
-                              </Button>
-                            </Link>
+                              </Link></Button>
                           )}
                         </div>
                       )}
@@ -617,15 +599,12 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
                           Cast your vote in this election
                         </p>
                       </div>
-                      <Link href={`/elections/${election.id}/vote`}>
-                        <Button
+                      <Button
                           size="lg"
-                          className="bg-green-600 hover:bg-green-700 text-white shadow-lg"
-                        >
+                          className="bg-green-600 hover:bg-green-700 text-white shadow-lg" asChild><Link href={`/elections/${election.id}/vote`}>
                           <Vote className="w-5 h-5 mr-2" />
                           Vote Now
-                        </Button>
-                      </Link>
+                        </Link></Button>
                     </div>
                   </div>
                 )}
@@ -644,16 +623,13 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
                     View real-time election results while voting is open
                   </p>
                 </div>
-                <Link href={`/elections/${election.id}/results`}>
-                  <Button
+                <Button
                     size="lg"
                     variant="outline"
-                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
-                  >
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100" asChild><Link href={`/elections/${election.id}/results`}>
                     <Trophy className="w-5 h-5 mr-2" />
                     View Live Results
-                  </Button>
-                </Link>
+                  </Link></Button>
               </div>
             </div>
           )}
@@ -670,15 +646,12 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
                     View the final results
                   </p>
                 </div>
-                <Link href={`/elections/${election.id}/results`}>
-                  <Button
+                <Button
                     size="lg"
-                    className="bg-amber-600 hover:bg-amber-700 text-white shadow-lg"
-                  >
+                    className="bg-amber-600 hover:bg-amber-700 text-white shadow-lg" asChild><Link href={`/elections/${election.id}/results`}>
                     <Trophy className="w-5 h-5 mr-2" />
                     View Results
-                  </Button>
-                </Link>
+                  </Link></Button>
               </div>
             </div>
           )}

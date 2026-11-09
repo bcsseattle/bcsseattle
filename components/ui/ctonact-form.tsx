@@ -96,9 +96,7 @@ export default function ContactForm({ heading = 'h2' }: { heading?: 'h1' | 'h2' 
             </CardContent>
             <CardFooter>
               <div className="flex justify-between w-screen">
-                <Button variant={'link'}>
-                  <Link href="/">Cancel</Link>
-                </Button>
+                <Button variant={'link'} asChild><Link href="/">Cancel</Link></Button>
                 <Button variant={'default'} type="submit">
                   Send
                 </Button>

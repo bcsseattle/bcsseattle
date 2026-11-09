@@ -8,9 +8,7 @@ export default function Hero({}: Props) {
       <div className='flex flex-col items-center justify-center py-24 space-y-4 text-center'>
         <h1 className='text-3xl font-bold'>Baloch Community Services of Seattle</h1>
         <p className='mt-5 text-md'></p>
-        <Link href="/about-us">
-          <Button variant='default'>Learn more</Button>
-        </Link>
+        <Button variant='default' asChild><Link href="/about-us">Learn more</Link></Button>
       </div>
     </section>
   );

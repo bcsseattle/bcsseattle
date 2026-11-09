@@ -50,9 +50,12 @@ export default function Breadcrumbs() {
                   <BreadcrumbSeparator />
                 </>
               ) : (
-                <BreadcrumbPage className="capitalize">
-                  {breadcrumb.name}
-                </BreadcrumbPage>
+                // In an <li>, like every other child of the list (BUG-066).
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="capitalize">
+                    {breadcrumb.name}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
               )}
             </React.Fragment>
           );

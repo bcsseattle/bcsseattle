@@ -194,13 +194,15 @@ export default function Navlinks({ user, member, isAdmin }: NavlinksProps) {
         {/* Show "For members" if user is not logged in OR if they don't have an active approved membership */}
         {(!user || !member || (member?.status !== 'active' && !member?.isApproved)) && (
           <NavigationMenuItem>
-            <ListItem href="/signin?redirectTo=%2Faccount" title="For members"></ListItem>
+            <NavigationMenuLink asChild>
+              <NextLink href="/signin?redirectTo=%2Faccount" className={navigationMenuTriggerStyle()}>
+                For members
+              </NextLink>
+            </NavigationMenuLink>
           </NavigationMenuItem>
         )}
         <NavigationMenuItem>
-          <Button variant="default" className="mx-2">
-            <NextLink href="/donate">Donate</NextLink>
-          </Button>
+          <Button variant="default" className="mx-2" asChild><NextLink href="/donate">Donate</NextLink></Button>
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>
@@ -222,8 +224,8 @@ const ListItem = React.forwardRef<
   React.ElementRef<'a'>,
   React.ComponentPropsWithoutRef<'a'>
 >(({ className, title, href, children, ...props }, ref) => {
+  // Just the <li>: it was wrapped in its own <ul>, nesting lists invalidly (BUG-066).
   return (
-    <ul>
       <li>
         <NavigationMenuLink asChild>
           <NextLink
@@ -241,7 +243,6 @@ const ListItem = React.forwardRef<
           </NextLink>
         </NavigationMenuLink>
       </li>
-    </ul>
   );
 });
 ListItem.displayName = 'ListItem';

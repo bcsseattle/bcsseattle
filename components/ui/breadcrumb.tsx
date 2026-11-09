@@ -77,8 +77,8 @@ const BreadcrumbSeparator = ({
   className,
   ...props
 }: React.ComponentProps<"li">) => (
+  // A plain hidden <li>: role="presentation" made it a non-item inside the list (BUG-066).
   <li
-    role="presentation"
     aria-hidden="true"
     className={cn("[&>svg]:w-3.5 [&>svg]:h-3.5", className)}
     {...props}

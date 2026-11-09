@@ -77,9 +77,7 @@ export default async function VoteConfirmationPage(props: Props) {
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-center">
-            <Link href={`/elections/${id}`}>
-              <Button>Back to Election</Button>
-            </Link>
+            <Button asChild><Link href={`/elections/${id}`}>Back to Election</Link></Button>
           </CardFooter>
         </Card>
       </div>
@@ -204,16 +202,12 @@ export default async function VoteConfirmationPage(props: Props) {
         {/* Actions */}
         <Card>
           <CardFooter className="flex flex-wrap gap-3 justify-center">
-            <Link href={`/elections/${id}`}>
-              <Button variant="outline">
+            <Button variant="outline" asChild><Link href={`/elections/${id}`}>
                 Back to Election
-              </Button>
-            </Link>
-            <Link href="/elections">
-              <Button variant="outline">
+              </Link></Button>
+            <Button variant="outline" asChild><Link href="/elections">
                 View All Elections
-              </Button>
-            </Link>
+              </Link></Button>
             {/* Future: Add download receipt button */}
             {/* <Button variant="outline" className="flex items-center gap-2">
               <Download className="w-4 h-4" />

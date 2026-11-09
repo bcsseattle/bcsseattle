@@ -81,3 +81,18 @@ Feature: The site works on phones and with assistive technology
     And I am signed in as an approved member
     When I go to the fundraisers page
     Then I should see "No fundraisers found."
+
+  @P2 @a11y @BUG-066
+  Scenario Outline: <path> has no controls nested in each other and no broken lists
+    Given I am signed in as an admin
+    And there is an open election with candidates "Hani" and "Nazir" for "President"
+    When I go to "<path>"
+    Then an accessibility scan should find no nested controls or broken lists
+
+    Examples:
+      | path             |
+      | /                |
+      | /terms           |
+      | /contact-us      |
+      | /elections       |
+      | /admin/members   |

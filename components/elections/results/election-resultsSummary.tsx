@@ -111,13 +111,11 @@ export function ElectionResultsSummary({
 
         {/* View full results link */}
         <div className="pt-2 border-t">
-          <Link href={`/elections/${electionId}/results`}>
-            <Button variant="outline" size="sm" className="w-full">
+          <Button variant="outline" size="sm" className="w-full" asChild><Link href={`/elections/${electionId}/results`}>
               <TrendingUp className="h-4 w-4 mr-2" />
               View Full Results
               <ExternalLink className="h-3 w-3 ml-2" />
-            </Button>
-          </Link>
+            </Link></Button>
         </div>
       </CardContent>
     </Card>

@@ -170,9 +170,7 @@ export default async function ElectionsPage(props: Props) {
                         )}
                       </div>
                       <div className="mt-4">
-                        <Link href={`/elections/${election.id}`}>
-                          <Button>View</Button>
-                        </Link>
+                        <Button asChild><Link href={`/elections/${election.id}`}>View</Link></Button>
                       </div>
                     </CardContent>
                   </Card>
