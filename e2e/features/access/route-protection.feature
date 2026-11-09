@@ -29,14 +29,14 @@ Feature: Members-only and admin-only pages are protected
   Scenario: An admin can open member management
     Given I am signed in as an admin
     When I go to "/admin/members"
-    Then I should see the heading "Member Management"
+    Then I should see the heading "Members"
 
   @P0 @critical
   Scenario: A member who isn't an admin is turned away from member management
     Given I am signed in as an approved member
     When I go to "/admin/members"
     Then I should be on the home page
-    And I should not see "Member Management"
+    And I should not see the heading "Members"
 
   @P0 @critical
   Scenario: A member can download their own contribution statement

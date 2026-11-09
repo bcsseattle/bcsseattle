@@ -115,6 +115,10 @@ Then('I should see {string}', async function (this: E2EWorld, text: string) {
   await expect(this.page.getByText(text, { exact: false }).first()).toBeVisible();
 });
 
+Then('I should not see the heading {string}', async function (this: E2EWorld, text: string) {
+  await expect(this.page.getByRole('heading', { name: text, exact: true })).toHaveCount(0);
+});
+
 Then('I should not see {string}', async function (this: E2EWorld, text: string) {
   await expect(this.page.getByText(text, { exact: false })).toHaveCount(0);
 });

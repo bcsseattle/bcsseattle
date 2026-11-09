@@ -10,7 +10,7 @@ function rowFor(world: E2EWorld, name: string) {
 
 async function openMemberManagement(world: E2EWorld) {
   if (!world.page.url().endsWith('/admin/members')) await world.page.goto('/admin/members');
-  await expect(world.page.getByRole('heading', { name: 'Member Management' })).toBeVisible();
+  await expect(world.page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible();
 }
 
 /** Confirms an AlertDialog and waits for the page to show the new state. */
