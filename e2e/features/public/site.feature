@@ -99,3 +99,9 @@ Feature: The public website
     When I go to "/no-such-page"
     Then I should see the heading "Page not found"
     And I should see a "Go to the home page" button
+
+  @P2 @BUG-054
+  Scenario: Search engines get a robots.txt and a sitemap of public pages
+    Given I am a visitor who is not signed in
+    Then robots.txt should keep crawlers out of sign-in and point to the sitemap
+    And every page in the sitemap should open

@@ -188,3 +188,23 @@ Then('the page should not load Google Analytics without a measurement id', async
   const tags = await this.page.locator('script[src*="googletagmanager"]').evaluateAll((s) => s.map((x) => (x as HTMLScriptElement).src));
   expect(tags).toEqual([]);
 });
+
+Then('robots.txt should keep crawlers out of sign-in and point to the sitemap', async function (this: E2EWorld) {
+  const res = await this.page.request.get('/robots.txt');
+  expect(res.status()).toBe(200);
+  const body = await res.text();
+  expect(body).toContain('Disallow: /signin');
+  expect(body).toMatch(/Sitemap: .*\/sitemap\.xml/);
+});
+
+Then('every page in the sitemap should open', async function (this: E2EWorld) {
+  const xml = await (await this.page.request.get('/sitemap.xml')).text();
+  const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
+  expect(urls.length).toBeGreaterThan(5);
+  const dead: string[] = [];
+  for (const path of urls) {
+    const res = await this.page.request.get(path);
+    if (res.status() >= 400) dead.push(`${path} → ${res.status()}`);
+  }
+  expect(dead).toEqual([]);
+});
