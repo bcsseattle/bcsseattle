@@ -93,8 +93,8 @@ export default async function Members() {
             </div>
             <CardDescription>
               This includes all members who are paying either{' '}
-              <span className="font-medium text-secondary">$5/month</span> or{' '}
-              <span className="font-medium text-primary">$60/year</span>.
+              <span className="font-medium">$5/month</span> or{' '}
+              <span className="font-medium">$60/year</span>.
             </CardDescription>
           </CardHeader>
           <CardContent>

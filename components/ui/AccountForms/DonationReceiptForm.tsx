@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '../card';
 import { Donation, Member } from '@/types';
-import { getPriceString } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 import { Button } from '../button';
 import {
   ColumnDef,
@@ -44,7 +44,7 @@ export const columns: ColumnDef<any>[] = [
     header: 'Amount',
     cell: (info) => {
       const value = info.getValue<number>(); // Explicitly type the value
-      const formatted = getPriceString(value); // Format the number as a currency string
+      const formatted = formatMoney(value); // Format the number as a currency string
       return <div className="font-medium">{formatted}</div>;
     }
   },

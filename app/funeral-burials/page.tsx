@@ -15,7 +15,7 @@ import {
 } from '@/utils/supabase/admin';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { getPriceString } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 
 export const revalidate = 0;
 
@@ -36,9 +36,9 @@ export default async function Page() {
 
   const halfOfTotalAmountPerHead = totalAmountPerHead / 2;
 
-  const intialPaymentPerHead = getPriceString(halfTotalLotPrice / totalCommitmenttedMembers);
-  const installPaymentPerHead = getPriceString(halfOfTotalAmountPerHead / 3);
-  const totalPaymentPerHead = getPriceString(totalAmountPerHead);
+  const intialPaymentPerHead = formatMoney(halfTotalLotPrice / totalCommitmenttedMembers);
+  const installPaymentPerHead = formatMoney(halfOfTotalAmountPerHead / 3);
+  const totalPaymentPerHead = formatMoney(totalAmountPerHead);
 
   const tableData = data?.map((d: any) => {
     return {

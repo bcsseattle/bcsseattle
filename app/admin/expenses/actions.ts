@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { getErrorRedirect, getStatusRedirect } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 
 const optional = (max: number) =>
   z.string().trim().max(max).transform((v) => v || null);
@@ -41,5 +42,5 @@ export async function addExpense(formData: FormData) {
     redirect(getErrorRedirect('/admin/expenses', 'Expense not added.', 'Something went wrong. Please try again.'));
   }
 
-  redirect(getStatusRedirect('/admin/expenses', 'Expense added.', `${parsed.data.category}: $${(parsed.data.amount / 100).toFixed(2)}`));
+  redirect(getStatusRedirect('/admin/expenses', 'Expense added.', `${parsed.data.category}: ${formatMoney(parsed.data.amount)}`));
 }

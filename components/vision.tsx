@@ -1,6 +1,6 @@
 export default function Vision() {
   return (
-    <section className="container my-12 text-zinc-700">
+    <section className="container my-12 text-foreground">
       <h1 className="text-4xl font-bold">Our Vision</h1>
       <p className="mt-5 text-xl">
         Our vision is to make BCS Seattle a vibrant cultural hub in Greater

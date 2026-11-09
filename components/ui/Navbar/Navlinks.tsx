@@ -117,7 +117,7 @@ export default function Navlinks({ user, member, isAdmin }: NavlinksProps) {
               href="/fundraisers" 
               className={cn(
                 navigationMenuTriggerStyle(),
-                "bg-transparent hover:bg-accent"
+                "bg-transparent hover:bg-accent-100"
               )}
             >
               Fundraisers
@@ -174,7 +174,7 @@ export default function Navlinks({ user, member, isAdmin }: NavlinksProps) {
                     title="Community Funds"
                   ></ListItem>
                   <NavigationMenuLink asChild>
-                    <li className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                    <li className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent-100 hover:text-foreground focus:bg-accent-100 focus:text-foreground">
                       <form onSubmit={(e) => handleRequest(e, SignOut, router)}>
                         <input
                           type="hidden"
@@ -231,7 +231,7 @@ const ListItem = React.forwardRef<
           <NextLink
             href={href as string}
             className={cn(
-              'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+              'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent-100 hover:text-foreground focus:bg-accent-100 focus:text-foreground',
               className
             )}
             {...props}
@@ -312,7 +312,7 @@ export function MobileNav(props: NavlinksProps) {
             <ul>
               {group.links.map((link) => (
                 <li key={link.href}>
-                  <NextLink href={link.href} className="block rounded-md px-3 py-2 text-sm hover:bg-accent">
+                  <NextLink href={link.href} className="block rounded-md px-3 py-2 text-sm hover:bg-accent-100">
                     {link.title}
                   </NextLink>
                 </li>

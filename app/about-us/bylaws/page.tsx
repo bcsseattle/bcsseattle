@@ -1,6 +1,6 @@
 export default function Bylaws() {
   return (
-    <section className="mb-32 text-zinc-700">
+    <section className="mb-32 text-foreground">
       <div className="max-w-6xl px-4 py-8 mx-auto sm:px-6 sm:pt-24 lg:px-8">
         <div className="sm:align-center sm:flex sm:flex-col space-y-4">
           <h1 className="text-2xl font-bold">

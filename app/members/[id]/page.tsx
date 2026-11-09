@@ -1,3 +1,4 @@
+import { formatMoney } from '@/utils/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PersonIcon } from '@radix-ui/react-icons';
 import { createClient } from '@/utils/supabase/server';
@@ -35,11 +36,7 @@ export default async function Page(props: {
     customerId: stripeCustomerId
   });
 
-  const totalSpentString = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0
-  }).format(totalSpent / 100);
+  const totalSpentString = formatMoney(totalSpent);
 
   const cards = [
     {
@@ -70,7 +67,7 @@ export default async function Page(props: {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold p-2 my-5 text-secondary">
+      <h1 className="text-3xl font-bold p-2 my-5 text-foreground">
         {member?.fullName}
       </h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

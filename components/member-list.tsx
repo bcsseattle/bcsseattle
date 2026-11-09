@@ -1,3 +1,4 @@
+import { formatMoney } from '@/utils/format';
 import {
   Table,
   TableBody,
@@ -60,13 +61,8 @@ export default function MemberList({
                 (price) => price.id === subscription?.price_id
               );
 
-              const priceString = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 0
-              }).format(
-                ((price?.unit_amount || 0) * (member.totalMembersInFamily ?? 0) || 0) /
-                  100
+              const priceString = formatMoney(
+                (price?.unit_amount || 0) * (member.totalMembersInFamily ?? 0) || 0
               );
 
               return (

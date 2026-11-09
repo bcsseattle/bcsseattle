@@ -1,10 +1,10 @@
-import { getPriceString } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 
 export function Expenses({ expenses = [] }: { expenses: any[] }) {
   return (
     <div className="space-y-8">
       {expenses?.map((expense) => {
-        const amountString = getPriceString(expense?.amount || 0);
+        const amountString = formatMoney(expense?.amount || 0);
         return (
           <div className="flex items-center" key={expense.id}>
             {expense.date}

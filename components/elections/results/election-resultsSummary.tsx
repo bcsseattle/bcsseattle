@@ -141,7 +141,7 @@ export function QuickResults({ electionId, className = "" }: QuickResultsProps) 
           <p className="text-sm text-muted-foreground">
             <Link 
               href={`/elections/${electionId}/results`}
-              className="text-primary hover:underline"
+              className="text-accent hover:underline"
             >
               View detailed results →
             </Link>
