@@ -1,10 +1,12 @@
-import { Card, CardContent } from '@/components/ui/card';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import dayjs from '@/libs/dayjs';
+import { buttonVariants } from '@/components/ui/button';
+import { CheckCircle } from 'lucide-react';
+import { ElectionCard } from '@/components/elections/election-card';
+import { PageHeader } from '@/components/portal/page-header';
+import { StatePanel } from '@/components/ui/state-panel';
+import { formatDate } from '@/utils/format';
 import { useServerFeatureFlag } from '@/utils/server-feature-flags';
 import {
   FEATURE_FLAGS,
@@ -125,59 +127,51 @@ export default async function ElectionsPage(props: Props) {
     })
   );
 
-      return (
-        <div className="max-w-3xl mx-auto p-6">
-          <h1 className="text-2xl font-semibold mb-4">
-            Current and Upcoming Elections
-          </h1>
+  // Elections (Figma 11:860). Only current and upcoming elections are loaded
+  // (the query is unchanged), so the mock's "Past" tab is left out.
+  const now = Date.now();
+  const isOpen = (e: { start_date: string; end_date: string }) =>
+    new Date(e.start_date).getTime() <= now && now <= new Date(e.end_date).getTime();
+  const firstOpenId = electionsWithCounts.find(isOpen)?.id;
 
-          {electionsWithCounts?.length === 0 ? (
-            <p className="text-muted-foreground">
-              No active elections at the moment.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {electionsWithCounts.map((election) => {
-                const contentTypes = getElectionContentTypes(election);
-                const enhancedDescription = getElectionDescription(election, contentTypes);
-                
-                return (
-                  <Card key={election.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h2 className="text-lg font-medium">{election.title}</h2>
-                          <p className="text-sm text-muted-foreground">
-                            {enhancedDescription}
-                          </p>
-                          <div className="text-sm text-gray-500 mt-1">
-                            {dayjs.utc(election.start_date).tz('America/Los_Angeles').format('MMM D')} –{' '}
-                            {dayjs.utc(election.end_date).tz('America/Los_Angeles').format('MMM D, YYYY')}
-                          </div>
-                        </div>
-                        {contentTypes.length > 0 && (
-                          <div className="flex flex-wrap gap-1 ml-4">
-                            {contentTypes.map((type) => (
-                              <Badge
-                                key={type}
-                                variant={contentTypes.length > 1 ? "secondary" : "default"}
-                                className="text-xs"
-                              >
-                                {type}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-4">
-                        <Button asChild><Link href={`/elections/${election.id}`}>View</Link></Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+  return (
+    <div className="flex max-w-[800px] flex-col gap-6">
+      <PageHeader
+        title="Elections"
+        description="Current and upcoming elections for approved members. You can vote once in each election; results are published when voting closes."
+      />
+      {electionsWithCounts?.length === 0 ? (
+        <StatePanel icon={CheckCircle} title="No active elections at the moment">
+          When the board opens an election it will appear here.
+        </StatePanel>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {electionsWithCounts.map((election) => {
+            const contentTypes = getElectionContentTypes(election);
+            const open = isOpen(election);
+            return (
+              <ElectionCard
+                key={election.id}
+                title={election.title}
+                description={getElectionDescription(election, contentTypes)}
+                phase={open ? { label: 'Voting open', tone: 'green' } : { label: 'Upcoming', tone: 'neutral' }}
+                types={contentTypes}
+                dates={`${formatDate(election.start_date)} – ${formatDate(election.end_date)}`}
+                action={
+                  // The first open election's Vote now is the page's one primary action.
+                  <Link
+                    href={`/elections/${election.id}`}
+                    className={buttonVariants({ variant: open && election.id === firstOpenId ? 'default' : 'outline' })}
+                  >
+                    {open ? 'Vote now' : 'View'}
+                    <span className="sr-only">: {election.title}</span>
+                  </Link>
+                }
+              />
+            );
+          })}
         </div>
-      );
+      )}
+    </div>
+  );
 }

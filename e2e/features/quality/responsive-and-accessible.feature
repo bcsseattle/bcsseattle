@@ -73,7 +73,7 @@ Feature: The site works on phones and with assistive technology
     Given there are no current elections
     And I am signed in as an approved member
     When I go to "/elections"
-    Then I should see "No active elections at the moment."
+    Then I should see "No active elections at the moment"
 
   @P2 @serial
   Scenario: The fundraisers page says so when there are no fundraisers

@@ -43,12 +43,10 @@ When('I open the candidate ballot', async function (this: E2EWorld) {
 });
 
 Then('the elections list should mark the election as {string}', async function (this: E2EWorld, label: string) {
-  // The election's own card: the smallest block holding both its title and its View link.
+  // The election's own card: the <article> headed by its title.
   const card = this.page
-    .locator('div')
-    .filter({ has: this.page.getByRole('heading', { name: this.election!.title, exact: true }) })
-    .filter({ has: this.page.getByRole('link', { name: 'View' }) })
-    .last();
+    .getByRole('article')
+    .filter({ has: this.page.getByRole('heading', { name: this.election!.title, exact: true }) });
   await expect(card.getByText(label, { exact: true })).toBeVisible();
 });
 
