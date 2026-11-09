@@ -3,6 +3,8 @@
 import { z } from 'zod';
 import { getErrorRedirect, getStatusRedirect } from 'utils/helpers';
 import { createClient } from '@/utils/supabase/server';
+// Votes have no insert policy for users: they are written here, after the checks above (BUG-005).
+import { supabaseAdmin } from '@/utils/supabase/admin';
 import {
   Candidate,
   NominateFormSchema,
@@ -185,7 +187,7 @@ export async function submitCandidateVotes(
         user_agent: userAgent
       }));
 
-      const { error: voteError } = await supabase
+      const { error: voteError } = await supabaseAdmin
         .from('votes')
         .insert(votesToInsert);
 
@@ -341,7 +343,7 @@ export async function submitInitiativeVotes(
         user_agent: userAgent
       }));
 
-      const { error: voteError } = await supabase
+      const { error: voteError } = await supabaseAdmin
         .from('votes')
         .insert(votesToInsert);
 
@@ -452,7 +454,7 @@ export async function submitCombinedVotes(
     });
 
     // Insert votes
-    const { error: voteError } = await supabase
+    const { error: voteError } = await supabaseAdmin
       .from('votes')
       .insert(votesToInsert);
 

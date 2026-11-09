@@ -16,6 +16,38 @@ Given('{string} has made a donation', async function (this: E2EWorld, name: stri
   this.donation = await createDonation(this.cleanup, { email: u.email, fullName: u.fullName, amountCents: 5000, userId: u.id });
 });
 
+async function guestDonation(world: E2EWorld, name: string, dollars: number, flags: { anonymous?: boolean; private?: boolean } = {}) {
+  // Suffix: members see every guest donation, and scenarios run in parallel.
+  world.data.guestName = `${name} ${Math.random().toString(36).slice(2, 6)}`;
+  world.donation = await createDonation(world.cleanup, { fullName: world.data.guestName, amountCents: dollars * 100, ...flags });
+}
+Given('a guest named {string} has donated ${int}', async function (this: E2EWorld, name: string, dollars: number) {
+  await guestDonation(this, name, dollars);
+});
+Given('a guest named {string} has donated ${int} anonymously', async function (this: E2EWorld, name: string, dollars: number) {
+  await guestDonation(this, name, dollars, { anonymous: true });
+});
+Given('a guest named {string} has made a private ${int} donation', async function (this: E2EWorld, name: string, dollars: number) {
+  await guestDonation(this, name, dollars, { private: true });
+});
+
+When('{string} reads that donation through the public API', async function (this: E2EWorld, reader: string) {
+  const client = await clientAs(this.user(reader));
+  this.rows = await client.from('donations').select('donation_amount, donors(full_name)').eq('id', this.donation!.id);
+});
+
+Then('they should see the ${int} donation from that guest', async function (this: E2EWorld, dollars: number) {
+  expect(this.rows?.data, JSON.stringify(this.rows?.error)).toEqual([{ donation_amount: dollars * 100, donors: { full_name: this.data.guestName } }]);
+});
+
+Then('they should see the ${int} donation but not who gave it', async function (this: E2EWorld, dollars: number) {
+  expect(this.rows?.data, JSON.stringify(this.rows?.error)).toEqual([{ donation_amount: dollars * 100, donors: null }]);
+});
+
+Then('they should not see that donation', async function (this: E2EWorld) {
+  expect(this.rows?.data ?? []).toHaveLength(0);
+});
+
 When('I request the contribution statement of {string} for this year', async function (this: E2EWorld, name: string) {
   const memberId = this.user(name).memberId;
   const res = await this.page.request.get(`/account/${memberId}/contributions/pdf?taxYear=${thisYear}`, { maxRedirects: 0 });
@@ -38,6 +70,11 @@ When('I open the member details page of {string}', async function (this: E2EWorl
 Then('I should not see {string}\'s name', async function (this: E2EWorld, name: string) {
   await this.page.waitForLoadState('networkidle');
   await expect(this.page.getByText(this.user(name).fullName)).toHaveCount(0);
+});
+
+Then('I should see {string}\'s details and total contributions', async function (this: E2EWorld, name: string) {
+  await expect(this.page.getByText(this.user(name).fullName).first()).toBeVisible();
+  await expect(this.page.getByText('Total Contributions')).toBeVisible();
 });
 
 // ---------------------------------------------------------------- direct API access

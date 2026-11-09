@@ -101,6 +101,13 @@ When('I submit a ballot for both {string} and {string}, labelling one with anoth
   this.response = { status: res.status(), body: await res.text() };
 });
 
+When('I submit the combined ballot with a vote for {string}', async function (this: E2EWorld, name: string) {
+  const res = await this.page.request.post(`/api/elections/${this.election!.id}/vote`, {
+    data: { candidateVotes: [{ candidateId: candidate(this, name).id, position: 'President' }], initiativeVotes: [] },
+  });
+  expect(res.status(), await res.text()).toBe(200);
+});
+
 Then('no votes should be recorded for the election', async function (this: E2EWorld) {
   const { count } = await admin.from('votes').select('id', { count: 'exact', head: true }).eq('election_id', this.election!.id);
   expect(count, `API said ${this.response?.status}: ${this.response?.body}`).toBe(0);

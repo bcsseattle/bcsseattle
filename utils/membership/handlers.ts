@@ -12,6 +12,7 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import {
+  supabaseAdmin,
   createMember,
   retrieveMember,
   upsertEmailLogs
@@ -137,8 +138,8 @@ export async function sendPaymentFailedEmail(charnge: Stripe.Charge) {
     const recipient = charnge.billing_details.email as string;
     const today = new Date().toISOString().split('T')[0];
 
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    // Runs from the Stripe webhook (no user session); email_logs is admin-only.
+    const { data, error } = await supabaseAdmin
       .from('email_logs')
       .select('*')
       .eq('recipient', recipient)

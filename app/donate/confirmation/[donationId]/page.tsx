@@ -1,5 +1,7 @@
 import Invoice from '@/components/donations/invoice';
 import { createClient } from '@/utils/supabase/server';
+// Receipts are opened by guests too: donations/donors are read by id with the service role.
+import { supabaseAdmin } from '@/utils/supabase/admin';
 import { redirect } from 'next/navigation';
 
 export default async function DonationConfirmation(props: {
@@ -14,7 +16,7 @@ export default async function DonationConfirmation(props: {
     .select('*')
     .maybeSingle();
 
-  const { data: donation } = await supabase
+  const { data: donation } = await supabaseAdmin
     .from('donations')
     .select('*')
     .eq('id', donationId)
@@ -23,7 +25,7 @@ export default async function DonationConfirmation(props: {
   if (!donation) {
     return redirect('/donate');
   }
-  const { data: donor } = await supabase
+  const { data: donor } = await supabaseAdmin
     .from('donors')
     .select('*')
     .eq('id', donation?.donor_id)

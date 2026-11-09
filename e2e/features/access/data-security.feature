@@ -14,19 +14,19 @@ Feature: Personal data is protected at the database and API level
     When "Bilal" reads the account record of "Amina" through the public API
     Then no record should be returned
 
-  @P0 @known-bug @BUG-001
+  @P0 @BUG-001
   Scenario: A user cannot make themselves an admin
     Given there is an approved member named "Bilal"
     When "Bilal" sets their own account to admin through the public API
     Then "Bilal" should not be an admin
 
-  @P0 @known-bug @BUG-002
+  @P0 @BUG-002
   Scenario: An applicant cannot approve their own membership
     Given there is a pending applicant named "Bilal"
     When "Bilal" marks their own membership as approved through the public API
     Then "Bilal"'s membership should still be awaiting approval
 
-  @P0 @known-bug @BUG-003
+  @P0 @BUG-003
   Scenario Outline: Someone who isn't signed in cannot read <table>
     Given there is an approved member named "Amina"
     And "Amina" has made a donation
@@ -39,7 +39,38 @@ Feature: Personal data is protected at the database and API level
       | donors    |
       | donations |
 
-  @P0 @known-bug @BUG-005
+  # Community transparency (confirmed 2026-11-08): approved members see every
+  # donation, members' and guests', and who gave it, except donations marked
+  # private and the identity of donors who gave anonymously.
+  @P0 @api
+  Scenario: An approved member can see a guest's donation and who gave it
+    Given a guest named "Farah" has donated $50
+    And there is an approved member named "Bilal"
+    When "Bilal" reads that donation through the public API
+    Then they should see the $50 donation from that guest
+
+  @P0 @api
+  Scenario: An anonymous gift is visible to members without its donor
+    Given a guest named "Farah" has donated $50 anonymously
+    And there is an approved member named "Bilal"
+    When "Bilal" reads that donation through the public API
+    Then they should see the $50 donation but not who gave it
+
+  @P0 @api
+  Scenario: A private donation is hidden from members
+    Given a guest named "Farah" has made a private $50 donation
+    And there is an approved member named "Bilal"
+    When "Bilal" reads that donation through the public API
+    Then they should not see that donation
+
+  @P0 @api
+  Scenario: Someone without an approved membership cannot see other people's donations
+    Given a guest named "Farah" has donated $50
+    And there is a user with no membership named "Bilal"
+    When "Bilal" reads that donation through the public API
+    Then they should not see that donation
+
+  @P0 @BUG-005
   Scenario: A member cannot record a vote directly, bypassing the ballot
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
     And there is an approved member named "Bilal"

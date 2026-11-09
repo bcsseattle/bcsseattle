@@ -42,19 +42,40 @@ Feature: Members-only and admin-only pages are protected
     When I request the contribution statement of "Amina" for this year
     Then I should receive a PDF document
 
-  @P0 @security @known-bug @BUG-009
-  Scenario: A member cannot download another member's contribution statement
+  # Statements are open to approved members (community transparency, confirmed
+  # 2026-11-08); since the BUG-003 fix, RLS keeps everyone else out.
+  @P0 @security @BUG-009
+  Scenario: Someone without a membership cannot download a member's contribution statement
+    Given there is an approved member named "Amina"
+    And "Amina" has paid a contribution this year
+    And there is a user with no membership named "Bilal"
+    And I am signed in as "Bilal"
+    When I request the contribution statement of "Amina" for this year
+    Then I should not receive a PDF document
+
+  @P1
+  Scenario: An approved member can download another member's contribution statement
     Given there is an approved member named "Amina"
     And "Amina" has paid a contribution this year
     And there is an approved member named "Bilal"
     And I am signed in as "Bilal"
     When I request the contribution statement of "Amina" for this year
-    Then I should not receive a PDF document
+    Then I should receive a PDF document
 
-  @P0 @security @known-bug @BUG-010
-  Scenario: A member cannot open another member's private details page
+  # Approved members may see each other's details, contributions included
+  # (confirmed 2026-11-08). Since the BUG-003 fix, RLS hides member rows from
+  # anyone who isn't an approved, active member.
+  @P0 @security @BUG-010
+  Scenario: Someone without a membership cannot open a member's details page
     Given there is an approved member named "Amina"
     And there is a user with no membership named "Bilal"
     And I am signed in as "Bilal"
     When I open the member details page of "Amina"
     Then I should not see "Amina"'s name
+
+  @P1
+  Scenario: An approved member can see another member's details and contributions
+    Given there is an approved member named "Amina"
+    And I am signed in as an approved member
+    When I open the member details page of "Amina"
+    Then I should see "Amina"'s details and total contributions

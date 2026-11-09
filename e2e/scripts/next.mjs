@@ -39,5 +39,5 @@ if (problems.length) {
 }
 
 const args = cmd === 'start' ? ['start', '-p', '3100'] : ['build'];
-const child = spawn('node_modules/.bin/next', args, { stdio: 'inherit', env: e });
+const child = spawn('node_modules/.bin/next', args, { stdio: 'inherit', env: { ...e, NEXT_DIST_DIR: '.next-e2e' } });
 child.on('exit', (code) => process.exit(code ?? 1));

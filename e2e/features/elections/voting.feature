@@ -57,6 +57,15 @@ Feature: Voting in member elections
       | closed   | Completed |
       | upcoming | Upcoming  |
 
+  # Votes are written only by the server since the BUG-005 fix; this covers the
+  # combined ballot (components/elections/voting-client.tsx), which has no session.
+  @P0 @api @BUG-005
+  Scenario: The combined ballot records a member's vote
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an approved member
+    When I submit the combined ballot with a vote for "Hani"
+    Then my vote for "Hani" should be recorded
+
   @P1 @security @api @known-bug @BUG-011
   Scenario: The ballot refuses two votes in one position, however they're labelled
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
