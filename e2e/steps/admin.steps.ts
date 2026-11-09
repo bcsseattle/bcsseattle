@@ -99,7 +99,7 @@ When(
 
 Then('the expense should be listed on the expenses page', async function (this: E2EWorld) {
   await expect(this.page.getByRole('row').filter({ hasText: this.data.expenseDescription })).toContainText(
-    `$${Number(this.data.expenseAmount).toFixed(2)}`
+    `USD ${Number(this.data.expenseAmount).toFixed(2)}`
   );
 });
 
