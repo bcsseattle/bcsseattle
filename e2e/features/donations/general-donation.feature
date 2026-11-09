@@ -108,3 +108,16 @@ Feature: General donations
     Given I am a visitor who is not signed in
     When I donate $100 once by card
     Then nobody should be able to sign in to the donor's account with a shared password
+
+  @P1 @BUG-077
+  Scenario: A donor can leave the phone number empty
+    Given I am a visitor who is not signed in
+    When I donate $100 once by card without giving a phone number
+    Then I should be taken to Stripe Checkout for $100.00 as a one-time payment
+
+  @P1 @BUG-077
+  Scenario: A missing donor name is caught on the donor details step
+    Given I am a visitor who is not signed in
+    When I continue past my donor details without a name
+    Then I should see "Donor name is required for individuals"
+    And I should still be on the donor details step

@@ -46,11 +46,11 @@ function donorEmail(world: E2EWorld) {
   return email;
 }
 
-async function donateByCard(world: E2EWorld, amount: string, frequency: Frequency) {
+async function donateByCard(world: E2EWorld, amount: string, frequency: Frequency, phone?: string) {
   const email = donorEmail(world);
   world.donation = { id: '', donor_email: email };
   await chooseDonation(world.page, amount, frequency);
-  await enterDonor(world, email);
+  await enterDonor(world, email, phone);
   await world.page.getByRole('button', { name: /^Donate .* Now$/ }).click();
   await world.page.waitForURL(/checkout\.stripe\.com/, { waitUntil: 'commit', timeout: 30_000 });
   world.checkoutSessionId = (await sessionFromCheckoutUrl(world.page.url())).id;
@@ -227,3 +227,21 @@ async function anonSignIn(email: string, password: string) {
   const { createClient } = await import('@supabase/supabase-js');
   return createClient(env.supabaseUrl, env.anonKey, { auth: { persistSession: false } }).auth.signInWithPassword({ email, password });
 }
+
+// ---------------------------------------------------------------- donor details step (BUG-077)
+
+When('I donate $100 once by card without giving a phone number', async function (this: E2EWorld) {
+  await donateByCard(this, '100', 'once', '');
+});
+
+When('I continue past my donor details without a name', async function (this: E2EWorld) {
+  await chooseDonation(this.page, '100', 'once');
+  await this.page.getByLabel('Name of Donor').fill('');
+  await this.page.getByLabel('Email').fill(donorEmail(this));
+  await this.page.getByLabel('Phone').fill('206-555-0100'); // with a valid phone the old form skipped the name
+  await this.page.getByRole('button', { name: 'Continue to payment' }).click();
+});
+
+Then('I should still be on the donor details step', async function (this: E2EWorld) {
+  await expect(this.page.getByRole('button', { name: 'Continue to payment' })).toBeVisible();
+});
