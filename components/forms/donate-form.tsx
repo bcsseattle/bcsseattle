@@ -199,7 +199,9 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
   const donationButtons = donationAmounts.map((amount) => (
     <Button
       key={amount}
-      variant={form.watch('amount') === amount ? 'secondary' : 'outline'}
+      variant="outline"
+      aria-pressed={form.watch('amount') === amount}
+      className="aria-pressed:border-accent aria-pressed:bg-accent-100"
       type="button"
       onClick={() => form.setValue('amount', amount)}
     >
@@ -220,11 +222,9 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
                   {donationFrequencies.map((donationFrequency: any) => (
                     <Button
                       key={donationFrequency?.value}
-                      variant={
-                        form.watch('frequency') === donationFrequency?.value
-                          ? 'secondary'
-                          : 'outline'
-                      }
+                      variant="outline"
+                      aria-pressed={form.watch('frequency') === donationFrequency?.value}
+                      className="aria-pressed:border-accent aria-pressed:bg-accent-100"
                       type="button"
                       onClick={() => {
                         form.setValue('frequency', donationFrequency?.value);
@@ -253,11 +253,9 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
                 <div className="grid grid-cols-3 gap-4">
                   {donationButtons}
                   <Button
-                    variant={
-                      !donationAmounts.includes(form.watch('amount'))
-                        ? 'default'
-                        : 'outline'
-                    }
+                    variant="outline"
+                    aria-pressed={!donationAmounts.includes(form.watch('amount'))}
+                    className="aria-pressed:border-accent aria-pressed:bg-accent-100"
                     type="button"
                     onClick={() => form.setValue('amount', '1000.00')}
                   >

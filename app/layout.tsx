@@ -7,7 +7,7 @@ import { getURL } from '@/utils/helpers';
 import { Inter as FontSans, Source_Serif_4 as FontSerif } from 'next/font/google';
 import { cn } from '@/utils/cn';
 import '@/styles/main.css';
-import Footer from '@/components/Footer';
+import SiteFooter from '@/components/site/site-footer';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
 import { Analytics } from '@vercel/analytics/react';
 import Breadcrumbs from '@/components/ui/breadcrumbs';
@@ -82,12 +82,22 @@ export default async function RootLayout({ children }: PropsWithChildren) {
           {children}
           <Analytics />
         </main>
-        <Footer />
+        <SiteFooter />
         <Suspense>
           <Toaster />
         </Suspense>
         {/* Seven components report success and errors with sonner's toast() (BUG-022). */}
-        <SonnerToaster richColors closeButton />
+        <SonnerToaster
+          closeButton
+          style={
+            {
+              '--normal-bg': 'hsl(var(--primary))',
+              '--normal-text': 'hsl(var(--primary-foreground))',
+              '--normal-border': 'hsl(var(--primary))',
+              '--width': '420px'
+            } as React.CSSProperties
+          }
+        />
       </body>
     </html>
   );
