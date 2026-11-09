@@ -46,7 +46,7 @@ Feature: The public website
 
   # The form blocks the send, but shows a generic "Required" instead of these
   # messages: it has no defaultValues, so an untouched field is undefined.
-  @P2 @known-bug @BUG-075
+  @P2 @BUG-075
   Scenario Outline: The contact form says which field is missing
     Given I am a visitor who is not signed in
     When I send the contact form as "<name>" from "rahim@example.test" saying "<message>"

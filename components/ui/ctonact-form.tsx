@@ -31,7 +31,9 @@ import { sendEmail } from '@/utils/auth-helpers/server';
 export default function ContactForm() {
   const router = useRouter();
   const form = useForm<z.infer<typeof ContactFormSchema>>({
-    resolver: zodResolver(ContactFormSchema)
+    resolver: zodResolver(ContactFormSchema),
+    // Empty strings, not undefined, so zod reports "Name is required" rather than "Required" (BUG-075).
+    defaultValues: { name: '', email: '', message: '' }
   });
 
   async function onSubmit(values: z.infer<typeof ContactFormSchema>) {
