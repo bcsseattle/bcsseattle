@@ -94,10 +94,11 @@ export async function checkoutWithStripe(
       line_items: [
         {
           price: price.id,
+          // One per family member, 1 to 5; a missing or zero size counts as 1 (BUG-044).
           quantity:
             isMembership || isGenerous
               ? 1
-              : (Math.min(member?.totalMembersInFamily, 5) ?? 1)
+              : Math.min(Math.max(Math.floor(Number(member?.totalMembersInFamily)) || 1, 1), 5)
         }
       ],
       cancel_url: getURL(cancelUrl),
