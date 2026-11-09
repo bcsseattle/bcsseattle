@@ -11,7 +11,8 @@ Feature: Admins review membership applications
   Scenario: An admin approves a pending application
     Given there is a pending applicant named "Hani"
     When I approve the membership of "Hani"
-    Then "Hani" should be listed as "Active"
+    Then I should be told that "Hani" has been approved
+    And "Hani" should be listed as "Active"
     And "Hani" should be an approved member
 
   @P1
@@ -21,19 +22,19 @@ Feature: Admins review membership applications
     Then "Hani" should be listed as "Pending"
     And "Hani"'s membership should still be awaiting approval
 
-  @P1 @known-bug @BUG-035
+  @P1 @BUG-035
   Scenario: A rejected applicant no longer appears as a pending application
     Given there is a pending applicant named "Hani"
     When I reject the membership application of "Hani"
     Then "Hani" should not be listed as "Pending"
 
-  @P1 @known-bug @BUG-035
+  @P1 @BUG-035
   Scenario: A deactivated member is shown as inactive, not as a new application
     Given there is an approved member named "Hani"
     When I deactivate the membership of "Hani"
     Then "Hani" should be listed as "Inactive"
 
-  @P1 @known-bug @BUG-036
+  @P1 @BUG-036
   Scenario: The admin can see each applicant's email address
     Given there is a pending applicant named "Hani"
     When I go to "/admin/members"

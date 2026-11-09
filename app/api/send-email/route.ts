@@ -8,7 +8,11 @@ export async function POST(request: NextRequest) {
     return new Response('Unauthorized', { status: 401 });
   }
   const { email, name, message } = await request.json();
-  const transport = nodemailer.createTransport({
+  // SMTP_URL (unset in production) points the mail at another server, e.g.
+  // the local Mailpit in development and e2e.
+  const transport = process.env.SMTP_URL
+    ? nodemailer.createTransport(process.env.SMTP_URL)
+    : nodemailer.createTransport({
     service: 'gmail',
     /* 
           setting service as 'gmail' is same as providing these setings:
@@ -26,7 +30,7 @@ export async function POST(request: NextRequest) {
   });
 
   const mailOptions: Mail.Options = {
-    from: process.env.MY_EMAIL,
+    from: process.env.MY_EMAIL || process.env.SEND_TO_EMAIL,
     to: process.env.SEND_TO_EMAIL,
     // cc: email, (uncomment this line if you want to send a copy to the sender)
     subject: `Message from ${name} (${email})`,

@@ -45,6 +45,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Unit tests (Jest, no services needed)
+        run: pnpm test
+
       - name: Start the e2e Supabase stack (production schema + develop overlay)
         run: pnpm e2e:db:start
 

@@ -1,28 +1,15 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
+import { supabaseAdmin } from '@/utils/supabase/admin';
 import { validateVotingSystemSecurity, generateSecurityReport } from '@/utils/elections/security-validator';
 
 // GET - Run security validation tests
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    
-    // Check if user is authenticated and has admin privileges
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    // The report exposes voter IDs and confirmation codes: admins only (BUG-033).
+    if (!(await isCurrentUserAdmin())) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
-
-    // Optional: Check if user has admin role
-    // const { data: userProfile } = await supabase
-    //   .from('profiles')
-    //   .select('role')
-    //   .eq('id', user.id)
-    //   .single();
-    
-    // if (userProfile?.role !== 'admin') {
-    //   return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    // }
 
     // Run security validation tests
     const testResults = await validateVotingSystemSecurity();
@@ -55,13 +42,11 @@ export async function GET(request: NextRequest) {
 // POST - Run specific security test
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    // The report exposes voter IDs and confirmation codes: admins only (BUG-033).
+    if (!(await isCurrentUserAdmin())) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
+    const supabase = supabaseAdmin;
 
     const { testName, electionId } = await request.json();
 

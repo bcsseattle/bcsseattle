@@ -81,6 +81,11 @@ export default async function ElectionsPage(props: Props) {
       return redirect('/register');
     }
 
+    // Signed in but never registered: there's no member to show a status for (BUG-056).
+    if (!member) {
+      return redirect('/register');
+    }
+
     if (!member?.isApproved) {
       return redirect(`/members/${member?.id}/pending`);
     }
@@ -101,10 +106,11 @@ export default async function ElectionsPage(props: Props) {
   const electionsWithCounts = await Promise.all(
     (elections || []).map(async (election) => {
       const [positionsData, initiativesData] = await Promise.all([
+        // Positions are defined per election type, not per election (BUG-059).
         supabase
           .from('election_positions')
           .select('id')
-          .eq('election_id', election.id),
+          .eq('election_type', String(election.type)),
         supabase
           .from('initiatives')
           .select('id')
@@ -164,9 +170,7 @@ export default async function ElectionsPage(props: Props) {
                         )}
                       </div>
                       <div className="mt-4">
-                        <Link href={`/elections/${election.id}`}>
-                          <Button>View</Button>
-                        </Link>
+                        <Button asChild><Link href={`/elections/${election.id}`}>View</Link></Button>
                       </div>
                     </CardContent>
                   </Card>

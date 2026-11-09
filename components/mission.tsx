@@ -1,7 +1,8 @@
-export default function Mission() {
+// h1 on its own page; h2 when it's a section of another page, e.g. the home page (BUG-051).
+export default function Mission({ heading: Heading = 'h1' }: { heading?: 'h1' | 'h2' }) {
   return (
     <section className="container my-12 text-zinc-700">
-      <h1 className="text-2xl font-bold">Our Mission</h1>
+      <Heading className="text-2xl font-bold">Our Mission</Heading>
       <p className="mt-5">
         BCS Seattle aims to enhance the cultural heritage and community welfare
         of the Baloch community in the Greater Seattle area. We are committed to

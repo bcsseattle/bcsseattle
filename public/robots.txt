@@ -3,3 +3,8 @@ Disallow: /*?_rsc=
 Disallow: /*&_rsc=
 Disallow: /signin
 Disallow: /signin/
+Disallow: /account
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://www.bcsseattle.org/sitemap.xml

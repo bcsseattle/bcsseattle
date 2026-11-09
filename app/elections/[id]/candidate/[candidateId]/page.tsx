@@ -63,12 +63,10 @@ export default async function CandidatePage2(props: Props) {
         <p className="text-sm text-red-600 mb-4">
           Error: {candidateError?.message}
         </p>
-        <Link href={`/elections/${electionId}`}>
-          <Button variant="outline">
+        <Button variant="outline" asChild><Link href={`/elections/${electionId}`}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Election
-          </Button>
-        </Link>
+          </Link></Button>
       </div>
     );
   }
@@ -150,12 +148,10 @@ export default async function CandidatePage2(props: Props) {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <Link href={`/elections/${electionId}`}>
-            <Button variant="ghost" className="gap-2 hover:bg-white/60">
+          <Button variant="ghost" className="gap-2 hover:bg-white/60" asChild><Link href={`/elections/${electionId}`}>
               <ArrowLeft className="h-4 w-4" />
               Back to Election
-            </Button>
-          </Link>
+            </Link></Button>
         </div>
 
         {/* Main Content */}
@@ -329,17 +325,14 @@ export default async function CandidatePage2(props: Props) {
                             </p>
                           )}
                         </div>
-                        <Link
+                        <Button
+                            variant="outline"
+                            className="w-full border-green-300 text-green-700 hover:bg-green-50" asChild><Link
                           href={`/elections/${electionId}/vote/candidates/confirmation?code=${userVoteSession?.confirmation_code}`}
                           className="w-full"
                         >
-                          <Button
-                            variant="outline"
-                            className="w-full border-green-300 text-green-700 hover:bg-green-50"
-                          >
                             View Vote Confirmation
-                          </Button>
-                        </Link>
+                          </Link></Button>
                       </div>
                     ) : candidateVotingEnded ? (
                       <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
@@ -351,11 +344,9 @@ export default async function CandidatePage2(props: Props) {
                           <p className="text-sm text-gray-600 mb-3">
                             Voting for candidates has ended for this election
                           </p>
-                          <Link href={`/elections/${electionId}/candidate`} className="w-full">
-                            <Button variant="outline" className="w-full">
+                          <Button variant="outline" className="w-full" asChild><Link href={`/elections/${electionId}/candidate`} className="w-full">
                               View Election Results
-                            </Button>
-                          </Link>
+                            </Link></Button>
                         </div>
                       </div>
                     ) : (
@@ -367,15 +358,13 @@ export default async function CandidatePage2(props: Props) {
                           <p className="text-sm text-blue-700 mb-3">
                             Cast your vote for {candidate.full_name}
                           </p>
-                          <Link
+                          <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg" asChild><Link
                             href={`/elections/${electionId}/vote/candidates`}
                             className="w-full"
                           >
-                            <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg">
                               <Vote className="h-4 w-4 mr-2" />
                               Cast Your Vote
-                            </Button>
-                          </Link>
+                            </Link></Button>
                         </div>
                       </div>
                     )
@@ -389,11 +378,9 @@ export default async function CandidatePage2(props: Props) {
                         <p className="text-sm text-gray-600 mb-3">
                           Voting for candidates has ended for this election
                         </p>
-                        <Link href={`/elections/${electionId}/candidate`} className="w-full">
-                          <Button variant="outline" className="w-full">
+                        <Button variant="outline" className="w-full" asChild><Link href={`/elections/${electionId}/candidate`} className="w-full">
                             View Election Results
-                          </Button>
-                        </Link>
+                          </Link></Button>
                       </div>
                     </div>
                   ) : (
@@ -405,40 +392,32 @@ export default async function CandidatePage2(props: Props) {
                         <p className="text-sm text-emerald-700 mb-3">
                           Sign in to vote for {candidate.full_name}
                         </p>
-                        <Link
+                        <Button className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 shadow-lg" asChild><Link
                           href={`/signin?redirectTo=${encodeURIComponent(`/elections/${electionId}/candidate/${candidateId}`)}`}
                           className="w-full"
                         >
-                          <Button className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 shadow-lg">
                             <Vote className="h-4 w-4 mr-2" />
                             Sign In to Vote
-                          </Button>
-                        </Link>
+                          </Link></Button>
                       </div>
                     </div>
                   )}
 
                   {/* View All Candidates */}
-                  <Link href={`/elections/${electionId}`} className="w-full">
-                    <Button
+                  <Button
                       variant="outline"
-                      className="w-full border-2 hover:bg-gray-50"
-                    >
+                      className="w-full border-2 hover:bg-gray-50" asChild><Link href={`/elections/${electionId}`} className="w-full">
                       <User className="h-4 w-4 mr-2" />
                       View All Candidates
-                    </Button>
-                  </Link>
+                    </Link></Button>
 
                   {/* View Election Details */}
-                  <Link href={`/elections/${electionId}`} className="w-full">
-                    <Button
+                  <Button
                       variant="ghost"
-                      className="w-full text-gray-600 hover:text-gray-800"
-                    >
+                      className="w-full text-gray-600 hover:text-gray-800" asChild><Link href={`/elections/${electionId}`} className="w-full">
                       <CalendarDays className="h-4 w-4 mr-2" />
                       Election Details
-                    </Button>
-                  </Link>
+                    </Link></Button>
                 </div>
               </CardContent>
             </Card>

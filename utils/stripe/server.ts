@@ -13,7 +13,8 @@ import {
   updateDonor,
   retrieveSmsNotification,
   updateSmsNotification,
-  getStripeCustomer
+  getStripeCustomer,
+  supabaseAdmin
 } from '@/utils/supabase/admin';
 import {
   getURL,
@@ -38,6 +39,17 @@ export async function checkoutWithStripe(
   isGenerous?: boolean
 ): Promise<CheckoutResponse> {
   try {
+    // The browser only chooses which price; amount, type and trial come from our
+    // copy of the Stripe price (BUG-013).
+    const { data: storedPrice } = await supabaseAdmin
+      .from('prices')
+      .select('*')
+      .eq('id', price.id)
+      .eq('active', true)
+      .maybeSingle();
+    if (!storedPrice) throw new Error('This price is not available.');
+    price = storedPrice as Price;
+
     // Get the user from Supabase auth
     const supabase = await createClient();
     const {
@@ -82,10 +94,11 @@ export async function checkoutWithStripe(
       line_items: [
         {
           price: price.id,
+          // One per family member, 1 to 5; a missing or zero size counts as 1 (BUG-044).
           quantity:
             isMembership || isGenerous
               ? 1
-              : (Math.min(member?.totalMembersInFamily, 5) ?? 1)
+              : Math.min(Math.max(Math.floor(Number(member?.totalMembersInFamily)) || 1, 1), 5)
         }
       ],
       cancel_url: getURL(cancelUrl),
@@ -174,6 +187,22 @@ export async function checkoutWithStripeForDonation(
   donation: Donation | null
 ): Promise<CheckoutResponse> {
   try {
+    // Charge what was recorded, never an amount sent by the browser (BUG-013).
+    const { data: saved } = await supabaseAdmin
+      .from('donations')
+      .select('*')
+      .eq('id', donation?.id ?? '')
+      .eq('donation_status', 'pending')
+      .maybeSingle();
+    const { data: storedPrice } = await supabaseAdmin
+      .from('prices')
+      .select('*')
+      .eq('id', price.id)
+      .maybeSingle();
+    if (!saved || !storedPrice) throw new Error('Donation not found.');
+    donation = saved as Donation;
+    price = { ...(storedPrice as Price), unit_amount: saved.donation_amount };
+
     const { data: user, error: userError } = await getOrCreateUser({
       email: donor?.email!
     });
@@ -308,6 +337,17 @@ export async function checkoutWithStripeForFundraiser(
   donation: FundraiserDonation | null
 ): Promise<CheckoutResponse> {
   try {
+    // Charge what was recorded, never an amount sent by the browser (BUG-013).
+    const { data: saved } = await supabaseAdmin
+      .from('fundraiser_donations')
+      .select('*')
+      .eq('id', donation?.id ?? '')
+      .eq('payment_status', 'pending')
+      .maybeSingle();
+    if (!saved) throw new Error('Donation not found.');
+    donation = saved as FundraiserDonation;
+    price = { ...price, unit_amount: Math.round(Number(saved.amount) * 100) };
+
     const params: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       allow_promotion_codes: false,

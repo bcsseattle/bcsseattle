@@ -7,21 +7,6 @@ import { createClient } from '@/utils/supabase/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { FundraiserFormSchema } from '@/types/forms';
 import { Fundraiser } from '@/types';
-import crypto from 'crypto';
-
-// Helper function to generate confirmation code for donations
-function generateConfirmationCode(): string {
-  return crypto.randomBytes(16).toString('hex').toUpperCase();
-}
-
-// Helper function to get client IP from headers
-function getClientIP(headers: Headers): string {
-  const forwarded = headers.get('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  return headers.get('x-real-ip') || 'unknown';
-}
 
 export async function createFundraiser(
   formValue: z.infer<typeof FundraiserFormSchema>
@@ -56,6 +41,7 @@ export async function createFundraiser(
         ends_at: formValue.ends_at ? new Date(formValue.ends_at).toISOString() : null,
         category: formValue.category,
         image_url: formValue.image_url || null,
+        beneficiary: formValue.beneficiary || null, // was collected but not saved (BUG-061)
         created_by: user.id,
         status: 'active'
       })
@@ -146,16 +132,10 @@ export async function submitDonation(
         .single();
 
       if (existingDonor) {
+        // Anyone can type any email here, so an existing donor's saved name and
+        // phone are never overwritten from this form (BUG-030). The donation
+        // itself keeps the name entered.
         fundraiserDonorId = existingDonor.id;
-        // Update donor information
-        await supabaseAdmin
-          .from('fundraiser_donors')
-          .update({
-            full_name: donorName,
-            phone: donorPhone,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', fundraiserDonorId);
       } else {
         // Create new donor
         const { data: newDonor, error: donorError } = await supabaseAdmin
@@ -180,7 +160,7 @@ export async function submitDonation(
     // Validate fundraiser exists and is active
     const { data: fundraiser, error: fundraiserError } = await supabase
       .from('fundraisers')
-      .select('id, status, ends_at')
+      .select('id, status, ends_at, minimum_donation')
       .eq('id', fundraiserId)
       .single();
 
@@ -196,10 +176,12 @@ export async function submitDonation(
       return { success: false, error: 'This fundraiser has ended' };
     }
 
-    // Generate confirmation code
-    const confirmationCode = generateConfirmationCode();
-    const clientIP = headers ? getClientIP(headers) : 'unknown';
-    const userAgent = headers?.get('user-agent') || 'unknown';
+    // The browser's checks can be skipped; Stripe's card minimum is $0.50 (BUG-043).
+    const minimum = Math.max(0.5, Number(fundraiser.minimum_donation ?? 0));
+    const cents = amount * 100;
+    if (!Number.isFinite(amount) || amount < minimum || amount > 999999.99 || Math.abs(cents - Math.round(cents)) > 1e-6) {
+      return { success: false, error: `Please donate between $${minimum.toFixed(2)} and $999,999.99` };
+    }
 
     // Create donation record
     const donationData = {
@@ -225,7 +207,6 @@ export async function submitDonation(
 
     return {
       success: true,
-      confirmationCode,
       donation
     };
 

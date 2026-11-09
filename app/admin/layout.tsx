@@ -38,12 +38,10 @@ export default async function AdminLayout({
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" asChild><Link href="/">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Site
-                </Button>
-              </Link>
+                </Link></Button>
               <div className="flex items-center space-x-2">
                 <Shield className="h-6 w-6 text-blue-600" />
                 <h1 className="text-xl font-bold">Admin Dashboard</h1>
@@ -60,24 +58,18 @@ export default async function AdminLayout({
       <div className="container mx-auto px-4 py-6">
         <Card className="p-4 mb-6">
           <nav className="flex space-x-4">
-            <Link href="/admin/members">
-              <Button variant="ghost" className="flex items-center space-x-2">
+            <Button variant="ghost" className="flex items-center space-x-2" asChild><Link href="/admin/members">
                 <Users className="h-4 w-4" />
                 <span>Members</span>
-              </Button>
-            </Link>
-            <Link href="/admin/expenses">
-              <Button variant="ghost" className="flex items-center space-x-2">
+              </Link></Button>
+            <Button variant="ghost" className="flex items-center space-x-2" asChild><Link href="/admin/expenses">
                 <Receipt className="h-4 w-4" />
                 <span>Expenses</span>
-              </Button>
-            </Link>
-            <Link href="/admin/elections">
-              <Button variant="ghost" className="flex items-center space-x-2">
+              </Link></Button>
+            <Button variant="ghost" className="flex items-center space-x-2" asChild><Link href="/admin/elections">
                 <Settings className="h-4 w-4" />
                 <span>Elections</span>
-              </Button>
-            </Link>
+              </Link></Button>
           </nav>
         </Card>
 

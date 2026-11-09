@@ -13,7 +13,7 @@ export async function updateFundraiserDonation(data: {
   fundraiser_id: string;
   donation_id: string;
   payment_status: 'completed' | 'failed' | 'pending';
-  amount: number;
+  amount?: number;
 }) {
   const { payment_intent_id, donation_id, payment_status } = data;
 

@@ -64,10 +64,12 @@ export const DonationFormSchema = z
     donorName: z.string().optional(),
     organizationName: z.string().optional(),
     email: z.string().email('Invalid email address'),
+    // Optional: the form starts with '', which the regex alone rejected (BUG-077).
     phone: z
       .string()
       .regex(/^\+?[0-9\-()\s]{7,15}$/, 'Phone number must be valid')
-      .optional(),
+      .optional()
+      .or(z.literal('')),
     address: z.string().optional(),
     city: z.string().optional(),
     state: z.string().optional(),

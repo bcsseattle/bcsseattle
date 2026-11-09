@@ -3,6 +3,7 @@ import { admin, anonClient, createFundraiser, createUser, uniqueEmail } from '..
 import { expect } from '../support/expect';
 import { checkoutCompleted, postWebhook, sessionFromCheckoutUrl } from '../support/stripe';
 import type { E2EWorld } from '../support/world';
+import { tamperWithCheckoutAmount } from './donations.steps';
 
 /** Fundraisers need a creator; scenarios don't care who, so one is made behind the scenes. */
 async function organiser(world: E2EWorld) {
@@ -50,7 +51,7 @@ async function donate(world: E2EWorld, amount: string) {
   world.data.fundraiserDonationId = session.metadata!.donation_id;
 }
 
-When(/^I donate \$(\d+) to the fundraiser$/, async function (this: E2EWorld, amount: string) {
+When(/^I donate \$([\d.]+) to the fundraiser$/, async function (this: E2EWorld, amount: string) {
   await donate(this, String(amount));
 });
 
@@ -59,8 +60,37 @@ Given(/^I have started a \$(\d+) donation to the fundraiser$/, async function (t
   await this.page.goto('/');
 });
 
-When(/^I try to donate \$(\d+) to the fundraiser$/, async function (this: E2EWorld, amount: string) {
+When(/^I try to donate \$([\d.]+) to the fundraiser$/, async function (this: E2EWorld, amount: string) {
   await fillDonation(this, String(amount));
+});
+
+When(/^I try to donate \$(\d+) to the fundraiser but my browser sends \$([\d.]+)$/, async function (this: E2EWorld, amount: string, sent: string) {
+  // Rewrites the amount argument of the submitDonation server action (BUG-043).
+  const id = this.fundraiser!.id;
+  await this.page.route('**/*', async (route) => {
+    const body = route.request().postData();
+    const from = `"${id}",${amount},`;
+    if (route.request().headers()['next-action'] && body?.includes(from)) {
+      this.data.rewrote = 'yes';
+      return route.continue({ postData: body.replace(from, `"${id}",${sent},`) });
+    }
+    return route.continue();
+  });
+  const answered = this.page.waitForResponse((r) => !!r.request().headers()['next-action'] && (r.request().postData() ?? '').includes(id));
+  await fillDonation(this, String(amount));
+  await answered;
+  expect(this.data.rewrote, 'the submitDonation request was not rewritten').toBe('yes');
+  this.cleanup.push(async () => admin.from('fundraiser_donations').delete().eq('fundraiser_id', id));
+});
+
+Given(/^the fundraiser's minimum donation is \$(\d+)$/, async function (this: E2EWorld, dollars: string) {
+  const { error } = await admin.from('fundraisers').update({ minimum_donation: Number(dollars) }).eq('id', this.fundraiser!.id);
+  expect(error).toBeNull();
+});
+
+Then('no donation should be recorded for the fundraiser', async function (this: E2EWorld) {
+  const { count } = await admin.from('fundraiser_donations').select('id', { count: 'exact', head: true }).eq('fundraiser_id', this.fundraiser!.id);
+  expect(count).toBe(0);
 });
 
 Then('I should not be taken to Stripe Checkout', async function (this: E2EWorld) {
@@ -75,7 +105,7 @@ Then(/^I should be taken to Stripe Checkout for \$([\d.]+) for the fundraiser$/,
   expect(session.metadata).toMatchObject({ type: 'fundraiser_donation', fundraiser_id: this.fundraiser!.id });
 });
 
-Then(/^a pending \$(\d+) fundraiser donation should be recorded$/, async function (this: E2EWorld, amount: string) {
+Then(/^a pending \$([\d.]+) fundraiser donation should be recorded$/, async function (this: E2EWorld, amount: string) {
   const { data } = await admin
     .from('fundraiser_donations')
     .select('amount, payment_status, fundraiser_id')
@@ -114,7 +144,7 @@ Then('the fundraiser should show {string} raised', async function (this: E2EWorl
   await expect(this.page.getByText(/raised of/)).toBeVisible();
 });
 
-Then(/^the fundraiser's total should be \$(\d+)$/, async function (this: E2EWorld, amount: string) {
+Then(/^the fundraiser's total should be \$([\d.]+)$/, async function (this: E2EWorld, amount: string) {
   const { data } = await admin.from('fundraisers').select('current_amount').eq('id', this.fundraiser!.id).single();
   expect(data?.current_amount).toBe(Number(amount));
 });
@@ -127,11 +157,12 @@ Then('the donor wall should list my donation', async function (this: E2EWorld) {
 
 // ---------------------------------------------------------------- admin
 
-async function fillFundraiserForm(world: E2EWorld, fields: { title?: string; description?: string; goal?: string }) {
+async function fillFundraiserForm(world: E2EWorld, fields: { title?: string; description?: string; goal?: string; beneficiary?: string }) {
   await world.page.goto('/fundraisers/admin/new');
   await world.page.getByLabel('Title').fill(fields.title ?? `E2E Fundraiser ${Date.now()}`);
   await world.page.getByLabel('Description').fill(fields.description ?? 'Raising money to cover costs for a family in need.');
   await world.page.getByLabel('Goal Amount ($)').fill(fields.goal ?? '1000');
+  if (fields.beneficiary) await world.page.getByLabel('Beneficiary').fill(fields.beneficiary);
   const inAMonth = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
   await world.page.getByLabel('End Date').fill(inAMonth);
   await world.page.getByRole('combobox').click();
@@ -204,8 +235,10 @@ Given('a guest has left their contact details with a fundraiser donation', async
   const { data } = await admin
     .from('fundraiser_donors')
     .insert({ email: uniqueEmail('fdonor'), full_name: 'Guest Donor', phone: '206-555-0177' })
-    .select('id')
+    .select('id, email')
     .single();
+  this.data.guestDonorId = data!.id;
+  this.data.guestDonorEmail = data!.email;
   this.cleanup.push(async () => {
     await admin.from('fundraiser_donors').delete().eq('id', data!.id);
   });
@@ -220,4 +253,60 @@ Then('the fundraiser should have the update {string}', async function (this: E2E
   await expect
     .poll(async () => (await admin.from('fundraiser_updates').select('content').eq('fundraiser_id', this.fundraiser!.id)).data)
     .toEqual([{ content: text }]);
+});
+
+When(/^I donate \$(\d+) to the fundraiser but my browser asks checkout to charge \$(\d+)$/, async function (this: E2EWorld, amount: string, charged: string) {
+  await tamperWithCheckoutAmount(this, Number(amount) * 100, Number(charged) * 100);
+  await donate(this, String(amount));
+});
+
+When('someone donates to the fundraiser with that guest\'s email as {string} with phone {string}', async function (this: E2EWorld, name: string, phone: string) {
+  await this.page.goto(`/fundraisers/${this.fundraiser!.id}/donate`);
+  await this.page.getByLabel('Donation Amount ($)').fill('25');
+  await this.page.getByLabel('Email').fill(this.data.guestDonorEmail);
+  await this.page.getByLabel('Full Name').fill(name);
+  const phoneField = this.page.getByLabel('Phone');
+  if (await phoneField.count()) await phoneField.fill(phone);
+  await this.page.getByRole('button', { name: 'Continue to Payment' }).click();
+  await this.page.waitForURL(/checkout\.stripe\.com/, { waitUntil: 'commit', timeout: 30_000 });
+  this.cleanup.push(async () => admin.from('fundraiser_donations').delete().eq('fundraiser_id', this.fundraiser!.id));
+});
+
+Then('the guest\'s saved name and phone should be unchanged', async function (this: E2EWorld) {
+  const { data } = await admin.from('fundraiser_donors').select('full_name, phone').eq('id', this.data.guestDonorId).single();
+  expect(data).toEqual({ full_name: 'Guest Donor', phone: '206-555-0177' });
+});
+
+// ---------------------------------------------------------------- delete (BUG-062)
+
+When('I delete the fundraiser through the API', async function (this: E2EWorld) {
+  const res = await this.page.request.delete(`/api/fundraisers/${this.fundraiser!.id}`);
+  this.response = { status: res.status(), body: await res.text() };
+});
+
+Given('the fundraiser has a donation', async function (this: E2EWorld) {
+  const { error } = await admin.from('fundraiser_donations').insert({ fundraiser_id: this.fundraiser!.id, amount: 25, donor_name: 'E2E', payment_status: 'completed' });
+  expect(error).toBeNull();
+});
+
+Then(/^the fundraiser should (still exist|be gone)$/, async function (this: E2EWorld, state: string) {
+  const { count } = await admin.from('fundraisers').select('id', { count: 'exact', head: true }).eq('id', this.fundraiser!.id);
+  expect(count, this.response?.body).toBe(state === 'be gone' ? 0 : 1);
+});
+
+Then('the delete should be refused with {int}', async function (this: E2EWorld, status: number) {
+  expect(this.response!.status, this.response!.body).toBe(status);
+});
+
+When('I create a fundraiser for the beneficiary {string}', async function (this: E2EWorld, beneficiary: string) {
+  await fillFundraiserForm(this, { beneficiary });
+  await expect(this.page).toHaveURL(/\/fundraisers\/[0-9a-f-]{36}$/);
+  const id = this.page.url().split('/').pop()!;
+  this.cleanup.push(async () => admin.from('fundraisers').delete().eq('id', id));
+  this.data.createdFundraiserId = id;
+});
+
+Then('the fundraiser should name {string} as its beneficiary', async function (this: E2EWorld, beneficiary: string) {
+  const { data } = await admin.from('fundraisers').select('beneficiary').eq('id', this.data.createdFundraiserId).single();
+  expect(data?.beneficiary).toBe(beneficiary);
 });

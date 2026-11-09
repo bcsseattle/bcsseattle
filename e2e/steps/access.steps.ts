@@ -1,5 +1,5 @@
 import { Given, Then, When } from '@cucumber/cucumber';
-import { admin, anonClient, clientAs, createDonation, getMember } from '../support/db';
+import { admin, anonClient, castCandidateVotes, clientAs, createDonation, getMember } from '../support/db';
 import { env } from '../support/env';
 import { expect } from '../support/expect';
 import { givePaidContribution } from '../support/stripe';
@@ -48,9 +48,10 @@ Then('they should not see that donation', async function (this: E2EWorld) {
   expect(this.rows?.data ?? []).toHaveLength(0);
 });
 
-When('I request the contribution statement of {string} for this year', async function (this: E2EWorld, name: string) {
+When(/^I request the contribution statement of "([^"]+)" (for this year|without choosing a year)$/, async function (this: E2EWorld, name: string, which: string) {
   const memberId = this.user(name).memberId;
-  const res = await this.page.request.get(`/account/${memberId}/contributions/pdf?taxYear=${thisYear}`, { maxRedirects: 0 });
+  const query = which === 'for this year' ? `?taxYear=${thisYear}` : '';
+  const res = await this.page.request.get(`/account/${memberId}/contributions/pdf${query}`, { maxRedirects: 0 });
   this.response = { status: res.status(), body: `${res.headers()['content-type']}\n${res.headers()['location'] ?? ''}` };
 });
 
@@ -148,4 +149,100 @@ When('I request the voting security report', async function (this: E2EWorld) {
 
 Then('the request should be refused', async function (this: E2EWorld) {
   expect([401, 403], this.response!.body).toContain(this.response!.status);
+});
+
+When('an anonymous visitor calls the {string} database function', async function (this: E2EWorld, fn: string) {
+  const { data, error } = await anonClient().rpc(fn);
+  this.apiError = error?.message ?? '';
+  this.rows = { data: (data as unknown[]) ?? null, error };
+});
+
+Then('the call should be refused', async function (this: E2EWorld) {
+  expect(this.apiError, `returned ${JSON.stringify(this.rows?.data)}`).toMatch(/permission denied/);
+});
+
+Then('I should get the voting security report', async function (this: E2EWorld) {
+  expect(this.response!.status, this.response!.body).toBe(200);
+  expect(this.response!.body).toContain('securityStatus');
+});
+
+// ---------------------------------------------------------------- election permissions (BUG-046)
+
+const candidateNamed = (world: E2EWorld, name: string) => world.election!.candidates.find((c) => c.full_name === name)!;
+
+Given('{string} is standing as {string}', async function (this: E2EWorld, user: string, candidate: string) {
+  const { error } = await admin.from('candidates').update({ user_id: this.user(user).id }).eq('id', candidateNamed(this, candidate).id);
+  expect(error).toBeNull();
+});
+
+Given('{string} has voted for {string}', async function (this: E2EWorld, voter: string, candidate: string) {
+  await castCandidateVotes(this.user(voter).id, this.election!.id, [candidateNamed(this, candidate).id]);
+});
+
+When('{string} withdraws as {string} through the public API', async function (this: E2EWorld, user: string, candidate: string) {
+  const { error } = await (await clientAs(this.user(user))).from('candidates').delete().eq('id', candidateNamed(this, candidate).id);
+  this.apiError = error?.message ?? '';
+});
+
+Then('{string} should still be on the ballot', async function (this: E2EWorld, candidate: string) {
+  const { count } = await admin.from('candidates').select('id', { count: 'exact', head: true }).eq('id', candidateNamed(this, candidate).id);
+  expect(count, this.apiError).toBe(1);
+});
+
+Then('{string} should no longer be on the ballot', async function (this: E2EWorld, candidate: string) {
+  const { count } = await admin.from('candidates').select('id', { count: 'exact', head: true }).eq('id', candidateNamed(this, candidate).id);
+  expect(count, this.apiError).toBe(0);
+});
+
+Then('the vote for {string} should still be counted', async function (this: E2EWorld, candidate: string) {
+  const { count } = await admin.from('votes').select('id', { count: 'exact', head: true }).eq('candidate_id', candidateNamed(this, candidate).id);
+  expect(count).toBe(1);
+});
+
+When('{string} creates an election through the public API', async function (this: E2EWorld, user: string) {
+  const u = this.user(user);
+  this.data.rogueElection = `Rogue election ${Date.now()}`;
+  const { error } = await (await clientAs(u)).from('elections').insert({
+    title: this.data.rogueElection,
+    type: 'leadership',
+    is_active: true,
+    start_date: new Date().toISOString(),
+    end_date: new Date(Date.now() + 86_400_000).toISOString(),
+    created_by: u.id,
+  });
+  this.apiError = error?.message ?? '';
+  this.cleanup.push(async () => admin.from('elections').delete().eq('title', this.data.rogueElection));
+});
+
+Then('no election should have been created', async function (this: E2EWorld) {
+  const { count } = await admin.from('elections').select('id', { count: 'exact', head: true }).eq('title', this.data.rogueElection);
+  expect(count, this.apiError).toBe(0);
+});
+
+// ---------------------------------------------------------------- community funds estimate (BUG-040)
+
+Given(/^a (completed|pending) \$(\d+) (external|card) donation$/, async function (this: E2EWorld, status: 'completed' | 'pending', dollars: string, method: string) {
+  await createDonation(this.cleanup, { amountCents: Number(dollars) * 100, status, paymentMethod: method });
+});
+
+/** The estimate the page should show with no bank account linked: funds + money received outside Stripe - expenses. */
+async function expectedBankEstimateCents() {
+  const sum = (rows: { amount?: unknown; donation_amount?: unknown }[] | null, k: 'amount' | 'donation_amount') =>
+    (rows ?? []).reduce((acc, r) => acc + Number(r[k] ?? 0), 0);
+  const funds = (await admin.from('funds').select('amount').not('status', 'in', '(cancelled,failed)').neq('is_private', true)).data;
+  const offline = (await admin.from('donations').select('donation_amount').eq('is_private', false).eq('donation_status', 'completed').not('payment_method', 'in', '(card,us_bank_account)')).data;
+  const expenses = (await admin.from('expenses').select('amount').eq('is_private', false)).data;
+  return sum(funds, 'amount') + sum(offline, 'donation_amount') - sum(expenses, 'amount');
+}
+
+Then('the estimated bank balance should count only money received outside Stripe', async function (this: E2EWorld) {
+  // Other scenarios change these tables in parallel: compare until page and database agree.
+  await expect
+    .poll(async () => {
+      await this.page.reload();
+      const shown = await this.page.locator('div.rounded-lg, div.rounded-xl').filter({ hasText: /^Bank Balance/ }).locator('.text-2xl').first().innerText();
+      const cents = Math.round(Number(shown.replace(/[^0-9.-]/g, '')) * 100);
+      return cents === (await expectedBankEstimateCents());
+    }, { timeout: 30_000 })
+    .toBe(true);
 });

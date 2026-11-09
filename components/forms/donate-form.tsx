@@ -93,10 +93,18 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
         ]);
         return isDonationValid;
       case 1: // Donor Details
+        // The schema's name check (superRefine) only runs once every field is
+        // valid, so with a phone entered a missing name surfaced only at the last
+        // step, on a field no longer shown: check it here (BUG-077).
+        const nameField = form.getValues('donorType') === 'organization' ? 'organizationName' : 'donorName';
+        if (!form.getValues(nameField)?.trim()) {
+          form.setError(nameField, {
+            message: nameField === 'donorName' ? 'Donor name is required for individuals' : 'Organization name is required for organizations'
+          });
+          return false;
+        }
         const isDonorValid = await form.trigger([
           'donorType',
-          // 'donorName',
-          // 'organizationName',
           'email',
           'phone',
           'address',

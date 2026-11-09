@@ -21,6 +21,8 @@ const relevantEvents = new Set([
   'price.updated',
   'price.deleted',
   'checkout.session.completed',
+  'checkout.session.async_payment_succeeded',
+  'checkout.session.async_payment_failed',
   'customer.subscription.created',
   'customer.subscription.updated',
   'customer.subscription.deleted',
@@ -76,9 +78,31 @@ export async function POST(req: Request) {
           );
           break;
         case 'checkout.session.completed':
+        case 'checkout.session.async_payment_succeeded':
+        case 'checkout.session.async_payment_failed':
           const checkoutSession = event.data.object as Stripe.Checkout.Session;
           const metadata = checkoutSession.metadata;
-          if (metadata?.type === 'fundraiser_donation') {
+          // Bank (ACH) payments complete the session before the money arrives
+          // (payment_status 'unpaid'); they're settled by async_payment_succeeded
+          // or failed by async_payment_failed (BUG-041).
+          const failed = event.type === 'checkout.session.async_payment_failed';
+          const paid = checkoutSession.payment_status !== 'unpaid';
+          if (failed && metadata?.type === 'fundraiser_donation') {
+            await updateFundraiserDonation({
+              payment_intent_id: checkoutSession.payment_intent as string,
+              fundraiser_id: metadata.fundraiser_id,
+              donation_id: metadata.donation_id,
+              payment_status: 'failed'
+            });
+          } else if (failed && metadata?.type === 'donation') {
+            await updateDonation({
+              stripe_payment_id: checkoutSession.payment_intent as string,
+              donation_id: metadata.donation_id,
+              donation_status: 'failed'
+            });
+          } else if (!paid) {
+            // Still settling: leave the donation pending.
+          } else if (metadata?.type === 'fundraiser_donation') {
             const amount = checkoutSession.amount_total ? checkoutSession.amount_total / 100 : 0;
             await updateFundraiserDonation({
               payment_intent_id: checkoutSession.payment_intent as string,
@@ -91,10 +115,11 @@ export async function POST(req: Request) {
             await updateDonation({
               stripe_payment_id: checkoutSession.payment_intent as string,
               donation_id: metadata.donation_id,
-              donation_status: 'completed'
+              donation_status: 'completed',
+              tax_receipt_generated: true // the receipt is available from now on
             });
           }
-          if (checkoutSession.mode === 'subscription') {
+          if (event.type === 'checkout.session.completed' && checkoutSession.mode === 'subscription') {
             const subscriptionId = checkoutSession.subscription;
             await manageSubscriptionStatusChange(
               subscriptionId as string,
@@ -160,9 +185,9 @@ export async function POST(req: Request) {
       );
     }
   } else {
-    return new Response(`Unsupported event type: ${event.type}`, {
-      status: 400
-    });
+    // Acknowledge events we don't act on, or Stripe keeps retrying them and
+    // eventually disables the endpoint (BUG-041).
+    return new Response(`Event type ignored: ${event.type}`, { status: 200 });
   }
   return new Response(JSON.stringify({ received: true }));
 }

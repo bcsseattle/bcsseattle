@@ -29,11 +29,12 @@ const CardHeader = React.forwardRef<
 ))
 CardHeader.displayName = "CardHeader"
 
+// `as` sets the heading level: a card that is the page's main content needs an h1 (BUG-051).
 const CardTitle = React.forwardRef<
   HTMLParagraphElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h3
+  React.HTMLAttributes<HTMLHeadingElement> & { as?: 'h1' | 'h2' | 'h3' }
+>(({ className, as: Heading = 'h3', ...props }, ref) => (
+  <Heading
     ref={ref}
     className={cn(
       "text-2xl font-semibold leading-none tracking-tight",

@@ -30,9 +30,7 @@ export default function Invoice({ organization, donor, donation }: Props) {
         <InfoBlock title="Donation Receipt" description="">
           <div className="flex justify-between">
             <p>Thank you for your support!</p>
-            <Button variant="default">
-              <Link href={`${currentPath}/pdf`}>Download</Link>
-            </Button>
+            <Button variant="default" asChild><Link href={`${currentPath}/pdf`}>Download</Link></Button>
           </div>
         </InfoBlock>
       </div>

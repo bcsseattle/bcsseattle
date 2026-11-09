@@ -75,12 +75,10 @@ export default async function InitiativeVoteConfirmationPage(props: Props) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href={`/elections/${id}`}>
-              <Button variant="outline">
+            <Button variant="outline" asChild><Link href={`/elections/${id}`}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Election
-              </Button>
-            </Link>
+              </Link></Button>
           </CardContent>
         </Card>
       </div>
@@ -204,17 +202,13 @@ export default async function InitiativeVoteConfirmationPage(props: Props) {
 
           {/* Actions */}
           <div className="flex gap-3">
-            <Link href={`/elections/${id}`}>
-              <Button variant="outline">
+            <Button variant="outline" asChild><Link href={`/elections/${id}`}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Election
-              </Button>
-            </Link>
+              </Link></Button>
 
             {/* Check if candidates are available for voting */}
-            <Link href={`/elections/${id}/vote/candidates`}>
-              <Button variant="default">Vote for Candidates</Button>
-            </Link>
+            <Button variant="default" asChild><Link href={`/elections/${id}/vote/candidates`}>Vote for Candidates</Link></Button>
           </div>
         </CardContent>
       </Card>

@@ -25,5 +25,5 @@
     ]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next-e2e/types/**/*.ts"],
-  "exclude": ["node_modules", "__tests__", "seed.ts", "e2e"]
+  "exclude": ["node_modules", "seed.ts", "e2e"]
 }

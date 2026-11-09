@@ -27,9 +27,12 @@ for (const k of Object.keys(e)) {
   if (/live/i.test(k) && e[k]) problems.push(`${k} is set`);
   if (/^(sk|rk)_live_/.test(e[k] ?? '')) problems.push(`${k} holds a live Stripe key`);
 }
-for (const k of ['MY_EMAIL', 'MY_PASSWORD', 'SEND_TO_EMAIL', 'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'NOTION_TOKEN']) {
+for (const k of ['MY_EMAIL', 'MY_PASSWORD', 'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'NOTION_TOKEN']) {
   if (e[k]) problems.push(`${k} must be empty`);
 }
+// Contact-form mail may only go to the local Mailpit, addressed to a .test inbox.
+if (!/^smtp:\/\/(127\.0\.0\.1|localhost):\d+$/.test(e.SMTP_URL ?? '')) problems.push('SMTP_URL must be the local Mailpit');
+if (e.SEND_TO_EMAIL && !e.SEND_TO_EMAIL.endsWith('.test')) problems.push('SEND_TO_EMAIL must be a .test address');
 if (e.RESEND_API_KEY !== 're_e2e_dummy_never_sends') problems.push('RESEND_API_KEY must be the e2e dummy');
 
 if (problems.length) {

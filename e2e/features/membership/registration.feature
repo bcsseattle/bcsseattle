@@ -50,7 +50,14 @@ Feature: Membership registration
     And I choose the "Family" membership type
     Then I should see "Total Members in Family"
 
-  @P1 @known-bug @BUG-034
+  @P1 @BUG-034
+  Scenario: The server refuses a registration without a name, even if the browser sends one
+    Given I am signed in as a user with no membership
+    When I register but my browser sends the form without a name
+    Then I should see the message "Name is required"
+    And no membership should have been created for me
+
+  @P1 @BUG-034
   Scenario: Resubmitting the form doesn't undo an approved membership
     Given I am signed in as an approved member
     When I submit my registration form again

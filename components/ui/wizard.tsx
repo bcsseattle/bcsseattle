@@ -26,7 +26,7 @@ export const Wizard = ({ wizardStep, children, steps }: WizardProps) => {
     <div className="flex flex-col gap-12 space-y-6">
       <Card className="md:w-[600px]">
         <CardHeader>
-          <CardTitle>{title}</CardTitle>
+          <CardTitle as="h1">{title}</CardTitle>
           <CardDescription></CardDescription>
         </CardHeader>
         <CardContent>

@@ -66,6 +66,37 @@ Feature: Voting in member elections
     When I submit the combined ballot with a vote for "Hani"
     Then my vote for "Hani" should be recorded
 
+  @P1 @BUG-052
+  Scenario: An initiative vote on the combined ballot is recorded
+    Given there is an open election with the initiative "Build a community garden"
+    And I am signed in as an approved member
+    When I vote "No / Oppose" on "Build a community garden" using the combined ballot
+    Then my "no" vote on "Build a community garden" should be recorded
+
+  @P2 @BUG-059
+  Scenario: A leadership election is marked "Leadership" in the elections list
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an approved member
+    When I go to "/elections"
+    Then the elections list should mark the election as "Leadership"
+
+  @P1 @api @BUG-060
+  Scenario: Candidate voting doesn't open before its own start date
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And candidate voting for the election only starts tomorrow
+    And I am signed in as an approved member
+    When I submit the candidate ballot with a vote for "Hani"
+    Then the ballot should be refused as not open yet
+
+  @P0 @security @api @BUG-016
+  Scenario: A member who voted on the combined ballot can't vote again on the candidate ballot
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an approved member
+    When I submit the combined ballot with a vote for "Hani"
+    And I submit the candidate ballot with a vote for "Nazir"
+    Then the ballot should be refused as already voted
+    And only my vote for "Hani" should be counted
+
   @P1 @security @api @BUG-011
   Scenario: The ballot refuses two votes in one position, however they're labelled
     Given there is an open election with candidates "Hani" and "Nazir" for "President"

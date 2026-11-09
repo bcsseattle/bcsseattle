@@ -118,12 +118,10 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
       {/* Header - Minimalist Mobile */}
       <div className="space-y-3 sm:space-y-4">
         <div className="flex items-center justify-between">
-          <Link href={`/elections/${id}`}>
-            <Button variant="ghost" size="sm" className="text-xs sm:text-sm -ml-2">
+          <Button variant="ghost" size="sm" className="text-xs sm:text-sm -ml-2" asChild><Link href={`/elections/${id}`}>
               <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
               <span className="hidden sm:inline">Back</span>
-            </Button>
-          </Link>
+            </Link></Button>
           
           {/* Mobile: Show status in header */}
           <div className="sm:hidden">
@@ -284,13 +282,11 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
                       {/* Manifesto Button - Icon only on mobile */}
                       {candidate.manifesto && (
                         <div className="mt-2 sm:mt-4">
-                          <Link href={candidate.manifesto} target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                          <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm" asChild><Link href={candidate.manifesto} target="_blank" rel="noopener noreferrer">
                               <FileText className="h-3 w-3 sm:mr-2" />
                               <span className="hidden sm:inline">View Manifesto</span>
                               <ExternalLink className="h-3 w-3 ml-1 sm:ml-2" />
-                            </Button>
-                          </Link>
+                            </Link></Button>
                         </div>
                       )}
                     </div>

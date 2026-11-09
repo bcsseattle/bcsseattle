@@ -343,19 +343,11 @@ const updateMember = async ({
     .eq('id', user_id)
     .maybeSingle();
 
-  const { data: subscription } = await supabaseAdmin
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', user_id)
-    .maybeSingle();
-
+  // Only links the Stripe customer. Status changes when Stripe reports the
+  // subscription, not when checkout starts (BUG-024).
   const { error: updateError } = await supabaseAdmin
     .from('members')
-    .update({
-      status: subscription ? 'active' : 'inactive',
-      stripe_customer_id: existingSupabaseCustomer?.id,
-      subscription_id: subscription?.id
-    })
+    .update({ stripe_customer_id: existingSupabaseCustomer?.id })
     .eq('user_id', user_id);
 
   if (updateError)
@@ -525,13 +517,33 @@ const manageSubscriptionStatusChange = async (
       subscription.default_payment_method as Stripe.PaymentMethod
     );
 
-  await supabaseAdmin
+  await syncMemberStatus(uuid);
+};
+
+/**
+ * Membership follows the member's contribution subscriptions: active while any is
+ * active or trialing, inactive once all are cancelled, unpaid or past due (BUG-023).
+ * Every row counts, so a second subscription doesn't break the lookup (BUG-024), and
+ * recurring donations ("BCS Donation") don't make someone a member.
+ */
+const syncMemberStatus = async (userId: string) => {
+  const { data: subs, error } = await supabaseAdmin
+    .from('subscriptions')
+    .select('id, status, prices(products(metadata))')
+    .eq('user_id', userId);
+  if (error) throw new Error(`Subscription lookup failed: ${error.message}`);
+
+  const current = (subs ?? []).find(
+    (s: any) =>
+      (s.status === 'active' || s.status === 'trialing') &&
+      s.prices?.products?.metadata?.type !== 'donation'
+  );
+  const { error: updateError } = await supabaseAdmin
     .from('members')
-    .update({
-      status: 'active',
-      subscription_id: subscription?.id
-    })
-    .eq('user_id', uuid);
+    .update(current ? { status: 'active', subscription_id: current.id } : { status: 'inactive' })
+    .eq('user_id', userId)
+    .eq('isApproved', true); // applicants stay pending or rejected until an admin decides
+  if (updateError) throw new Error(`Member status update failed: ${updateError.message}`);
 };
 
 const getStripeAvailableBalance = async () => {
@@ -723,6 +735,17 @@ const getDonations = async () => {
   return { data: transformedData, error: null };
 };
 
+/** Finds an auth user by email across every page of users (listUsers pages at 50 by default). */
+const findAuthUserByEmail = async (email: string) => {
+  const wanted = email.toLowerCase();
+  for (let page = 1; ; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw new Error(`Error fetching users: ${error.message}`);
+    const hit = data.users.find((u) => u.email?.toLowerCase() === wanted);
+    if (hit || data.users.length < 1000) return hit ?? null;
+  }
+};
+
 const getOrCreateUser = async ({
   email
 }: {
@@ -732,32 +755,20 @@ const getOrCreateUser = async ({
   error: string | null;
 }> => {
   try {
-    // Step 1: Check if the user exists
-    const { data: allUsers, error: listError } =
-      await supabaseAdmin.auth.admin.listUsers();
-    if (listError) {
-      console.error('Error fetching users:', listError.message);
-      return { data: null, error: 'Error fetching users' };
-    }
-
-    const userExists = allUsers?.users?.find(
-      (user: any) => user.email === email
-    );
-    if (userExists) {
-      console.log('User already exists:', userExists.email);
-      return { data: userExists, error: null };
-    }
-
-    // Step 2: Create the user. Not auth.signUp(): that stores the new user's
-    // session on this shared service-role client, which then runs under RLS
-    // as that user for every later call on this server instance (BUG-073).
-    const { data, error: signUpError } =
-      await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: process.env.SUPABASE_DEFAULT_PASSWORD || ''
-      });
+    // Create first and look up only when the email is taken: the old lookup read
+    // just the first page of users, so returning donors past it failed (BUG-053).
+    // Not auth.signUp(): that stores the new user's session on this shared
+    // service-role client, which then runs under RLS as that user (BUG-073).
+    // No password: donor accounts used to share one default password, so anyone
+    // who knew it could sign in as any guest donor (BUG-053). They can set their
+    // own with "Forgot password".
+    const { data, error: signUpError } = await supabaseAdmin.auth.admin.createUser({ email });
 
     if (signUpError) {
+      if (signUpError.code === 'email_exists' || /already (been )?registered/i.test(signUpError.message)) {
+        const existing = await findAuthUserByEmail(email);
+        if (existing) return { data: existing, error: null };
+      }
       console.error('Error creating user:', signUpError.message);
       return { data: null, error: signUpError.message };
     }

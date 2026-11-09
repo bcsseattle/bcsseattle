@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { Given, Then, When } from '@cucumber/cucumber';
 import { admin, uniqueEmail } from '../support/db';
+import { env } from '../support/env';
 import { expect } from '../support/expect';
 import { postWebhook, checkoutCompleted } from '../support/stripe';
 import type { E2EWorld } from '../support/world';
@@ -8,6 +9,7 @@ import type { E2EWorld } from '../support/world';
 // ---------------------------------------------------------------- contact & funeral fund
 
 When('I send the contact form as {string} from {string} saying {string}', async function (this: E2EWorld, name: string, email: string, message: string) {
+  this.data.sentAfter = new Date(Date.now() - 1000).toISOString();
   await this.page.goto('/contact-us');
   await this.page.getByLabel('Name').fill(name);
   await this.page.getByLabel('Email').fill(email);
@@ -166,4 +168,64 @@ Given('there are no current elections', async function () {
 Given('there are no active fundraisers', async function () {
   const { data } = await admin.from('fundraisers').select('title').eq('status', 'active');
   expect(data, 'active fundraisers left in the e2e database (another scenario did not clean up?)').toEqual([]);
+});
+
+Then('BCS Seattle should receive a message from {string}', async function (this: E2EWorld, email: string) {
+  // The contact form's mail is delivered to the e2e stack's Mailpit (BUG-031).
+  await expect
+    .poll(async () => {
+      const res = await fetch(`${env.mailpitUrl}/api/v1/search?query=${encodeURIComponent(`to:"contact@bcsseattle.test"`)}`);
+      if (!res.ok) return 0;
+      const body = (await res.json()) as { messages?: { Subject: string; Created: string }[] };
+      return body.messages?.filter((m) => m.Subject.includes(`(${email})`) && m.Created >= this.data.sentAfter).length ?? 0;
+    }, { timeout: 20_000 })
+    .toBeGreaterThan(0);
+});
+
+Then('the page should not load Google Analytics without a measurement id', async function (this: E2EWorld) {
+  // next/script's lazyOnload injects the tag after the load event (BUG-063).
+  await this.page.waitForLoadState('networkidle');
+  const tags = await this.page.locator('script[src*="googletagmanager"]').evaluateAll((s) => s.map((x) => (x as HTMLScriptElement).src));
+  expect(tags).toEqual([]);
+});
+
+Then('robots.txt should keep crawlers out of sign-in and point to the sitemap', async function (this: E2EWorld) {
+  const res = await this.page.request.get('/robots.txt');
+  expect(res.status()).toBe(200);
+  const body = await res.text();
+  expect(body).toContain('Disallow: /signin');
+  expect(body).toMatch(/Sitemap: .*\/sitemap\.xml/);
+});
+
+Then('every page in the sitemap should open', async function (this: E2EWorld) {
+  const xml = await (await this.page.request.get('/sitemap.xml')).text();
+  const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
+  expect(urls.length).toBeGreaterThan(5);
+  const dead: string[] = [];
+  for (const path of urls) {
+    const res = await this.page.request.get(path);
+    if (res.status() >= 400) dead.push(`${path} → ${res.status()}`);
+  }
+  expect(dead).toEqual([]);
+});
+
+Then('the breadcrumbs should not show any raw IDs', async function (this: E2EWorld) {
+  const crumbs = this.page.getByRole('navigation', { name: 'breadcrumb' });
+  await expect(crumbs).toBeVisible();
+  expect(await crumbs.innerText()).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/i);
+  await expect(crumbs).toContainText('Details');
+});
+
+When('I open the phone menu and choose {string}', async function (this: E2EWorld, link: string) {
+  await this.page.getByText('Menu', { exact: true }).click();
+  await this.page.getByRole('navigation', { name: 'Mobile' }).getByRole('link', { name: link, exact: true }).click();
+});
+
+Then('an accessibility scan should find no nested controls or broken lists', async function (this: E2EWorld) {
+  // Links inside buttons (or the reverse) and lists nested without <li> (BUG-066).
+  await this.page.waitForLoadState('networkidle');
+  const { violations } = await new AxeBuilder({ page: this.page })
+    .withRules(['nested-interactive', 'list', 'listitem'])
+    .analyze();
+  expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(' | ')}`)).toEqual([]);
 });

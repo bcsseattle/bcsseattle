@@ -28,10 +28,13 @@ import { ContactFormSchema } from '@/types';
 import Link from 'next/link';
 import { sendEmail } from '@/utils/auth-helpers/server';
 
-export default function ContactForm() {
+// h1 on /contact-us, h2 as a section of the home page (BUG-051).
+export default function ContactForm({ heading = 'h2' }: { heading?: 'h1' | 'h2' }) {
   const router = useRouter();
   const form = useForm<z.infer<typeof ContactFormSchema>>({
-    resolver: zodResolver(ContactFormSchema)
+    resolver: zodResolver(ContactFormSchema),
+    // Empty strings, not undefined, so zod reports "Name is required" rather than "Required" (BUG-075).
+    defaultValues: { name: '', email: '', message: '' }
   });
 
   async function onSubmit(values: z.infer<typeof ContactFormSchema>) {
@@ -44,7 +47,7 @@ export default function ContactForm() {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card className="max-w-screen py-4 mt-4">
           <CardHeader>
-            <CardTitle>Contact Us</CardTitle>
+            <CardTitle as={heading}>Contact Us</CardTitle>
             <CardDescription>
               Send us a message and we'll get back to you shortly
             </CardDescription>
@@ -93,9 +96,7 @@ export default function ContactForm() {
             </CardContent>
             <CardFooter>
               <div className="flex justify-between w-screen">
-                <Button variant={'link'}>
-                  <Link href="/">Cancel</Link>
-                </Button>
+                <Button variant={'link'} asChild><Link href="/">Cancel</Link></Button>
                 <Button variant={'default'} type="submit">
                   Send
                 </Button>

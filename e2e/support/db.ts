@@ -128,7 +128,7 @@ export async function createMember(
   overrides: Record<string, unknown> = {}
 ): Promise<string> {
   // What the app writes for each state today (utils/membership/handlers.ts).
-  const status = { approved: 'active', pending: 'pending', inactive: 'inactive', rejected: 'inactive' }[state];
+  const status = { approved: 'active', pending: 'pending', inactive: 'inactive', rejected: 'rejected' }[state];
   const row = must(
     await admin
       .from('members')
@@ -286,7 +286,7 @@ export async function createFundraiser(
 
 export async function createDonation(
   cleanup: Cleanup,
-  opts: { email?: string; fullName?: string; amountCents: number; status?: 'pending' | 'completed'; userId?: string; anonymous?: boolean; private?: boolean }
+  opts: { email?: string; fullName?: string; amountCents: number; status?: 'pending' | 'completed'; userId?: string; anonymous?: boolean; private?: boolean; paymentMethod?: string }
 ) {
   const email = opts.email ?? uniqueEmail('donor');
   const donor = must(
@@ -317,7 +317,7 @@ export async function createDonation(
         donation_amount: opts.amountCents,
         donation_type: 'one_time',
         donation_status: opts.status ?? 'completed',
-        payment_method: 'card',
+        payment_method: opts.paymentMethod ?? 'card',
         purpose: 'general-purpose',
         donation_description: 'Donation',
       })

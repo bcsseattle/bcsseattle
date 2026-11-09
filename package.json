@@ -29,8 +29,6 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:integration": "jest --testPathPattern=integration",
-    "test:unit": "jest --testPathPattern=unit",
     "e2e:db:start": "supabase start --workdir e2e -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta",
     "e2e:db:stop": "supabase stop --workdir e2e",
     "e2e:db:reset": "supabase db reset --workdir e2e",

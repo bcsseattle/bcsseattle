@@ -14,6 +14,13 @@ Feature: General donations
     Then I should be taken to Stripe Checkout for $100.00 as a one-time payment
     And a pending $100.00 donation should be recorded for my email
 
+  @P0 @critical @BUG-013
+  Scenario: Changing the amount in the browser doesn't change what is charged
+    Given I am signed in as an approved member
+    When I donate $100 once by card but my browser asks checkout to charge $1
+    Then I should be taken to Stripe Checkout for $100.00 as a one-time payment
+    And a pending $100.00 donation should be recorded for my email
+
   @P0 @critical
   Scenario: Once Stripe confirms the payment, the donor gets a receipt
     Given I am signed in as an approved member
@@ -67,15 +74,50 @@ Feature: General donations
     When I open the receipt for that donation
     Then I should see "Donation Amount: $50"
 
-  @P1 @known-bug @BUG-042
+  @P1 @BUG-042
   Scenario: No receipt is issued for a donation that was never paid
     Given a pending $50 donation by a guest donor
     And I am signed in as an approved member
     When I open the receipt for that donation
     Then I should not see "Donation Receipt"
+    And I should see "We are confirming your payment"
+
+  @P1 @BUG-042
+  Scenario: The receipt PDF isn't available for an unpaid donation
+    Given a pending $50 donation by a guest donor
+    When I download the receipt PDF for that donation
+    Then no PDF should be returned
+    And the donation should not be marked as receipted
 
   @P0 @critical @BUG-073
   Scenario: A first-time guest can start a card donation
     Given I am a visitor who is not signed in
     When I donate $100 once by card
     Then I should be taken to Stripe Checkout for $100.00 as a one-time payment
+
+  @P1 @BUG-053
+  Scenario: A returning guest donor can donate however many accounts the site has
+    Given a returning guest donor whose account is followed by 55 newer accounts
+    And I am a visitor who is not signed in
+    When I donate $100 once by card
+    Then I should be taken to Stripe Checkout for $100.00 as a one-time payment
+    And the donation should be linked to the returning donor's account
+
+  @P1 @security @BUG-053
+  Scenario: A guest donor's new account has no shared password
+    Given I am a visitor who is not signed in
+    When I donate $100 once by card
+    Then nobody should be able to sign in to the donor's account with a shared password
+
+  @P1 @BUG-077
+  Scenario: A donor can leave the phone number empty
+    Given I am a visitor who is not signed in
+    When I donate $100 once by card without giving a phone number
+    Then I should be taken to Stripe Checkout for $100.00 as a one-time payment
+
+  @P1 @BUG-077
+  Scenario: A missing donor name is caught on the donor details step
+    Given I am a visitor who is not signed in
+    When I continue past my donor details without a name
+    Then I should see "Donor name is required for individuals"
+    And I should still be on the donor details step

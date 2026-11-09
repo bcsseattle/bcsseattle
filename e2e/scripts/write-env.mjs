@@ -39,6 +39,7 @@ const env = {
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: stripePublishable,
   // We sign webhook events ourselves, so any fixed value works.
   STRIPE_WEBHOOK_SECRET: 'whsec_e2e_local_signing_secret',
+  // No longer read by the app (BUG-053); the e2e check signs in with it to prove that.
   SUPABASE_DEFAULT_PASSWORD: 'e2e-default-password',
   CRON_SECRET: 'e2e-cron-secret',
   // Resend's client throws at import without a key; this one can never send.
@@ -49,7 +50,9 @@ const env = {
   // loading the real ones from .env / .env.local (it only fills undefined vars).
   MY_EMAIL: '',
   MY_PASSWORD: '',
-  SEND_TO_EMAIL: '',
+  // Contact-form mail is delivered to the stack's Mailpit, never Gmail.
+  SMTP_URL: 'smtp://127.0.0.1:57325',
+  SEND_TO_EMAIL: 'contact@bcsseattle.test',
   TWILIO_ACCOUNT_SID: '',
   TWILIO_AUTH_TOKEN: '',
   TWILIO_PHONE_NUMBER: '',

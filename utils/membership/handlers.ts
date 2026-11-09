@@ -37,8 +37,13 @@ export async function registerMember(
     redirect('/signin');
   }
 
-  try {
+  // The browser's validation can be skipped (BUG-034).
+  const parsed = MemberRegistrationFormSchema.safeParse(values);
+  if (!parsed.success) {
+    return getErrorRedirect('/register', 'Please check the form.', parsed.error.issues[0].message);
+  }
 
+  try {
     const {
       fullName,
       phone,
@@ -50,31 +55,35 @@ export async function registerMember(
       membershipType,
       totalMembersInFamily,
       terms
-    } = values;
+    } = parsed.data;
+    const details = { fullName, phone, address, address2, city, state, zip, membershipType, totalMembersInFamily, terms };
 
-    const createMemberDetails = {
-      fullName,
-      phone,
-      address,
-      address2,
-      city,
-      state,
-      zip,
-      user_id: user.id,
-      status: 'inactive',
-      isApproved: false,
-      membershipType,
-      totalMembersInFamily,
-      terms
-    };
+    const { data: existing } = await supabaseAdmin
+      .from('members')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    const { data, error } = await createMember(createMemberDetails);
-    if (error) {
-      console.error('Error creating member:', error);
-      throw new Error('Failed to create member');
+    if (existing) {
+      // Submitting the form again only updates the member's details: their
+      // approval and status stay, and nobody is emailed again (BUG-034).
+      const { error } = await supabaseAdmin.from('members').update(details).eq('id', existing.id);
+      if (error) throw new Error(`Failed to update member: ${error.message}`);
+    } else {
+      const createMemberDetails = {
+        ...details,
+        user_id: user.id,
+        status: 'pending', // awaiting admin approval (BUG-072)
+        isApproved: false
+      };
+      const { error } = await createMember(createMemberDetails);
+      if (error) {
+        console.error('Error creating member:', error);
+        throw new Error('Failed to create member');
+      }
+      await sendWelecomEmail(user);
+      await sendNewMemberJoinedEmail(user, createMemberDetails);
     }
-    await sendWelecomEmail(user);
-    await sendNewMemberJoinedEmail(user, createMemberDetails);
   } catch (error) {
     console.error(error);
     return getErrorRedirect(
@@ -355,13 +364,12 @@ export async function rejectMember(memberId: string) {
 
   console.log('Found member:', existingMember);
 
-  // Update member status
+  // Deactivating an approved member keeps their approval (they show as Inactive
+  // and can be reactivated); rejecting an application marks it rejected, so it
+  // no longer looks like a new application (BUG-035).
   const { data, error } = await supabase
     .from('members')
-    .update({ 
-      status: 'inactive',
-      isApproved: false
-    })
+    .update(existingMember.isApproved ? { status: 'inactive' } : { status: 'rejected', isApproved: false })
     .eq('id', memberId)
     .select()
     .maybeSingle();

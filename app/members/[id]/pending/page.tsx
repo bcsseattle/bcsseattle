@@ -24,6 +24,11 @@ export default async function PendingMembers() {
   if (member.isApproved) {
     return redirect(`/members/${member.id}`);
   }
+  if (member.status === 'rejected') {
+    return (
+      <p>Your membership application was not approved. Please contact us if you have any questions.</p>
+    );
+  }
   if (member.status === 'inactive') {
     return (
       <p>Your membership is inactive. Please contact support for assistance.</p>

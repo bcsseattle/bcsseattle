@@ -57,6 +57,11 @@ export default async function CommunityFunds(props: {
     return redirect('/register');
   }
 
+  // Signed in but never registered: there's no member to show a status for (BUG-056).
+  if (!member) {
+    return redirect('/register');
+  }
+
   if (!member?.isApproved) {
     return redirect(`/members/${member?.id}/pending`);
   }
@@ -77,12 +82,17 @@ export default async function CommunityFunds(props: {
 
   const { data: donations } = await getDonations();
 
+  // Money received outside Stripe: completed Zelle, check, cash or external
+  // donations. Card and bank donations go through Stripe, and pending ones
+  // (abandoned checkouts, unconfirmed pledges) aren't money yet (BUG-040).
   const donationsOutsideStripe = donations?.filter(
-    (donation) => !Boolean(donation.stripe_payment_id)
+    (donation) =>
+      donation.donation_status === 'completed' &&
+      !['card', 'us_bank_account'].includes(donation.payment_method)
   );
 
   const totalDonations = donationsOutsideStripe?.reduce(
-    (acc: number, donation: any) => acc + donation.amount,
+    (acc: number, donation: any) => acc + Number(donation.donation_amount), // the column is donation_amount, in cents
     0
   );
 

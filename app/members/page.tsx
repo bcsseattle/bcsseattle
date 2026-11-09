@@ -39,6 +39,11 @@ export default async function Members() {
 
   const { data: prices } = await supabase.from('prices').select('*');
 
+  // Signed in but never registered: there's no member to show a status for (BUG-056).
+  if (!member) {
+    return redirect('/register');
+  }
+
   if (!member?.isApproved) {
     return redirect(`/members/${member?.id}/pending`);
   }

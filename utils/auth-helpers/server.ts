@@ -470,16 +470,22 @@ export async function updateName(formData: FormData) {
 // }
 
 export async function sendEmail(values: z.infer<typeof ContactFormSchema>) {
-  const { name, email, message } = values;
+  const parsed = ContactFormSchema.safeParse(values);
+  if (!parsed.success) {
+    return getErrorRedirect('/contact-us', 'Please check the form.', parsed.error.issues[0].message);
+  }
+  const { name, email, message } = parsed.data;
 
   const api_url = process.env.NEXT_PUBLIC_SITE_URL + '/api/send-email';
 
   try {
-    const response = fetch(api_url, {
+    // Wait for the send: success is only reported once the message went out (BUG-031).
+    const response = await fetch(api_url, {
       method: 'POST',
       headers: internalAuthHeader(),
       body: JSON.stringify({ name, email, message })
     });
+    if (!response.ok) throw new Error(`send-email answered ${response.status}`);
     return getStatusRedirect('/', 'Success!', 'Your message has been sent.');
   } catch (error) {
     console.error(error);
@@ -494,18 +500,23 @@ export async function sendEmail(values: z.infer<typeof ContactFormSchema>) {
 export async function signUpFuneralBurial(
   values: z.infer<typeof FuneralFundFormSchema>
 ) {
+  const parsed = FuneralFundFormSchema.safeParse(values);
+  if (!parsed.success) {
+    return getErrorRedirect('/funeral-burials', 'Please check the form.', parsed.error.issues[0].message);
+  }
   const {
     fullName,
     email,
     phoneNumber,
     additionalServices,
     additionalComments
-  } = values;
+  } = parsed.data;
 
   const api_url = process.env.NEXT_PUBLIC_SITE_URL + '/api/signup-funeral';
 
   try {
-    const response = fetch(api_url, {
+    // Wait for the save: success is only reported once it was recorded (BUG-031).
+    const response = await fetch(api_url, {
       method: 'POST',
       headers: internalAuthHeader(),
       body: JSON.stringify({
@@ -516,6 +527,7 @@ export async function signUpFuneralBurial(
         additionalComments
       })
     });
+    if (!response.ok) throw new Error(`signup-funeral answered ${response.status}`);
     return getStatusRedirect(
       '/funeral-burials',
       'Successfully signed up!',

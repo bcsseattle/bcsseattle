@@ -42,6 +42,16 @@ When('I open the candidate ballot', async function (this: E2EWorld) {
   await this.page.goto(`/elections/${this.election!.id}/vote/candidates`);
 });
 
+Then('the elections list should mark the election as {string}', async function (this: E2EWorld, label: string) {
+  // The election's own card: the smallest block holding both its title and its View link.
+  const card = this.page
+    .locator('div')
+    .filter({ has: this.page.getByRole('heading', { name: this.election!.title, exact: true }) })
+    .filter({ has: this.page.getByRole('link', { name: 'View' }) })
+    .last();
+  await expect(card.getByText(label, { exact: true })).toBeVisible();
+});
+
 Then('I should see the election status {string}', async function (this: E2EWorld, status: string) {
   await expect(this.page.getByText(status, { exact: true }).first()).toBeVisible();
 });
@@ -64,6 +74,16 @@ When('I vote {string} on {string}', async function (this: E2EWorld, choice: stri
   await this.page.getByRole('button', { name: 'Review Votes' }).click();
   await this.page.getByRole('button', { name: 'Submit Initiative Votes' }).click();
   await expect(this.page).toHaveURL(/\/vote\/initiatives\/confirmation\?code=/);
+});
+
+When('I vote {string} on {string} using the combined ballot', async function (this: E2EWorld, choice: string, title: string) {
+  const initiative = this.election!.initiatives.find((i) => i.title === title)!;
+  const value = { 'Yes / Support': 'yes', 'No / Oppose': 'no', 'Abstain / No preference': 'abstain' }[choice];
+  await this.page.goto(`/elections/${this.election!.id}/vote`);
+  await this.page.locator(`[id="${initiative.id}-${value}"]`).click();
+  await this.page.getByRole('button', { name: 'Review & Submit' }).click();
+  await this.page.getByRole('button', { name: 'Submit Vote' }).click();
+  await expect(this.page).toHaveURL(/\/vote\/confirmation/);
 });
 
 Then('I should be given a confirmation code', async function (this: E2EWorld) {
@@ -106,6 +126,37 @@ When('I submit the combined ballot with a vote for {string}', async function (th
     data: { candidateVotes: [{ candidateId: candidate(this, name).id, position: 'President' }], initiativeVotes: [] },
   });
   expect(res.status(), await res.text()).toBe(200);
+});
+
+When('I submit the candidate ballot with a vote for {string}', async function (this: E2EWorld, name: string) {
+  const res = await this.page.request.post(`/api/elections/${this.election!.id}/vote/candidates`, {
+    data: { candidateVotes: [{ candidateId: candidate(this, name).id, position: 'President' }] },
+  });
+  this.response = { status: res.status(), body: await res.text() };
+});
+
+Given('candidate voting for the election only starts tomorrow', async function (this: E2EWorld) {
+  // Only the start is set: separate periods come from the leadership type's default.
+  const { error } = await admin
+    .from('elections')
+    .update({ candidate_voting_start: new Date(Date.now() + 86_400_000).toISOString() })
+    .eq('id', this.election!.id);
+  expect(error).toBeNull();
+});
+
+Then('the ballot should be refused as not open yet', async function (this: E2EWorld) {
+  expect(this.response!.status, this.response!.body).toBe(400);
+  expect(this.response!.body).toContain('not currently open');
+});
+
+Then('the ballot should be refused as already voted', async function (this: E2EWorld) {
+  expect(this.response!.status, this.response!.body).toBe(400);
+  expect(this.response!.body).toContain('already voted');
+});
+
+Then('only my vote for {string} should be counted', async function (this: E2EWorld, name: string) {
+  const { data } = await admin.from('votes').select('candidate_id').eq('election_id', this.election!.id).eq('user_id', this.me!.id);
+  expect(data).toEqual([{ candidate_id: candidate(this, name).id }]);
 });
 
 Then('no votes should be recorded for the election', async function (this: E2EWorld) {
@@ -185,6 +236,18 @@ Given(/^"([^"]+)" is the only candidate for "([^"]+)" and received (\d+) votes$/
   await giveVotes(this, data.id, Number(n));
 });
 
+Given("the page's clock is under the test's control", async function (this: E2EWorld) {
+  await this.page.clock.install();
+});
+
+When('another member votes for {string}', async function (this: E2EWorld, name: string) {
+  await giveVotes(this, candidate(this, name).id, 1);
+});
+
+When('{int} seconds pass', async function (this: E2EWorld, seconds: number) {
+  await this.page.clock.runFor(seconds * 1000);
+});
+
 When('I open the election results', async function (this: E2EWorld) {
   await this.page.goto(`/elections/${this.election!.id}/results`);
   await expect(this.page.getByRole('heading', { name: 'Election Results' })).toBeVisible();
@@ -192,6 +255,19 @@ When('I open the election results', async function (this: E2EWorld) {
 
 When('I open the {string} tab', async function (this: E2EWorld, name: string) {
   await this.page.getByRole('tab', { name }).click();
+});
+
+Given('the election is still a draft', async function (this: E2EWorld) {
+  const { error } = await admin.from('elections').update({ status: 'draft' }).eq('id', this.election!.id);
+  expect(error).toBeNull();
+});
+
+Then('the results should not be found', async function (this: E2EWorld) {
+  expect(this.response!.status, this.response!.body).toBe(404);
+});
+
+Then('the results should need sign-in', async function (this: E2EWorld) {
+  expect(this.response!.status, this.response!.body).toBe(401);
 });
 
 When('I fetch the published results of the election', async function (this: E2EWorld) {

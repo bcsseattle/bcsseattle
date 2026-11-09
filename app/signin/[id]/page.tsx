@@ -69,7 +69,7 @@ export default async function SignIn(props: {
       <div className="flex flex-col justify-between max-w-lg p-3 m-auto w-96">
         <Card className="w-[350px]">
           <CardHeader>
-            <CardTitle>
+            <CardTitle as="h1">
               {viewProp === 'forgot_password'
                 ? 'Reset Password'
                 : viewProp === 'update_password'

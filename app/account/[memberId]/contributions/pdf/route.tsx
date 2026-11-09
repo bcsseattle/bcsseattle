@@ -22,8 +22,9 @@ export async function GET(
   const requestUrl = new URL(request.url);
   try {
     const { memberId } = await params;
+    // No (or an invalid) ?taxYear means this year: Number(null) is 0, which ?? kept (BUG-058).
     const taxYear =
-      Number(request?.nextUrl?.searchParams.get('taxYear')) ??
+      Number(request?.nextUrl?.searchParams.get('taxYear')) ||
       new Date().getFullYear();
     if (!memberId) {
       return NextResponse.redirect('/account');

@@ -82,6 +82,14 @@ Feature: Personal data is protected at the database and API level
     When an anonymous visitor reads the "fundraiser_donors" table through the public API
     Then no record should be returned
 
+  @P1 @BUG-030
+  Scenario: Donating with someone else's email doesn't change their saved details
+    Given there is an active fundraiser "Roof repair" with a goal of $2,000
+    And a guest has left their contact details with a fundraiser donation
+    And I am signed in as an approved member
+    When someone donates to the fundraiser with that guest's email as "Mallory" with phone "+12065550000"
+    Then the guest's saved name and phone should be unchanged
+
   @P0 @BUG-005
   Scenario: A member cannot record a vote directly, bypassing the ballot
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
@@ -94,8 +102,51 @@ Feature: Personal data is protected at the database and API level
     When an anonymous caller asks the site to send a payment-failed email to "victim@example.test"
     Then the request should be refused before any email is attempted
 
-  @P1 @known-bug @BUG-033
+  @P1 @BUG-033
   Scenario: Only admins can run the voting security report
     Given I am signed in as an approved member
     When I request the voting security report
     Then the request should be refused
+
+  @P1 @BUG-033
+  Scenario: An admin can run the voting security report
+    Given I am signed in as an admin
+    When I request the voting security report
+    Then I should get the voting security report
+
+  @P0 @api @BUG-033
+  Scenario Outline: Voter-level database functions can't be called with the public key
+    When an anonymous visitor calls the "<function>" database function
+    Then the call should be refused
+
+    Examples:
+      | function                 |
+      | find_duplicate_votes     |
+      | find_invalid_votes       |
+      | find_orphaned_votes      |
+      | check_unique_constraints |
+
+  @P0 @api @BUG-046
+  Scenario: A member cannot create an election through the public API
+    Given there is an approved member named "Bilal"
+    When "Bilal" creates an election through the public API
+    Then no election should have been created
+
+  @P0 @api @BUG-046
+  Scenario: A candidate cannot withdraw once voting has opened, so votes for them stay
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And there is an approved member named "Bilal"
+    And there is an approved member named "Zara"
+    And "Bilal" is standing as "Hani"
+    And "Zara" has voted for "Hani"
+    When "Bilal" withdraws as "Hani" through the public API
+    Then "Hani" should still be on the ballot
+    And the vote for "Hani" should still be counted
+
+  @P1 @api @BUG-046
+  Scenario: A candidate can withdraw before voting opens
+    Given there is an upcoming election with candidates "Hani" and "Nazir" for "President"
+    And there is an approved member named "Bilal"
+    And "Bilal" is standing as "Hani"
+    When "Bilal" withdraws as "Hani" through the public API
+    Then "Hani" should no longer be on the ballot

@@ -23,6 +23,12 @@ Feature: Supporting a fundraiser
     Then I should be taken to Stripe Checkout for $25.00 for the fundraiser
     And a pending $25 fundraiser donation should be recorded
 
+  @P0 @critical @BUG-013
+  Scenario: Changing the amount in the browser doesn't change what the fundraiser charges
+    Given I am signed in as an approved member
+    When I donate $25 to the fundraiser but my browser asks checkout to charge $1
+    Then I should be taken to Stripe Checkout for $25.00 for the fundraiser
+
   @P0 @critical
   Scenario: Once Stripe confirms the payment, the fundraiser's total goes up
     Given I am signed in as an approved member
@@ -30,6 +36,15 @@ Feature: Supporting a fundraiser
     When Stripe confirms the payment for my fundraiser donation
     And I open the fundraiser
     Then the fundraiser should show "$25.00" raised
+
+  @P1 @payments @BUG-081
+  Scenario: A donation with cents is accepted and counted in full
+    Given I am signed in as an approved member
+    When I donate $25.50 to the fundraiser
+    Then I should be taken to Stripe Checkout for $25.50 for the fundraiser
+    And a pending $25.50 fundraiser donation should be recorded
+    When Stripe confirms the payment for my fundraiser donation
+    Then the fundraiser's total should be $25.50
 
   @P1 @payments @BUG-012
   Scenario: A payment Stripe reports twice is only counted once
@@ -65,7 +80,17 @@ Feature: Supporting a fundraiser
     Examples:
       | amount  |
       | 0       |
+      | 0.49    |
       | 1000000 |
+
+  @P1 @BUG-043
+  Scenario: The server refuses a donation below the minimum even if the browser allows it
+    Given the fundraiser's minimum donation is $10
+    And I am signed in as an approved member
+    When I try to donate $25 to the fundraiser but my browser sends $5
+    Then I should see "Please donate between $10.00 and $999,999.99"
+    And I should not be taken to Stripe Checkout
+    And no donation should be recorded for the fundraiser
 
   @P1 @BUG-021
   Scenario: A visitor who isn't signed in can browse fundraisers
@@ -73,7 +98,7 @@ Feature: Supporting a fundraiser
     When I go to the fundraisers page
     Then I should see the fundraiser "Help the Rahimi family" with "$0.00 raised" towards a "$1,000.00 goal"
 
-  @P2 @known-bug @BUG-038
+  @P2 @BUG-038
   Scenario: A fundraiser with no end date keeps accepting donations
     Given there is an active fundraiser "Ongoing zakat fund" with no end date
     And I am signed in as an approved member

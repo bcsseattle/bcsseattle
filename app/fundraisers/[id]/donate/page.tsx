@@ -41,8 +41,9 @@ export default async function DonatePage({ params }: PageProps) {
     notFound();
   }
 
-  // If fundraiser has ended or is not active, redirect to main page
-  if (fundraiser.status !== 'active' || new Date(fundraiser.ends_at!) < new Date()) {
+  // If fundraiser has ended or is not active, redirect to main page.
+  // No end date means open-ended (BUG-038).
+  if (fundraiser.status !== 'active' || (fundraiser.ends_at && new Date(fundraiser.ends_at) < new Date())) {
     return (
       <div className="container max-w-2xl py-10">
         <div className="rounded-lg border p-8 text-center">

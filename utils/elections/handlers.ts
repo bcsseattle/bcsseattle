@@ -5,7 +5,7 @@ import { getErrorRedirect, getStatusRedirect } from 'utils/helpers';
 import { createClient } from '@/utils/supabase/server';
 // Votes have no insert policy for users: they are written here, after the checks above (BUG-005).
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { currentUserIsActiveMember } from '@/utils/election-config';
+import { currentUserIsActiveMember, isCandidateVotingOpen } from '@/utils/election-config';
 import {
   Candidate,
   NominateFormSchema,
@@ -51,6 +51,19 @@ interface VotingResult {
   votesCast?: number;
   sessionId?: string;
   error?: string;
+}
+
+/**
+ * Whether the user already has votes of this kind in the election, cast through
+ * any ballot (combined, candidates or initiatives). The votes themselves are the
+ * record, so every path checks them the same way (BUG-016).
+ */
+async function hasVoted(userId: string, electionId: string, kind: 'candidates' | 'initiatives' | 'any') {
+  let query = supabaseAdmin.from('votes').select('id').eq('user_id', userId).eq('election_id', electionId);
+  if (kind === 'candidates') query = query.not('candidate_id', 'is', null);
+  if (kind === 'initiatives') query = query.not('initiative_id', 'is', null);
+  const { data } = await query.limit(1);
+  return (data?.length ?? 0) > 0;
 }
 
 // Voting handlers following the same pattern as membership handlers
@@ -110,18 +123,8 @@ export async function submitCandidateVotes(
       return { success: false, error: 'Election not found' };
     }
 
-    // Check if candidate voting is open
-    const now = new Date();
-    const startDate = new Date(election.start_date);
-    const endDate = new Date(election.end_date);
-    
-    // Use candidate-specific end date if separate voting periods are enabled
-    let candidateEndDate = endDate;
-    if (election.enable_separate_voting_periods && election.candidate_voting_end) {
-      candidateEndDate = new Date(election.candidate_voting_end);
-    }
-
-    if (now < startDate || now > candidateEndDate) {
+    // Same window as everywhere else, including candidate_voting_start (BUG-060).
+    if (!(await isCandidateVotingOpen(electionId))) {
       return { success: false, error: 'Candidate voting is not currently open for this election' };
     }
 
@@ -134,7 +137,7 @@ export async function submitCandidateVotes(
       .eq('session_type', 'candidates')
       .single();
 
-    if (existingSession?.completed_at) {
+    if (existingSession?.completed_at || (await hasVoted(user.id, electionId, 'candidates'))) {
       return { success: false, error: 'You have already voted for candidates in this election' };
     }
 
@@ -275,7 +278,7 @@ export async function submitInitiativeVotes(
       .eq('session_type', 'initiatives')
       .single();
 
-    if (existingSession?.completed_at) {
+    if (existingSession?.completed_at || (await hasVoted(user.id, electionId, 'initiatives'))) {
       return { success: false, error: 'You have already voted for initiatives in this election' };
     }
 
@@ -427,21 +430,33 @@ export async function submitCombinedVotes(
       return { success: false, error: 'Voting is not currently open for this election' };
     }
 
-    // Check if user has already voted
-    const { data: existingVotes } = await supabase
-      .from('votes')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('election_id', electionId)
-      .limit(1);
-
-    if (existingVotes && existingVotes.length > 0) {
+    // Already voted through any ballot? (BUG-016)
+    if (await hasVoted(user.id, electionId, 'any')) {
       return { success: false, error: 'You have already voted in this election' };
     }
 
     const candidateError = await validateCandidateVotes(supabase, electionId, candidateVotes);
     if (candidateError) {
       return { success: false, error: candidateError };
+    }
+
+    // Initiative votes: yes/no/abstain, once each, on this election's initiatives (BUG-052).
+    if (initiativeVotes.some((v) => !['yes', 'no', 'abstain'].includes(v.vote as string))) {
+      return { success: false, error: 'Each initiative vote must be yes, no or abstain' };
+    }
+    const initiativeIds = initiativeVotes.map((v) => v.initiativeId);
+    if (new Set(initiativeIds).size !== initiativeIds.length) {
+      return { success: false, error: 'Cannot vote on the same initiative twice' };
+    }
+    if (initiativeIds.length > 0) {
+      const { data: found } = await supabase
+        .from('initiatives')
+        .select('id')
+        .eq('election_id', electionId)
+        .in('id', initiativeIds);
+      if ((found?.length ?? 0) !== initiativeIds.length) {
+        return { success: false, error: 'Invalid initiative for this election' };
+      }
     }
 
     const totalVotes = candidateVotes.length + initiativeVotes.length;

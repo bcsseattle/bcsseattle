@@ -39,6 +39,25 @@ export default async function DonationConfirmation(props: {
     return redirect('/donate');
   }
 
+  // A receipt is only issued for money received (BUG-042). Donors land here
+  // straight from Stripe, often a moment before the webhook confirms payment.
+  if (donation.donation_status !== 'completed') {
+    const failed = donation.donation_status === 'failed';
+    return (
+      <div className="mx-auto max-w-xl py-16 text-center space-y-4">
+        {!failed && <meta httpEquiv="refresh" content="5" />}
+        <h1 className="text-2xl font-bold">
+          {failed ? 'Your payment did not go through' : 'Thank you! We are confirming your payment'}
+        </h1>
+        <p className="text-muted-foreground">
+          {failed
+            ? 'No money was taken. Please try donating again or contact us.'
+            : 'Your receipt will appear here as soon as the payment is confirmed. Bank transfers can take a few days; we will email your receipt.'}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <Invoice organization={organization} donation={donation} donor={donor} />

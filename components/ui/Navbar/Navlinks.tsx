@@ -194,13 +194,15 @@ export default function Navlinks({ user, member, isAdmin }: NavlinksProps) {
         {/* Show "For members" if user is not logged in OR if they don't have an active approved membership */}
         {(!user || !member || (member?.status !== 'active' && !member?.isApproved)) && (
           <NavigationMenuItem>
-            <ListItem href="/signin?redirectTo=%2Faccount" title="For members"></ListItem>
+            <NavigationMenuLink asChild>
+              <NextLink href="/signin?redirectTo=%2Faccount" className={navigationMenuTriggerStyle()}>
+                For members
+              </NextLink>
+            </NavigationMenuLink>
           </NavigationMenuItem>
         )}
         <NavigationMenuItem>
-          <Button variant="default" className="mx-2">
-            <NextLink href="/donate">Donate</NextLink>
-          </Button>
+          <Button variant="default" className="mx-2" asChild><NextLink href="/donate">Donate</NextLink></Button>
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>
@@ -222,8 +224,8 @@ const ListItem = React.forwardRef<
   React.ElementRef<'a'>,
   React.ComponentPropsWithoutRef<'a'>
 >(({ className, title, href, children, ...props }, ref) => {
+  // Just the <li>: it was wrapped in its own <ul>, nesting lists invalidly (BUG-066).
   return (
-    <ul>
       <li>
         <NavigationMenuLink asChild>
           <NextLink
@@ -241,7 +243,93 @@ const ListItem = React.forwardRef<
           </NextLink>
         </NavigationMenuLink>
       </li>
-    </ul>
   );
 });
 ListItem.displayName = 'ListItem';
+
+/** The navigation as plain groups of links, for the phone menu (BUG-050). */
+function navGroups({ user, member, isAdmin }: NavlinksProps) {
+  const isMember = !!user && !!member && (member.status === 'active' || member.isApproved);
+  return [
+    {
+      title: 'About us',
+      links: [
+        { title: 'About BCS Seattle', href: '/about-us' },
+        { title: 'Mission', href: '/about-us/mission' },
+        { title: 'Vision', href: '/about-us/vision' },
+        { title: 'Bylaws', href: '/about-us/bylaws' }
+      ]
+    },
+    {
+      title: 'Resources',
+      links: [...components, ...(user ? [{ title: 'Immigration', href: '/resources/immigration' }] : [])]
+    },
+    { title: 'Fundraisers', links: [{ title: 'Fundraisers', href: '/fundraisers' }] },
+    ...(user && isAdmin
+      ? [
+          {
+            title: 'Admin',
+            links: [
+              { title: 'Member Management', href: '/admin/members' },
+              { title: 'Election Management', href: '/admin/elections' },
+              { title: 'Fundraiser Management', href: '/fundraisers/admin/new' },
+              { title: 'Expenses', href: '/admin/expenses' }
+            ]
+          }
+        ]
+      : []),
+    isMember
+      ? {
+          title: 'Membership',
+          links: [
+            { title: 'Elections', href: '/elections' },
+            { title: 'Account', href: '/account' },
+            { title: 'Manage contribution', href: '/contribute' },
+            { title: 'Members', href: '/members' },
+            { title: 'Community Funds', href: '/community-funds' }
+          ]
+        }
+      : { title: 'For members', links: [{ title: 'For members', href: '/signin?redirectTo=%2Faccount' }] }
+  ];
+}
+
+/** Phone menu: a native disclosure, so it works before and without JavaScript. */
+export function MobileNav(props: NavlinksProps) {
+  const router = getRedirectMethod() === 'client' ? useRouter() : null;
+  const currentPath = usePathname();
+  const menu = React.useRef<HTMLDetailsElement>(null);
+  // Close the menu after navigating.
+  React.useEffect(() => menu.current?.removeAttribute('open'), [currentPath]);
+  const { user, member } = props;
+  const isMember = !!user && !!member && (member.status === 'active' || member.isApproved);
+  return (
+    <details ref={menu} className="relative">
+      <summary className="list-none cursor-pointer rounded-md border px-3 py-2 text-sm font-medium">Menu</summary>
+      <nav aria-label="Mobile" className="absolute right-0 z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-md border bg-white p-2 shadow-lg">
+        {navGroups(props).map((group) => (
+          <div key={group.title} className="py-1">
+            {group.links.length > 1 && <p className="px-3 pt-2 text-xs font-semibold uppercase text-muted-foreground">{group.title}</p>}
+            <ul>
+              {group.links.map((link) => (
+                <li key={link.href}>
+                  <NextLink href={link.href} className="block rounded-md px-3 py-2 text-sm hover:bg-accent">
+                    {link.title}
+                  </NextLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+        {isMember && (
+          <form onSubmit={(e) => handleRequest(e, SignOut, router)} className="px-3 py-2">
+            <input type="hidden" name="pathName" value={currentPath} />
+            <button type="submit" className="text-sm">Sign out</button>
+          </form>
+        )}
+        <Button asChild className="m-2 w-[calc(100%-1rem)]">
+          <NextLink href="/donate">Donate</NextLink>
+        </Button>
+      </nav>
+    </details>
+  );
+}

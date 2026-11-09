@@ -37,13 +37,29 @@ Feature: Standing for election and seeing the results
     Then I should see "3 total votes cast"
     And I should see "66.67%"
 
-  @P1 @api @known-bug @BUG-037
+  @P1 @api @BUG-037
   Scenario: Each candidate's share is worked out within their own position
     Given there is a closed election with candidates "Hani" and "Nazir" for "President"
     And "Hani" received 2 votes and "Nazir" received 1 vote
     And "Sara" is the only candidate for "Treasurer" and received 3 votes
+    And I am signed in as an approved member
     When I fetch the published results of the election
     Then "Hani" should have 66.67 percent of the "President" vote
+
+  @P1 @api @BUG-037
+  Scenario: A draft election's results aren't published
+    Given there is a closed election with candidates "Hani" and "Nazir" for "President"
+    And the election is still a draft
+    And I am signed in as an approved member
+    When I fetch the published results of the election
+    Then the results should not be found
+
+  @P1 @api @BUG-037
+  Scenario: Election results need a signed-in member
+    Given there is a closed election with candidates "Hani" and "Nazir" for "President"
+    And I am a visitor who is not signed in
+    When I fetch the published results of the election
+    Then the results should need sign-in
 
   # The tally route counts with the service role since the BUG-019 fix, so it
   # must not reveal counts while candidate voting is still open.
@@ -61,3 +77,16 @@ Feature: Standing for election and seeing the results
     And I am signed in as an approved member
     When I fetch the candidate results as a member
     Then "Hani" should have 2 votes
+
+  @P2 @BUG-045
+  Scenario: The results page picks up other members' votes while it's open
+    Given there is a closed election with candidates "Hani" and "Nazir" for "President"
+    And "Hani" received 2 votes and "Nazir" received 1 vote
+    And I am signed in as an approved member
+    And the page's clock is under the test's control
+    When I open the election results
+    And I open the "Leadership Results" tab
+    Then I should see "3 total votes cast"
+    When another member votes for "Nazir"
+    And 15 seconds pass
+    Then I should see "4 total votes cast"

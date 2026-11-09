@@ -72,15 +72,13 @@ export async function isCandidateVotingOpen(electionId: string, nowUtc: dayjs.Da
     .maybeSingle();
   if (!election) return false;
 
-  // Candidate voting runs from the election's start to its end, or to
-  // candidate_voting_end when separate periods are on. It used to return true
-  // whenever separate periods were off, so closed and upcoming elections showed
-  // "Voting Open" (BUG-015).
-  const end =
-    config.enable_separate_voting_periods && config.candidate_voting_end
-      ? config.candidate_voting_end
-      : election.end_date;
-  return !nowUtc.isBefore(dayjs.utc(election.start_date)) && !nowUtc.isAfter(dayjs.utc(end));
+  // Candidate voting runs over the election's dates, or over
+  // candidate_voting_start/end when separate periods are on (BUG-015, BUG-060:
+  // the start used to be ignored).
+  const separate = config.enable_separate_voting_periods;
+  const start = separate && config.candidate_voting_start ? config.candidate_voting_start : election.start_date;
+  const end = separate && config.candidate_voting_end ? config.candidate_voting_end : election.end_date;
+  return !nowUtc.isBefore(dayjs.utc(start)) && !nowUtc.isAfter(dayjs.utc(end));
 }
 
 /**
