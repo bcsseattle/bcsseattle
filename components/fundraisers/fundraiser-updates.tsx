@@ -10,8 +10,8 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { createClient } from '@/utils/supabase/client';
+import { Textarea } from '@/components/ui/textarea';
 import { formatDistanceToNow } from 'date-fns';
-import { useRouter } from 'next/navigation';
 
 interface FundraiserUpdatesProps {
   fundraiserId: string;
@@ -28,9 +28,30 @@ export function FundraiserUpdates({
   fundraiserId,
   isAdmin = false
 }: FundraiserUpdatesProps) {
-  const router = useRouter();
   const [updates, setUpdates] = useState<Update[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [content, setContent] = useState('');
+  const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState('');
+
+  async function postUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    setPosting(true);
+    setPostError('');
+    const res = await fetch(`/api/fundraisers/${fundraiserId}/updates`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.ok) {
+      setUpdates((prev) => [body, ...prev]);
+      setContent('');
+    } else {
+      setPostError(body.error ?? 'Could not post the update.');
+    }
+    setPosting(false);
+  }
 
   useEffect(() => {
     async function fetchUpdates() {
@@ -66,17 +87,23 @@ export function FundraiserUpdates({
             Latest updates about this fundraiser
           </CardDescription>
         </div>
-        {isAdmin && (
-          <Button
-            onClick={() =>
-              router.push(`/fundraisers/${fundraiserId}/updates/new`)
-            }
-          >
-            Add Update
-          </Button>
-        )}
       </CardHeader>
       <CardContent className="space-y-4">
+        {isAdmin && (
+          <form onSubmit={postUpdate} className="space-y-2">
+            <Textarea
+              aria-label="New update"
+              placeholder="Share news about this fundraiser"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              required
+            />
+            {postError && <p className="text-sm text-destructive">{postError}</p>}
+            <Button type="submit" disabled={posting || !content.trim()}>
+              {posting ? 'Posting…' : 'Add Update'}
+            </Button>
+          </form>
+        )}
         {isLoading ? (
           <p className="text-center text-muted-foreground">Loading updates...</p>
         ) : updates.length === 0 ? (

@@ -63,8 +63,25 @@ Feature: The public website
     Then I should see "Your response has been recorded."
     And my interest in the funeral and burial fund should be recorded
 
-  @P2 @known-bug @BUG-047
+  @P2 @BUG-047
   Scenario: Every program card on the home page leads to a real page
     Given I am a visitor who is not signed in
     When I go to "/"
     Then every link in the programs section should open a page that exists
+
+  @P2 @BUG-047
+  Scenario Outline: No link on a public page leads to a missing page
+    Given I am a visitor who is not signed in
+    When I go to "<path>"
+    Then every link on the page should open a page that exists
+
+    Examples:
+      | path             |
+      | /                |
+      | /about-us        |
+      | /what-we-do      |
+      | /resources       |
+      | /donate          |
+      | /fundraisers     |
+      | /get-involved    |
+      | /signin/password_signin |

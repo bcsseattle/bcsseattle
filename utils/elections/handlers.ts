@@ -845,7 +845,7 @@ export async function nominateCandidateWithRollback(
 
     if (existingNomination && !checkError) {
       return getErrorRedirect(
-        '/elections/nominate',
+        `/elections/${electionId}/nominate`,
         `You have already nominated yourself for ${existingNomination.position}. You can only nominate yourself for one position per election.`
       );
     }

@@ -26,7 +26,7 @@ export default function ProgramsAndServices() {
               </Link>
             </div>
             <div className="w-full md:w-1/2 lg:my-4 lg:w-1/4 mb-4">
-              <Link href="/programs/youth-programs">
+              <Link href="/youth-programs">
                 <Card>
                   <CardHeader>
                     <CardTitle>Youth Programs</CardTitle>

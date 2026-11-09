@@ -210,3 +210,14 @@ Given('a guest has left their contact details with a fundraiser donation', async
     await admin.from('fundraiser_donors').delete().eq('id', data!.id);
   });
 });
+
+When('I post the update {string}', async function (this: E2EWorld, text: string) {
+  await this.page.getByLabel('New update').fill(text);
+  await this.page.getByRole('button', { name: 'Add Update' }).click();
+});
+
+Then('the fundraiser should have the update {string}', async function (this: E2EWorld, text: string) {
+  await expect
+    .poll(async () => (await admin.from('fundraiser_updates').select('content').eq('fundraiser_id', this.fundraiser!.id)).data)
+    .toEqual([{ content: text }]);
+});

@@ -109,7 +109,7 @@ export async function signInWithEmail(formData: FormData) {
     );
   } else {
     redirectPath = getErrorRedirect(
-      '/signin/email_sigin',
+      '/signin/email_signin',
       'Hmm... Something went wrong.',
       'You could not be signed in.'
     );
@@ -131,20 +131,26 @@ export async function verifyOtp(formData: FormData) {
     type: 'email'
   });
 
+  // Failures go back to the code form (there is no "otp_signin" view) so the user can retry.
+  const retry = `email=${encodeURIComponent(email)}`;
   if (error) {
     redirectPath = getErrorRedirect(
-      '/signin/otp_signin',
+      '/signin/verify_otp',
       'You could not be signed in.',
-      error.message
+      error.message,
+      false,
+      retry
     );
   } else if (data) {
-    await cookieStore.set('preferredSignInView', 'otp_signin', { path: '/' });
+    await cookieStore.set('preferredSignInView', 'email_signin', { path: '/' });
     redirectPath = getStatusRedirect('/', 'Success!', 'You are now signed in.');
   } else {
     redirectPath = getErrorRedirect(
-      '/signin/otp_signin',
+      '/signin/verify_otp',
       'Hmm... Something went wrong.',
-      'You could not be signed in.'
+      'You could not be signed in.',
+      false,
+      retry
     );
   }
 

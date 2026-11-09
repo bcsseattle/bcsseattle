@@ -17,7 +17,7 @@ export async function GET(
   try {
     const { data: updates, error } = await supabase
       .from('fundraiser_updates')
-      .select('*, created_by:users(name)')
+      .select('*')
       .eq('fundraiser_id', params.id)
       .order('created_at', { ascending: false });
 
@@ -96,7 +96,7 @@ export async function POST(
         content,
         created_by: session.user.id
       })
-      .select('*, created_by:users(name)')
+      .select('*')
       .single();
 
     if (updateError) {
