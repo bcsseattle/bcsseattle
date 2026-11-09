@@ -71,10 +71,10 @@ export default async function Page() {
   // console.log('data', data);
 
   return (
-    <section className="mb-32">
-      <div className="max-w-6xl px-4 py-4 mx-auto sm:px-6 sm:pt-8 lg:px-8">
-        <div className="sm:align-center sm:flex sm:flex-col">
-          <h1 className="text-4xl font-extrabold sm:tex sm:text-5xl">
+    <section className="pb-8">
+      <div className="pt-8 lg:pt-16">
+        <div className="flex flex-col">
+          <h1 className="text-display text-foreground">
             Funeral & Burial
           </h1>
           {/* <div

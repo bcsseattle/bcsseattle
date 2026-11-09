@@ -3,10 +3,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import dayjs from '@/libs/dayjs';
 import { createClient } from '@/utils/supabase/server';
-
-const fmt = (d: string) => dayjs.utc(d).tz('America/Los_Angeles').format('MMM D, YYYY');
+import dayjs from '@/libs/dayjs';
+import { formatDate } from '@/utils/format';
 
 // The admin layout already turns away anyone who isn't an admin.
 export default async function AdminElectionsPage() {
@@ -22,12 +21,12 @@ export default async function AdminElectionsPage() {
 
   return (
     <Card>
-      <CardHeader className="flex-row items-start justify-between space-y-0">
+      <CardHeader className="flex-row flex-wrap items-start justify-between gap-3 space-y-0">
         <div>
           <CardTitle>Election Management</CardTitle>
           <CardDescription>All elections, newest first.</CardDescription>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
             <Link href="/admin/voting-config">Voting configuration</Link>
           </Button>
@@ -52,7 +51,7 @@ export default async function AdminElectionsPage() {
                 <TableRow key={e.id}>
                   <TableCell className="font-medium">{e.title}</TableCell>
                   <TableCell>
-                    {fmt(e.start_date)} – {fmt(e.end_date)}
+                    {formatDate(e.start_date)} – {formatDate(e.end_date)}
                   </TableCell>
                   <TableCell>
                     <Badge variant={status(e) === 'Open' ? 'default' : 'secondary'}>{status(e)}</Badge>

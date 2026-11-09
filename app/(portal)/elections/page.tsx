@@ -101,7 +101,7 @@ export default async function ElectionsPage(props: Props) {
     .order('start_date', { ascending: true });
 
   if (error) {
-    return <div className="text-red-500">Error loading elections: {error.message}</div>;
+    return <div className="text-badge-red-text">Error loading elections: {error.message}</div>;
   }
 
   // Get content counts for each election

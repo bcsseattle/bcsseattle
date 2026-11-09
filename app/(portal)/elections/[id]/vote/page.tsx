@@ -141,7 +141,7 @@ export default async function VotePage(props: Props) {
   const positionOrder = await getPositionOrder();
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="w-full">
       <VotingClient
         election={election}
         candidates={candidates || []}

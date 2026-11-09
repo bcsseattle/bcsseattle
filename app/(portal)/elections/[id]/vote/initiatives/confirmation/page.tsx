@@ -18,6 +18,8 @@ import {
   ThumbsDown,
   Minus
 } from 'lucide-react';
+import { formatDeadline } from '@/utils/format';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -64,13 +66,13 @@ export default async function InitiativeVoteConfirmationPage(props: Props) {
 
   if (!session || sessionError) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <Card className="border-red-200 bg-red-50">
+      <div className="max-w-2xl">
+        <Card className="border-badge-red-border bg-badge-red-bg">
           <CardHeader>
-            <CardTitle className="text-red-800">
+            <CardTitle className="text-badge-red-text">
               Confirmation Not Found
             </CardTitle>
-            <CardDescription className="text-red-700">
+            <CardDescription className="text-badge-red-text">
               The confirmation code provided is invalid or has expired.
             </CardDescription>
           </CardHeader>
@@ -106,11 +108,11 @@ export default async function InitiativeVoteConfirmationPage(props: Props) {
   const getVoteIcon = (vote: string) => {
     switch (vote) {
       case 'yes':
-        return <ThumbsUp className="w-4 h-4 text-green-600" />;
+        return <ThumbsUp className="w-4 h-4 text-badge-green-text" />;
       case 'no':
-        return <ThumbsDown className="w-4 h-4 text-red-600" />;
+        return <ThumbsDown className="w-4 h-4 text-badge-red-text" />;
       case 'abstain':
-        return <Minus className="w-4 h-4 text-gray-600" />;
+        return <Minus className="w-4 h-4 text-muted-foreground" />;
       default:
         return null;
     }
@@ -131,43 +133,44 @@ export default async function InitiativeVoteConfirmationPage(props: Props) {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <Card className="border-blue-200 bg-blue-50">
+    <div className="max-w-2xl">
+      <BreadcrumbName id={id} name={election.title} />
+      <Card className="border-accent-200 bg-accent-100">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-800">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <CheckCircle className="w-6 h-6" />
             Initiative Votes Confirmed
           </CardTitle>
-          <CardDescription className="text-blue-700">
+          <CardDescription className="text-foreground">
             Your initiative votes for {election.title} have been successfully
             recorded.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Confirmation Details */}
-          <div className="bg-white p-4 rounded-lg border">
+          <div className="bg-card p-4 rounded-lg border">
             <h3 className="font-semibold mb-3">Confirmation Details</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Confirmation Code:</span>
+                <span className="text-muted-foreground">Confirmation Code:</span>
                 <span className="font-mono font-medium">
                   {session.confirmation_code}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Votes Cast:</span>
+                <span className="text-muted-foreground">Votes Cast:</span>
                 <span>{session.votes_cast}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Submitted:</span>
-                <span>{new Date(session.completed_at!).toLocaleString()}</span>
+                <span className="text-muted-foreground">Submitted:</span>
+                <span>{formatDeadline(session.completed_at!)}</span>
               </div>
             </div>
           </div>
 
           {/* Vote Summary */}
           {votes && votes.length > 0 && (
-            <div className="bg-white p-4 rounded-lg border">
+            <div className="bg-card p-4 rounded-lg border">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 Your Initiative Votes
@@ -176,7 +179,7 @@ export default async function InitiativeVoteConfirmationPage(props: Props) {
                 {votes.map((vote) => (
                   <div
                     key={vote.id}
-                    className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0"
+                    className="flex justify-between items-center py-3 border-b border-border last:border-b-0"
                   >
                     <span className="font-medium">
                       {vote.initiatives?.title}

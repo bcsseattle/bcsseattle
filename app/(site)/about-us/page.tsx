@@ -1,12 +1,12 @@
 export default function Page() {
   return (
-    <section className="mb-32">
-      <div className="max-w-6xl px-4 py-8 mx-auto sm:px-6 sm:pt-24 lg:px-8">
-        <div className="sm:align-center sm:flex sm:flex-col">
-          <h1 className="text-4xl font-extrabold sm:text-center sm:text-5xl">
+    <section className="pb-8">
+      <div className="max-w-3xl pt-8 lg:pt-16">
+        <div className="flex flex-col">
+          <h1 className="text-display text-foreground">
             About Baloch Community Services of Seattle
           </h1>
-          <p className="mt-5 text-xl sm:text-2xl">
+          <p className="mt-3 font-serif text-doc-lead text-foreground">
             Baloch Community Services is a non-profit organization dedicated to
             serving the Baloch community in the United States. The organization
             offers a variety of services to help community members, including
@@ -17,10 +17,10 @@ export default function Page() {
           </p>
           <div className="sm:justify-between">
             <div className="my-10">
-              <h2 className="text-4xl font-extrabold sm:text-center sm:text-5xl">
+              <h2 className="text-screen text-foreground">
                 Mission Statement
               </h2>
-              <p className="mt-5 text-xl sm:text-2xl">
+              <p className="mt-3 font-serif text-doc-lead text-foreground">
                 BCS Seattle aims to enhance the cultural heritage and community
                 welfare of the Baloch community in the Greater Seattle area. We
                 are committed to organizing educational programs, hosting
@@ -32,10 +32,10 @@ export default function Page() {
               </p>
             </div>
             <div className="my-10">
-              <h2 className="text-4xl font-extrabold sm:text-center sm:text-5xl">
+              <h2 className="text-screen text-foreground">
                 Vision Statement
               </h2>
-              <p className="mt-5 text-xl sm:text-2xl">
+              <p className="mt-3 font-serif text-doc-lead text-foreground">
                 Our vision is to be a vibrant hub of cultural exchange and
                 support within the Greater Seattle area, where the Baloch
                 community thrives socially, educationally, and culturally. We

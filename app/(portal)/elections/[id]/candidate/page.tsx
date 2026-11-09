@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Trophy, Users, Clock, ArrowLeft, FileText, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { Database } from '@/types';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 type Election = Database['public']['Tables']['elections']['Row'];
 type Candidate = Database['public']['Tables']['candidates']['Row'];
@@ -114,7 +115,8 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   const totalPositions = Object.keys(candidatesByPosition).length;
 
   return (
-    <div className="container mx-auto py-3 sm:py-8 space-y-3 sm:space-y-6 px-3 sm:px-4">
+    <div className="space-y-3 sm:space-y-6">
+      <BreadcrumbName id={id} name={election.title} />
       {/* Header - Minimalist Mobile */}
       <div className="space-y-3 sm:space-y-4">
         <div className="flex items-center justify-between">
@@ -134,7 +136,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
         </div>
         
         <div className="space-y-1 sm:space-y-2">
-          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold">Candidates</h1>
+          <h1 className="text-screen text-foreground">Candidates</h1>
           <p className="text-xs sm:text-base text-muted-foreground line-clamp-1 sm:line-clamp-none">{election.title}</p>
         </div>
         
@@ -151,7 +153,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
       <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <Card className="p-2 sm:p-6">
           <div className="text-center">
-            <Users className="h-3 w-3 sm:h-5 sm:w-5 text-blue-600 mx-auto mb-1" />
+            <Users className="h-3 w-3 sm:h-5 sm:w-5 text-accent mx-auto mb-1" />
             <p className="text-sm sm:text-2xl font-bold">{totalCandidates}</p>
             <p className="text-[10px] sm:text-sm text-muted-foreground">Candidates</p>
           </div>
@@ -159,7 +161,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
         
         <Card className="p-2 sm:p-6">
           <div className="text-center">
-            <Trophy className="h-3 w-3 sm:h-5 sm:w-5 text-yellow-600 mx-auto mb-1" />
+            <Trophy className="h-3 w-3 sm:h-5 sm:w-5 text-badge-orange-text mx-auto mb-1" />
             <p className="text-sm sm:text-2xl font-bold">{totalPositions}</p>
             <p className="text-[10px] sm:text-sm text-muted-foreground">Positions</p>
           </div>
@@ -167,7 +169,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
         
         <Card className="p-2 sm:p-6">
           <div className="text-center">
-            <Clock className="h-3 w-3 sm:h-5 sm:w-5 text-green-600 mx-auto mb-1" />
+            <Clock className="h-3 w-3 sm:h-5 sm:w-5 text-badge-green-text mx-auto mb-1" />
             <p className="text-xs sm:text-sm font-medium">
               {votingEnded ? 'Closed' : 'Open'}
             </p>
@@ -260,7 +262,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
                               <div className="w-full bg-muted rounded-full h-1.5">
                                 <div 
                                   className={`h-1.5 rounded-full transition-all duration-500 ${
-                                    candidate.is_winner ? 'bg-green-600' : 'bg-blue-600'
+                                    'bg-primary'
                                   }`}
                                   style={{ width: `${candidate.percentage}%` }}
                                 />

@@ -65,8 +65,8 @@ export default async function SignIn(props: {
 
   return (
     <div className="flex justify-center height-screen-helper">
-      <div className="flex flex-col justify-between max-w-lg p-3 m-auto w-96">
-        <Card className="w-[350px]">
+      <div className="m-auto flex w-full max-w-[384px] flex-col justify-between py-8">
+        <Card className="w-full">
           <CardHeader>
             <CardTitle as="h1">
               {viewProp === 'forgot_password'

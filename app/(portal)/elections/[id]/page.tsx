@@ -22,6 +22,7 @@ import {
   getCandidateVotingPeriod,
   shouldShowUnopposedStatus
 } from '@/utils/election-config';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 type Election = Database['public']['Tables']['elections']['Row'];
 type Candidate = Database['public']['Tables']['candidates']['Row'];
@@ -306,6 +307,7 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
 
   return (
     <div className="flex flex-col gap-6">
+      <BreadcrumbName id={election.id} name={election.title} />
       <PageHeader
         badge={<Badge tone={phase.tone}>{phase.label}</Badge>}
         back={{ href: '/elections', label: 'Elections' }}

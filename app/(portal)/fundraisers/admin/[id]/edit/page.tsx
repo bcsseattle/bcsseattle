@@ -2,6 +2,8 @@ import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
 import { createClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { FundraiserUpdateForm } from '@/components/fundraisers/admin/fundraiser-update-form';
+import { PageHeader } from '@/components/portal/page-header';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -37,17 +39,14 @@ export default async function EditFundraiserPage({ params }: PageProps) {
   }
 
   return (
-    <div className="container max-w-2xl py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Edit Fundraiser</h1>
-        <p className="text-muted-foreground">
-          Update the details of your fundraising campaign.
-        </p>
-      </div>
+    <div className="max-w-2xl space-y-6">
+      <BreadcrumbName id={fundraiser.id} name={fundraiser.title} />
+      <PageHeader
+        title="Edit Fundraiser"
+        description="Update the details of your fundraising campaign."
+      />
 
-      <div className="space-y-8">
-        <FundraiserUpdateForm fundraiser={fundraiser} />
-      </div>
+      <FundraiserUpdateForm fundraiser={fundraiser} />
     </div>
   );
 }

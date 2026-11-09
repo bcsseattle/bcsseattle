@@ -110,4 +110,4 @@ Feature: The public website
     Given there is an active fundraiser "Roof repair" with a goal of $2,000
     And I am a visitor who is not signed in
     When I open the fundraiser
-    Then the breadcrumbs should not show any raw IDs
+    Then the breadcrumbs should name it "Roof repair", not show its raw ID

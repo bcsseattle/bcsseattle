@@ -4,6 +4,7 @@ import { DonationForm } from '@/components/fundraisers/donation-form';
 import { getSession } from '@/utils/auth-helpers/server';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -45,15 +46,15 @@ export default async function DonatePage({ params }: PageProps) {
   // No end date means open-ended (BUG-038).
   if (fundraiser.status !== 'active' || (fundraiser.ends_at && new Date(fundraiser.ends_at) < new Date())) {
     return (
-      <div className="container max-w-2xl py-10">
-        <div className="rounded-lg border p-8 text-center">
-          <h1 className="text-2xl font-bold mb-4">
+      <div className="max-w-2xl pb-8 pt-8 lg:pt-16">
+        <div className="rounded-lg border bg-card p-8 text-center">
+          <h1 className="mb-2 text-screen text-foreground">
             This fundraiser is no longer accepting donations
           </h1>
           <p className="text-muted-foreground mb-6">
             The fundraiser has ended or is not currently active.
           </p>
-          <Button asChild>
+          <Button variant="outline" asChild>
             <Link href="/fundraisers">View Other Fundraisers</Link>
           </Button>
         </div>
@@ -62,15 +63,16 @@ export default async function DonatePage({ params }: PageProps) {
   }
 
   return (
-    <div className="container max-w-2xl py-10">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">Make a Donation</h1>
-        <p className="text-muted-foreground">
+    <div className="max-w-2xl pb-8 pt-8 lg:pt-16">
+      <BreadcrumbName id={fundraiser.id} name={fundraiser.title} />
+      <div className="mb-6 flex flex-col gap-1">
+        <h1 className="text-display text-foreground">Make a Donation</h1>
+        <p className="mt-0 text-sm text-muted-foreground">
           Support {fundraiser.title}
         </p>
       </div>
 
-      <div className="rounded-lg border p-6">
+      <div className="rounded-lg border bg-card p-6">
         <DonationForm fundraiser={fundraiser} />
       </div>
     </div>

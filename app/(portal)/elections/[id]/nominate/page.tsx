@@ -2,6 +2,7 @@ import React from 'react';
 import { notFound, redirect } from 'next/navigation';
 import NominateForm from '@/components/nominate-form';
 import { createClient } from '@/utils/supabase/server';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -47,7 +48,8 @@ export default async function NominatePage(props: Props) {
   }
 
   return (
-    <main className="max-w-3xl mx-auto p-4">
+    <div className="max-w-3xl">
+      <BreadcrumbName id={election.id} name={election.title} />
       <NominateForm
         electionTitle={election.title}
         electionId={election.id}
@@ -55,6 +57,6 @@ export default async function NominatePage(props: Props) {
         positions={positions ?? []}
         member={member}
       />
-    </main>
+    </div>
   );
 }

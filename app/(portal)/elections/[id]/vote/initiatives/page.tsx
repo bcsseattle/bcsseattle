@@ -67,7 +67,7 @@ export default async function InitiativeVotePage(props: Props) {
     .order('ballot_order');
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="w-full">
       <InitiativeVotingClient
         election={election}
         initiatives={initiatives || []}

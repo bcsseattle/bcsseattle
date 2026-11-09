@@ -1,7 +1,7 @@
 export default function Page() {
     return (
       <>
-        <h1>Get Involved</h1>
+        <h1 className="pt-8 text-display text-foreground lg:pt-16">Get Involved</h1>
       </>
     );
   }

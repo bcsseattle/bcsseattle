@@ -121,13 +121,13 @@ export default function CandidateVotingForm({
   // If user has already voted, show message
   if (hasVoted) {
     return (
-      <Card className="border-green-200 bg-green-50">
+      <Card className="border-badge-green-border bg-badge-green-bg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-800">
+          <CardTitle className="flex items-center gap-2 text-badge-green-text">
             <CheckCircle className="w-5 h-5" />
             Candidate Votes Already Submitted
           </CardTitle>
-          <CardDescription className="text-green-700">
+          <CardDescription className="text-badge-green-text">
             You have already cast your votes for candidates in this election. Thank you for participating!
           </CardDescription>
         </CardHeader>
@@ -144,7 +144,7 @@ export default function CandidateVotingForm({
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl space-y-6">
       {/* Election Header */}
       <Card>
         <CardHeader>
@@ -159,10 +159,10 @@ export default function CandidateVotingForm({
       </Card>
 
       {/* Voting Instructions */}
-      <div className="relative w-full rounded-lg border p-4 bg-blue-50 border-blue-200">
+      <div className="relative w-full rounded-lg border p-4 bg-accent-100 border-accent-200">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5" />
-          <div className="text-sm text-blue-800">
+          <AlertTriangle className="h-4 w-4 text-accent mt-0.5" />
+          <div className="text-sm text-foreground">
             <strong>Important:</strong> You can only vote for candidates once in this election. Please review your selections carefully before submitting.
             You may choose one candidate per position, or leave positions blank.
           </div>
@@ -187,14 +187,14 @@ export default function CandidateVotingForm({
                 {orderedPositions.map((position) => (
                   <div key={position.position} className="space-y-4">
                     {/* Position Header */}
-                    <div className="border-b border-gray-200 pb-4">
+                    <div className="border-b border-border pb-4">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-sm">
+                        <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                          <span className="text-primary-foreground font-semibold text-sm">
                             {position.display_order}
                           </span>
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900">
+                        <h3 className="text-xl font-semibold text-foreground">
                           {position.position}
                         </h3>
                         <Badge variant="outline">
@@ -203,7 +203,7 @@ export default function CandidateVotingForm({
                         </Badge>
                       </div>
                       {position.description && (
-                        <p className="text-sm text-gray-600 ml-11">
+                        <p className="text-sm text-muted-foreground ml-11">
                           {position.description}
                         </p>
                       )}
@@ -222,19 +222,19 @@ export default function CandidateVotingForm({
                               className="space-y-3"
                             >
                               {/* No vote option */}
-                              <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                              <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted">
                                 <RadioGroupItem value="" id={`no-vote-${position.position}`} />
                                 <label 
                                   htmlFor={`no-vote-${position.position}`}
                                   className="flex-1 cursor-pointer"
                                 >
                                   <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                                      <User className="w-6 h-6 text-gray-500" />
+                                    <div className="w-12 h-12 bg-mat rounded-full flex items-center justify-center">
+                                      <User className="w-6 h-6 text-muted-foreground" />
                                     </div>
                                     <div>
-                                      <p className="font-medium text-gray-600">No Vote</p>
-                                      <p className="text-sm text-gray-500">Skip this position</p>
+                                      <p className="font-medium text-muted-foreground">No Vote</p>
+                                      <p className="text-sm text-muted-foreground">Skip this position</p>
                                     </div>
                                   </div>
                                 </label>
@@ -244,7 +244,7 @@ export default function CandidateVotingForm({
                               {candidatesByPosition[position.position].map((candidate) => (
                                 <div 
                                   key={candidate.id} 
-                                  className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50"
+                                  className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted"
                                 >
                                   <RadioGroupItem value={candidate.id} id={candidate.id} />
                                   <label 
@@ -262,11 +262,11 @@ export default function CandidateVotingForm({
                                         </AvatarFallback>
                                       </Avatar>
                                       <div className="flex-1">
-                                        <h4 className="font-semibold text-gray-900 mb-1">
+                                        <h4 className="font-semibold text-foreground mb-1">
                                           {candidate.full_name}
                                         </h4>
                                         {candidate.bio && (
-                                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                                          <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
                                             {candidate.bio}
                                           </p>
                                         )}
@@ -292,26 +292,26 @@ export default function CandidateVotingForm({
 
           {/* Vote Summary (shown before final submission) */}
           {showSummary && (
-            <Card className="border-yellow-200 bg-yellow-50">
+            <Card className="border-badge-orange-border bg-badge-orange-bg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-yellow-800">
+                <CardTitle className="flex items-center gap-2 text-badge-orange-text">
                   <AlertTriangle className="w-5 h-5" />
                   Review Your Candidate Votes
                 </CardTitle>
-                <CardDescription className="text-yellow-700">
+                <CardDescription className="text-badge-orange-text">
                   Please review your candidate selections before submitting. Once submitted, you cannot change your votes.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {getVoteSummary().length > 0 ? (
                   getVoteSummary().map(({ position, candidate }, index) => (
-                    <div key={index} className="flex justify-between items-center py-2 border-b border-yellow-200 last:border-b-0">
-                      <span className="font-medium text-yellow-800">{position}</span>
-                      <span className="text-yellow-700">{candidate?.full_name}</span>
+                    <div key={index} className="flex justify-between items-center py-2 border-b border-badge-orange-border last:border-b-0">
+                      <span className="font-medium text-badge-orange-text">{position}</span>
+                      <span className="text-badge-orange-text">{candidate?.full_name}</span>
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-4 text-yellow-700">
+                  <div className="text-center py-4 text-badge-orange-text">
                     No candidates selected
                   </div>
                 )}
@@ -339,7 +339,7 @@ export default function CandidateVotingForm({
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-card border-t-transparent rounded-full animate-spin" />
                   Submitting...
                 </div>
               ) : showSummary ? (

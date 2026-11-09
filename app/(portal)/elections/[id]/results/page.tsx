@@ -16,6 +16,8 @@ import { ElectionDashboard } from '@/components/elections/results/election-dashb
 import { VotingExplainer } from '@/components/elections/results/voting-explainer';
 import { getElectionTypeDescription } from '@/utils/election-types';
 import { ElectionType } from '@/types';
+import { formatDeadline } from '@/utils/format';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 export default function ElectionResultsPage() {
   const params = useParams();
@@ -39,7 +41,7 @@ export default function ElectionResultsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="w-full">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="flex items-center space-x-2">
             <RefreshCw className="h-4 w-4 animate-spin" />
@@ -52,10 +54,10 @@ export default function ElectionResultsPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-8">
-        <Card className="border-red-200 bg-red-50">
+      <div className="w-full">
+        <Card className="border-badge-red-border bg-badge-red-bg">
           <CardContent className="pt-6">
-            <div className="flex items-center space-x-2 text-red-700">
+            <div className="flex items-center space-x-2 text-badge-red-text">
               <span className="font-medium">Error:</span>
               <span>{error}</span>
             </div>
@@ -75,7 +77,7 @@ export default function ElectionResultsPage() {
 
   if (!results) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="w-full">
         <Card>
           <CardContent className="pt-6">
             <p>No results available for this election.</p>
@@ -90,13 +92,14 @@ export default function ElectionResultsPage() {
   const typeDescription = getElectionTypeDescription(electionType);
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="space-y-6">
+      <BreadcrumbName id={id} name={results.election.title} />
       {/* Enhanced Page Header with Type Information */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <TypeIcon className="h-8 w-8 text-muted-foreground" />
           <div>
-            <h1 className="text-3xl font-bold">Election Results</h1>
+            <h1 className="text-screen text-foreground">Election Results</h1>
             <div className="flex items-center gap-2 mt-1">
               <p className="text-muted-foreground">{typeDescription}</p>
               <Badge variant="outline" className="capitalize">
@@ -119,7 +122,7 @@ export default function ElectionResultsPage() {
 
       {/* Results Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList>
           <TabsTrigger value="overview">
             <BarChart3 className="h-4 w-4 mr-2" />
             Overview
@@ -163,23 +166,23 @@ export default function ElectionResultsPage() {
                     <div>
                       <p className="text-sm font-medium">Start Date</p>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(results.election.startDate).toLocaleString()}
+                        {formatDeadline(results.election.startDate)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium">End Date</p>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(results.election.endDate).toLocaleString()}
+                        {formatDeadline(results.election.endDate)}
                       </p>
                     </div>
                     {results.election.candidateVotingEnd && (
                       <div>
                         <p className="text-sm font-medium">Candidate Voting End</p>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(results.election.candidateVotingEnd).toLocaleString()}
+                          {formatDeadline(results.election.candidateVotingEnd)}
                         </p>
                         {!results.votingStatus.candidateVotingOpen && (
-                          <p className="text-xs text-orange-600">Closed early</p>
+                          <p className="text-xs text-badge-orange-text">Closed early</p>
                         )}
                       </div>
                     )}
@@ -219,7 +222,7 @@ export default function ElectionResultsPage() {
                 <div>
                   <h3 className="text-lg font-semibold">Data Freshness</h3>
                   <p className="text-sm text-muted-foreground">
-                    Results last updated: {lastUpdated.toLocaleString()}
+                    Results last updated: {formatDeadline(lastUpdated)}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Data refreshes automatically when new votes are cast

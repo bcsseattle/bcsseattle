@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Vote, Download } from 'lucide-react';
+import { formatDeadline } from '@/utils/format';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -68,8 +70,8 @@ export default async function VoteConfirmationPage(props: Props) {
 
   if (!userVotes || userVotes.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-2xl mx-auto">
+      <div className="w-full">
+        <Card className="max-w-2xl">
           <CardHeader>
             <CardTitle className="text-center">No Votes Found</CardTitle>
             <CardDescription className="text-center">
@@ -88,20 +90,21 @@ export default async function VoteConfirmationPage(props: Props) {
   const initiativeVotes = userVotes.filter(vote => vote.initiative_id);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="w-full">
+      <BreadcrumbName id={id} name={election.title} />
+      <div className="max-w-3xl space-y-6">
         {/* Confirmation Header */}
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-badge-green-border bg-badge-green-bg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-800">
+            <CardTitle className="flex items-center gap-2 text-badge-green-text">
               <CheckCircle className="w-6 h-6" />
               Vote Confirmed
             </CardTitle>
-            <CardDescription className="text-green-700">
+            <CardDescription className="text-badge-green-text">
               Your vote has been successfully recorded for "{election.title}".
               {voteConfirmation && (
                 <span className="block mt-2 font-medium">
-                  Confirmation Code: <code className="bg-white px-2 py-1 rounded text-sm">{voteConfirmation.confirmation_code}</code>
+                  Confirmation Code: <code className="bg-card px-2 py-1 rounded text-sm">{voteConfirmation.confirmation_code}</code>
                 </span>
               )}
             </CardDescription>
@@ -126,14 +129,14 @@ export default async function VoteConfirmationPage(props: Props) {
                 <h3 className="font-semibold text-lg mb-3">Leadership Votes</h3>
                 <div className="space-y-3">
                   {candidateVotes.map((vote) => (
-                    <div key={vote.id} className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg">
+                    <div key={vote.id} className="flex justify-between items-center py-3 px-4 bg-muted rounded-lg">
                       <div>
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-foreground">
                           {vote.candidates?.position}
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="text-gray-700">
+                        <span className="text-foreground">
                           {vote.candidates?.full_name}
                         </span>
                       </div>
@@ -149,9 +152,9 @@ export default async function VoteConfirmationPage(props: Props) {
                 <h3 className="font-semibold text-lg mb-3">Initiative Votes</h3>
                 <div className="space-y-3">
                   {initiativeVotes.map((vote) => (
-                    <div key={vote.id} className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg">
+                    <div key={vote.id} className="flex justify-between items-center py-3 px-4 bg-muted rounded-lg">
                       <div>
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-foreground">
                           {vote.initiatives?.title}
                         </span>
                       </div>
@@ -168,14 +171,14 @@ export default async function VoteConfirmationPage(props: Props) {
 
             {/* Vote Details */}
             {voteConfirmation && (
-              <div className="pt-4 border-t border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+              <div className="pt-4 border-t border-border">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
                   <div>
                     <span className="font-medium">Votes Cast:</span> {voteConfirmation.votes_cast}
                   </div>
                   {voteConfirmation.confirmed_at && (
                     <div>
-                      <span className="font-medium">Submitted:</span> {new Date(voteConfirmation.confirmed_at).toLocaleString()}
+                      <span className="font-medium">Submitted:</span> {formatDeadline(voteConfirmation.confirmed_at)}
                     </div>
                   )}
                 </div>
@@ -185,9 +188,9 @@ export default async function VoteConfirmationPage(props: Props) {
         </Card>
 
         {/* Important Information */}
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-accent-200 bg-accent-100">
           <CardContent className="pt-6">
-            <div className="space-y-2 text-blue-800">
+            <div className="space-y-2 text-foreground">
               <h4 className="font-semibold">Important Information:</h4>
               <ul className="text-sm space-y-1 list-disc list-inside">
                 <li>Your vote has been recorded and cannot be changed</li>

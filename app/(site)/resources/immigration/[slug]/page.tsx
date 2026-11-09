@@ -43,14 +43,14 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
   const isMembersOnly = params.slug.includes('asylum');
 
   return (
-    <div className="p-4 relative">
+    <div className="relative pt-8">
       <div
         className="no-print select-none"
         dangerouslySetInnerHTML={{ __html: html }}
       ></div>
       {isMembersOnly && (
         <div className="fixed bottom-0 left-0 w-full h-1/3 z-10 opacity-50 flex items-center justify-center pointer-events-none">
-          <div className="text-center text-red-600 text-xl font-bold w-3/4">
+          <div className="text-center text-badge-red-text text-xl font-bold w-3/4">
             For BCSS members only. Please do not share outside the community.
           </div>
         </div>

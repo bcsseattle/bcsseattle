@@ -6,8 +6,9 @@
 import { createClient } from '@/utils/supabase/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import dayjs from '@/libs/dayjs';
+import { formatDeadline } from '@/utils/format';
 import { getElectionVotingStatus } from '@/utils/election-admin';
+import { PageHeader } from '@/components/portal/page-header';
 
 export default async function TestVotingConfigPage() {
   const supabase = await createClient();
@@ -19,15 +20,15 @@ export default async function TestVotingConfigPage() {
     .order('start_date', { ascending: false });
 
   if (error) {
-    return <div className="text-red-500">Error loading elections: {error.message}</div>;
+    return <div className="text-badge-red-text">Error loading elections: {error.message}</div>;
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Voting Configuration Test</h1>
+    <div className="space-y-6">
+      <PageHeader title="Voting Configuration Test" />
       
-      <div className="text-sm text-gray-600 mb-4">
-        Current time: {dayjs.utc().tz('America/Los_Angeles').format('MMM D, YYYY h:mm A [PST/PDT]')}
+      <div className="text-sm text-muted-foreground mb-4">
+        Current time: {formatDeadline(new Date())}
       </div>
 
       {elections?.map(async (election) => {
@@ -47,24 +48,24 @@ export default async function TestVotingConfigPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* General Election Period */}
-              <div className="border rounded-lg p-4 bg-gray-50">
+              <div className="border rounded-lg p-4 bg-muted">
                 <h4 className="font-semibold mb-2">General Voting Period</h4>
                 <div className="text-sm space-y-1">
-                  <div>Start: {dayjs.utc(election.start_date).tz('America/Los_Angeles').format('MMM D, YYYY h:mm A')}</div>
-                  <div>End: {dayjs.utc(election.end_date).tz('America/Los_Angeles').format('MMM D, YYYY h:mm A')}</div>
+                  <div>Start: {formatDeadline(election.start_date)}</div>
+                  <div>End: {formatDeadline(election.end_date)}</div>
                 </div>
               </div>
 
               {/* Candidate Voting Period */}
               {election.enable_separate_voting_periods && (
-                <div className="border rounded-lg p-4 bg-blue-50">
+                <div className="border rounded-lg p-4 bg-accent-100">
                   <h4 className="font-semibold mb-2">Candidate Voting Period</h4>
                   <div className="text-sm space-y-1">
                     <div>Start: {election.candidate_voting_start ? 
-                      dayjs.utc(election.candidate_voting_start).tz('America/Los_Angeles').format('MMM D, YYYY h:mm A') : 
+                      formatDeadline(election.candidate_voting_start) : 
                       'Same as general'}</div>
                     <div>End: {election.candidate_voting_end ? 
-                      dayjs.utc(election.candidate_voting_end).tz('America/Los_Angeles').format('MMM D, YYYY h:mm A') : 
+                      formatDeadline(election.candidate_voting_end) : 
                       'Same as general'}</div>
                   </div>
                 </div>
@@ -72,7 +73,7 @@ export default async function TestVotingConfigPage() {
 
               {/* Current Status */}
               {status.success && status.data && (
-                <div className="border rounded-lg p-4 bg-green-50">
+                <div className="border rounded-lg p-4 bg-badge-green-bg">
                   <h4 className="font-semibold mb-2">Current Status</h4>
                   <div className="flex gap-4">
                     <div className="flex items-center gap-2">
@@ -90,7 +91,7 @@ export default async function TestVotingConfigPage() {
                     {status.data.status.candidatesElectedUnopposed && (
                       <div className="flex items-center gap-2">
                         <span className="text-sm">Candidates:</span>
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                        <Badge variant="outline" className="bg-accent-100 text-foreground">
                           Elected Unopposed
                         </Badge>
                       </div>
@@ -100,7 +101,7 @@ export default async function TestVotingConfigPage() {
               )}
 
               {/* Configuration */}
-              <div className="border rounded-lg p-4 bg-yellow-50">
+              <div className="border rounded-lg p-4 bg-badge-orange-bg">
                 <h4 className="font-semibold mb-2">Configuration</h4>
                 <div className="text-sm space-y-1">
                   <div>Separate Periods: {election.enable_separate_voting_periods ? 'Enabled' : 'Disabled'}</div>
@@ -114,7 +115,7 @@ export default async function TestVotingConfigPage() {
 
       {(!elections || elections.length === 0) && (
         <Card>
-          <CardContent className="p-6 text-center text-gray-500">
+          <CardContent className="p-6 text-center text-muted-foreground">
             No elections found.
           </CardContent>
         </Card>
