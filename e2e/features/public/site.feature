@@ -29,12 +29,13 @@ Feature: The public website
     And I choose "Mission" from the menu
     Then I should be on the "/about-us/mission" page
 
-  @P1
+  @P1 @BUG-031
   Scenario: A visitor sends a message through the contact form
     Given I am a visitor who is not signed in
     When I send the contact form as "Rahim" from "rahim@example.test" saying "Do you help with citizenship interviews?"
     Then I should be on the home page
     And I should see "Your message has been sent."
+    And BCS Seattle should receive a message from "rahim@example.test"
 
   @P1
   Scenario: The contact form rejects an invalid email address

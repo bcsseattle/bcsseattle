@@ -34,6 +34,8 @@ port = 57323
 [inbucket]
 enabled = true
 port = 57324
+# The contact form's mail goes here (SMTP_URL in e2e/.env.e2e).
+smtp_port = 57325
 
 [storage]
 enabled = true

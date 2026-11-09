@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { Given, Then, When } from '@cucumber/cucumber';
 import { admin, uniqueEmail } from '../support/db';
+import { env } from '../support/env';
 import { expect } from '../support/expect';
 import { postWebhook, checkoutCompleted } from '../support/stripe';
 import type { E2EWorld } from '../support/world';
@@ -8,6 +9,7 @@ import type { E2EWorld } from '../support/world';
 // ---------------------------------------------------------------- contact & funeral fund
 
 When('I send the contact form as {string} from {string} saying {string}', async function (this: E2EWorld, name: string, email: string, message: string) {
+  this.data.sentAfter = new Date(Date.now() - 1000).toISOString();
   await this.page.goto('/contact-us');
   await this.page.getByLabel('Name').fill(name);
   await this.page.getByLabel('Email').fill(email);
@@ -166,4 +168,16 @@ Given('there are no current elections', async function () {
 Given('there are no active fundraisers', async function () {
   const { data } = await admin.from('fundraisers').select('title').eq('status', 'active');
   expect(data, 'active fundraisers left in the e2e database (another scenario did not clean up?)').toEqual([]);
+});
+
+Then('BCS Seattle should receive a message from {string}', async function (this: E2EWorld, email: string) {
+  // The contact form's mail is delivered to the e2e stack's Mailpit (BUG-031).
+  await expect
+    .poll(async () => {
+      const res = await fetch(`${env.mailpitUrl}/api/v1/search?query=${encodeURIComponent(`to:"contact@bcsseattle.test"`)}`);
+      if (!res.ok) return 0;
+      const body = (await res.json()) as { messages?: { Subject: string; Created: string }[] };
+      return body.messages?.filter((m) => m.Subject.includes(`(${email})`) && m.Created >= this.data.sentAfter).length ?? 0;
+    }, { timeout: 20_000 })
+    .toBeGreaterThan(0);
 });

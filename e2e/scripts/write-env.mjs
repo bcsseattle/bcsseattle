@@ -49,7 +49,9 @@ const env = {
   // loading the real ones from .env / .env.local (it only fills undefined vars).
   MY_EMAIL: '',
   MY_PASSWORD: '',
-  SEND_TO_EMAIL: '',
+  // Contact-form mail is delivered to the stack's Mailpit, never Gmail.
+  SMTP_URL: 'smtp://127.0.0.1:57325',
+  SEND_TO_EMAIL: 'contact@bcsseattle.test',
   TWILIO_ACCOUNT_SID: '',
   TWILIO_AUTH_TOKEN: '',
   TWILIO_PHONE_NUMBER: '',
