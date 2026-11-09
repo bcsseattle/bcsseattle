@@ -154,3 +154,23 @@ When(/^I donate \$(\d+) once by card but my browser asks checkout to charge \$(\
   await tamperWithCheckoutAmount(this, Number(amount) * 100, Number(charged) * 100);
   await donateByCard(this, amount, 'once');
 });
+
+// A bank (ACH) payment: Checkout completes unpaid, then Stripe reports it settled or failed (BUG-041).
+const bankEvents = {
+  started: { type: 'checkout.session.completed', payment_status: 'unpaid' },
+  settled: { type: 'checkout.session.async_payment_succeeded', payment_status: 'paid' },
+  failed: { type: 'checkout.session.async_payment_failed', payment_status: 'unpaid' },
+} as const;
+
+When(/^Stripe reports the bank payment for the donation as (started|settled|failed)$/, async function (this: E2EWorld, stage: keyof typeof bankEvents) {
+  const event = checkoutCompleted({ type: 'donation', donation_id: this.donation!.id }, 5_000);
+  event.type = bankEvents[stage].type;
+  (event.data.object as Record<string, unknown>).payment_status = bankEvents[stage].payment_status;
+  const res = await postWebhook(event);
+  expect(res.status, res.body).toBe(200);
+});
+
+Then(/^the donation should be (pending|completed|failed)$/, async function (this: E2EWorld, status: string) {
+  const { data } = await admin.from('donations').select('donation_status').eq('id', this.donation!.id).single();
+  expect(data?.donation_status).toBe(status);
+});
