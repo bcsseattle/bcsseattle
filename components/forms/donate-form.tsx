@@ -252,12 +252,15 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
         render={({ field }) => (
           <FormItem>
             <FormLabel id="frequency-label">How often</FormLabel>
-            <SegmentedControl
-              aria-labelledby="frequency-label"
-              value={field.value}
-              onValueChange={setFrequency}
-              options={FREQUENCIES}
-            />
+            {/* A block, so the inline label sits above the inline-flex control. */}
+            <div>
+              <SegmentedControl
+                aria-labelledby="frequency-label"
+                value={field.value}
+                onValueChange={setFrequency}
+                options={FREQUENCIES}
+              />
+            </div>
             <FormMessage />
           </FormItem>
         )}
@@ -374,15 +377,17 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
         render={({ field }) => (
           <FormItem>
             <FormLabel id="donor-type-label">Donor type</FormLabel>
-            <SegmentedControl
-              aria-labelledby="donor-type-label"
-              value={field.value}
-              onValueChange={field.onChange}
-              options={[
-                { value: 'individual', label: 'Individual' },
-                { value: 'organization', label: 'Organization' }
-              ]}
-            />
+            <div>
+              <SegmentedControl
+                aria-labelledby="donor-type-label"
+                value={field.value}
+                onValueChange={field.onChange}
+                options={[
+                  { value: 'individual', label: 'Individual' },
+                  { value: 'organization', label: 'Organization' }
+                ]}
+              />
+            </div>
             <FormMessage />
           </FormItem>
         )}

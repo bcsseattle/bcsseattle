@@ -17,7 +17,9 @@ const fontSans = FontSans({
 });
 const fontSerif = FontSerif({
   subsets: ['latin'],
-  variable: '--font-serif'
+  variable: '--font-serif',
+  // Optical sizes, so 56px display text uses the display cut, as in the mock.
+  axes: ['opsz']
 });
 
 const meta = {

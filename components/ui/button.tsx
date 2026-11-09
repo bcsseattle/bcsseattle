@@ -7,7 +7,7 @@ import { cn } from "@/utils/cn"
 // Art Gallery Button (Figma 5:155). Primary is ink and appears once per view;
 // every other action is Secondary (outline), Ghost or Link. Destructive is a
 // danger outline. Focus/Ring: 2px card gap, 2px accent.
-const buttonVariants = cva(
+const buttonVariantsRaw = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
@@ -41,9 +41,13 @@ const buttonVariants = cva(
   }
 )
 
+// Merged, so a link-styled <Link className={buttonVariants(...)}> gets the
+// variant's padding over the size's (cva alone leaves both classes in).
+const buttonVariants = (...args: Parameters<typeof buttonVariantsRaw>) => cn(buttonVariantsRaw(...args))
+
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+    VariantProps<typeof buttonVariantsRaw> {
   asChild?: boolean
 }
 
