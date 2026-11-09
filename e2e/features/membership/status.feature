@@ -22,7 +22,7 @@ Feature: Membership status
     When I go to "/members"
     Then I should see "Your membership is inactive. Please contact support for assistance."
 
-  @P1 @known-bug @BUG-072
+  @P1 @BUG-072
   Scenario: Someone who has just registered sees that their application is pending
     Given I am signed in as a user with no membership
     When I register as an individual member living in Seattle, WA

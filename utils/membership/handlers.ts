@@ -61,7 +61,7 @@ export async function registerMember(
       state,
       zip,
       user_id: user.id,
-      status: 'inactive',
+      status: 'pending', // awaiting admin approval (BUG-072)
       isApproved: false,
       membershipType,
       totalMembersInFamily,
