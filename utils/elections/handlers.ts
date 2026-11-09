@@ -450,6 +450,25 @@ export async function submitCombinedVotes(
       return { success: false, error: candidateError };
     }
 
+    // Initiative votes: yes/no/abstain, once each, on this election's initiatives (BUG-052).
+    if (initiativeVotes.some((v) => !['yes', 'no', 'abstain'].includes(v.vote as string))) {
+      return { success: false, error: 'Each initiative vote must be yes, no or abstain' };
+    }
+    const initiativeIds = initiativeVotes.map((v) => v.initiativeId);
+    if (new Set(initiativeIds).size !== initiativeIds.length) {
+      return { success: false, error: 'Cannot vote on the same initiative twice' };
+    }
+    if (initiativeIds.length > 0) {
+      const { data: found } = await supabase
+        .from('initiatives')
+        .select('id')
+        .eq('election_id', electionId)
+        .in('id', initiativeIds);
+      if ((found?.length ?? 0) !== initiativeIds.length) {
+        return { success: false, error: 'Invalid initiative for this election' };
+      }
+    }
+
     const totalVotes = candidateVotes.length + initiativeVotes.length;
     const confirmationCode = generateConfirmationCode();
     const clientIP = headers ? getClientIP(headers) : 'unknown';

@@ -75,7 +75,7 @@ IDs are stable; reference them in commits and PRs. "Verified" means confirmed by
 | BUG-049 | Platform | `app/global-error.tsx.tsx` | The double extension means Next never uses it. No root `error.tsx` or `not-found.tsx`. |
 | BUG-050 | Platform | `components/ui/Navbar/Navbar.tsx:39`; `Navlinks.tsx:94,136,164`; `components/ui/ctonact-form.tsx:95` | Fixed widths cause sideways scrolling on phones (320–375px). No mobile menu. |
 | BUG-051 | Platform | `Navbar.tsx:42`, `Hero.tsx:9`, `mission.tsx:4` | Several `<h1>`s per page (the nav title is an h1 everywhere). |
-| BUG-052 | Elections | `components/elections/voting-client.tsx:47-51` | Combined ballot sends booleans to the yes/no/abstain column, so initiative votes fail. |
+| BUG-052 | Elections | `components/elections/voting-client.tsx:47-51` | Combined ballot sends booleans to the yes/no/abstain column, so initiative votes fail. — **Fixed on `develop`**: the combined ballot sends yes/no/abstain unchanged (`components/elections/voting-client.tsx`), and `submitCombinedVotes` checks each initiative vote is a valid option, once, on this election. Gating scenario votes No through the combined ballot page. |
 | BUG-053 | Accounts | `utils/supabase/admin.ts:708-725` | `getOrCreateUser` only checks the first page (about 50) of users, then creates donor accounts with a shared default password. |
 | BUG-054 | Platform | `app/signin/robots.ts` | Dead file (`robots.ts` only works at the app root). No sitemap. |
 

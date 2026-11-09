@@ -66,6 +66,16 @@ When('I vote {string} on {string}', async function (this: E2EWorld, choice: stri
   await expect(this.page).toHaveURL(/\/vote\/initiatives\/confirmation\?code=/);
 });
 
+When('I vote {string} on {string} using the combined ballot', async function (this: E2EWorld, choice: string, title: string) {
+  const initiative = this.election!.initiatives.find((i) => i.title === title)!;
+  const value = { 'Yes / Support': 'yes', 'No / Oppose': 'no', 'Abstain / No preference': 'abstain' }[choice];
+  await this.page.goto(`/elections/${this.election!.id}/vote`);
+  await this.page.locator(`[id="${initiative.id}-${value}"]`).click();
+  await this.page.getByRole('button', { name: 'Review & Submit' }).click();
+  await this.page.getByRole('button', { name: 'Submit Vote' }).click();
+  await expect(this.page).toHaveURL(/\/vote\/confirmation/);
+});
+
 Then('I should be given a confirmation code', async function (this: E2EWorld) {
   const code = new URL(this.page.url()).searchParams.get('code');
   expect(code).toMatch(/^[A-F0-9]{32}$/);
