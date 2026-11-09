@@ -1,4 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
+import { supabaseAdmin } from '@/utils/supabase/admin';
+import { currentUserIsActiveMember, isCandidateVotingOpen } from '@/utils/election-config';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -20,6 +22,15 @@ export async function GET(
     const { id } = await params;
     const supabase = await createClient();
 
+    // Tallies are for members, once candidate voting has closed. Counting needs
+    // the service role: users can read only their own votes (BUG-019).
+    if (!(await currentUserIsActiveMember())) {
+      return NextResponse.json({ error: 'Only members can see results' }, { status: 403 });
+    }
+    if (await isCandidateVotingOpen(id)) {
+      return NextResponse.json({ error: 'Results are available once voting closes' }, { status: 403 });
+    }
+
     // Get all candidates for this election
     const { data: candidates, error: candidatesError } = await supabase
       .from('candidates')
@@ -39,7 +50,7 @@ export async function GET(
     }
 
     // Get vote counts for each candidate
-    const { data: voteCounts, error: voteError } = await supabase
+    const { data: voteCounts, error: voteError } = await supabaseAdmin
       .from('votes')
       .select('candidate_id')
       .eq('election_id', id)

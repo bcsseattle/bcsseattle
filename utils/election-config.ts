@@ -5,6 +5,7 @@
 
 import dayjs from '@/libs/dayjs';
 import { createClient } from '@/utils/supabase/server';
+import { supabaseAdmin } from '@/utils/supabase/admin';
 import { ElectionType } from '@/types';
 import { 
   ELECTION_TYPE_CONFIGS, 
@@ -63,19 +64,23 @@ export async function getElectionVotingConfig(electionId: string): Promise<Elect
  */
 export async function isCandidateVotingOpen(electionId: string, nowUtc: dayjs.Dayjs = dayjs.utc()): Promise<boolean> {
   const config = await getElectionVotingConfig(electionId);
-  
-  // If separate voting periods are disabled, use regular election logic
-  if (!config.enable_separate_voting_periods) {
-    return true; // Will be handled by regular election period logic
-  }
-  
-  // If no candidate voting end date is set, default to open
-  if (!config.candidate_voting_end) {
-    return true;
-  }
-  
-  const candidateEndUtc = dayjs.utc(config.candidate_voting_end);
-  return nowUtc.isBefore(candidateEndUtc);
+  const supabase = await createClient();
+  const { data: election } = await supabase
+    .from('elections')
+    .select('start_date, end_date')
+    .eq('id', electionId)
+    .maybeSingle();
+  if (!election) return false;
+
+  // Candidate voting runs from the election's start to its end, or to
+  // candidate_voting_end when separate periods are on. It used to return true
+  // whenever separate periods were off, so closed and upcoming elections showed
+  // "Voting Open" (BUG-015).
+  const end =
+    config.enable_separate_voting_periods && config.candidate_voting_end
+      ? config.candidate_voting_end
+      : election.end_date;
+  return !nowUtc.isBefore(dayjs.utc(election.start_date)) && !nowUtc.isAfter(dayjs.utc(end));
 }
 
 /**
@@ -150,8 +155,11 @@ export async function getCandidateVotingPeriod(electionId: string): Promise<{
  * Get candidate vote results for a specific election
  */
 export async function getCandidateResults(electionId: string): Promise<Record<string, { candidateId: string; voteCount: number; position: string; candidateName: string }[]>> {
-  const supabase = await createClient();
-  
+  // Users can read only their own votes, so tallies need the service role (BUG-019);
+  // and never while candidate voting is still open.
+  if (await isCandidateVotingOpen(electionId)) return {};
+  const supabase = supabaseAdmin;
+
   try {
     // Get candidate vote counts grouped by position
     const { data: voteResults, error } = await supabase

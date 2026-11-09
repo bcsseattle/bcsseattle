@@ -44,7 +44,7 @@ Feature: Voting in member elections
     When I open the candidate ballot
     Then I should not be offered a ballot
 
-  @P1 @known-bug @BUG-015
+  @P1 @BUG-015
   Scenario Outline: A <window> election says "<status>" and offers no ballot
     Given there is a <window> election with candidates "Hani" and "Nazir" for "President"
     And I am signed in as an approved member
@@ -73,7 +73,7 @@ Feature: Voting in member elections
     When I submit a ballot for both "Hani" and "Nazir", labelling one with another position
     Then no votes should be recorded for the election
 
-  @P1 @security @known-bug @BUG-020
+  @P1 @security @BUG-020
   Scenario: A URL parameter can't switch off the membership check in production
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
     And I am signed in as a pending applicant

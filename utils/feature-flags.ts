@@ -47,7 +47,9 @@ function getEnvironmentFeatures(): Partial<FeatureFlags> {
  * Parse URL override configuration
  */
 function parseUrlOverride(configOverrideString?: string): Partial<FeatureFlags> {
-  if (!configOverrideString) {
+  // URL overrides are a development aid only: in production anyone could add
+  // ?configoverride=... to skip the membership check (BUG-020).
+  if (!configOverrideString || process.env.NODE_ENV === 'production') {
     return {};
   }
 
