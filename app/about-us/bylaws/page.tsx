@@ -393,7 +393,7 @@ export default function Bylaws() {
             Directors.
           </p>
           <h2 className="text-xl font-bold">
-            ARTICLE VIII. CONTRACTS, C2ECKS, DEPOSITS AND FUNDS
+            ARTICLE VIII. CONTRACTS, CHECKS, DEPOSITS AND FUNDS
           </h2>
           <p>
             <strong>Section 1. Contracts</strong>
@@ -574,7 +574,7 @@ export default function Bylaws() {
             up-to-date on membership dues.
           </p>
           <h2 className="text-xl font-bold">
-            ARTICLE XII. AMENDMENTS TO B2LAWS
+            ARTICLE XII. AMENDMENTS TO BYLAWS
           </h2>
           <p>
             <strong>Section 1. Proposal of Amendments</strong>
