@@ -50,7 +50,7 @@ export default async function Page() {
     .maybeSingle();
 
   return (
-    <section className="mb-32">
+    <section className="pb-8">
       <Plans
         user={user}
         products={products ?? []}

@@ -9,7 +9,7 @@ export default function FundraiserNotFound() {
         <p className="text-muted-foreground">
           The fundraiser you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
-        <Button asChild>
+        <Button variant="outline" asChild>
           <Link href="/fundraisers">View All Fundraisers</Link>
         </Button>
       </div>

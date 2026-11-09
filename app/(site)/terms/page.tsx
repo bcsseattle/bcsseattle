@@ -13,7 +13,7 @@ export default function Page() {
             Please refer to our bylaws.
           </p>
           <div className="mt-6">
-            <Button variant="default" asChild><Link
+            <Button variant="outline" asChild><Link
                 href="/about-us/bylaws"
               >
                 View Bylaws

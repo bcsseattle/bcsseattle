@@ -1,14 +1,8 @@
 import MemberList from '@/components/member-list';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
+import { PageHeader } from '@/components/portal/page-header';
+import { StatTile } from '@/components/ui/stat-tile';
 import { Member } from '@/types';
 import { createClient } from '@/utils/supabase/server';
-import { PersonIcon } from '@radix-ui/react-icons';
 import { redirect } from 'next/navigation';
 
 export default async function Members() {
@@ -62,54 +56,25 @@ export default async function Members() {
   );
 
   return (
-    <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="">
-          <CardHeader>
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-large">
-                Total registered members
-              </CardTitle>
-              <PersonIcon />
-            </div>
-            <CardDescription>
-              This includes both head of family and individual members
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeMembers?.length}</div>
-          </CardContent>
-        </Card>
-        <Card className="">
-          <CardHeader>
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-large">
-                Contributing members
-              </CardTitle>
-              <div>
-                <PersonIcon />
-                <PersonIcon />
-              </div>
-            </div>
-            <CardDescription>
-              This includes all members who are paying either{' '}
-              <span className="font-medium">$5/month</span> or{' '}
-              <span className="font-medium">$60/year</span>.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalFamilyMembers}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="mt-5">
-        <MemberList
-          members={members || []}
-          subscriptions={subscriptions || []}
-          prices={prices || []}
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Member directory" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile
+          label="Total registered members"
+          value={activeMembers?.length}
+          note="This includes both head of family and individual members"
+        />
+        <StatTile
+          label="Contributing members"
+          value={totalFamilyMembers}
+          note="This includes all members who are paying either USD 5/month or USD 60/year."
         />
       </div>
-    </>
+      <MemberList
+        members={members || []}
+        subscriptions={subscriptions || []}
+        prices={prices || []}
+      />
+    </div>
   );
 }

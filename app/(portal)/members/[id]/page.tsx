@@ -1,8 +1,7 @@
 import { formatDate, formatMoney } from '@/utils/format';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PersonIcon } from '@radix-ui/react-icons';
+import { PageHeader } from '@/components/portal/page-header';
+import { StatTile } from '@/components/ui/stat-tile';
 import { createClient } from '@/utils/supabase/server';
-import { ClockIcon, DollarSign, TypeIcon } from 'lucide-react';
 import { getTotalCustomerSpent } from '@/utils/supabase/admin';
 import RecentFunds from '@/components/recent-funds';
 import { individualColumns } from '@/components/payments/columns';
@@ -41,44 +40,28 @@ export default async function Page(props: {
   const cards = [
     {
       title: 'Member since',
-      icon: ClockIcon,
       value: formatDate(member!.created_at)
     },
     {
       title: 'Total Family Members',
-      icon: PersonIcon,
       value: member?.totalMembersInFamily
     },
     {
       title: 'Membership type',
-      icon: TypeIcon,
       value: member?.membershipType
     },
     {
       title: 'Total Contributions',
-      icon: DollarSign,
       value: totalSpentString
     }
   ];
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold p-2 my-5 text-foreground">
-        {member?.fullName}
-      </h1>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {cards.map((card, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {card.title}
-              </CardTitle>
-              <card.icon className="w-6 h-6" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{card.value}</div>
-            </CardContent>
-          </Card>
+    <div className="flex flex-col gap-6">
+      <PageHeader title={member?.fullName} />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {cards.map((card) => (
+          <StatTile key={card.title} label={card.title} value={card.value} />
         ))}
       </div>
       <RecentFunds

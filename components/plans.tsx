@@ -14,6 +14,7 @@ import {
   SubscriptionWithProduct
 } from '@/types';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/portal/page-header';
 import {
   Card,
   CardContent,
@@ -76,13 +77,12 @@ export default function Plans({ user, products, subscription }: Props) {
 
   if (!products.length) {
     return (
-      <section className="">
-        <div className="max-w-6xl px-4 py-8 mx-auto sm:py-24 sm:px-6 lg:px-8">
-          <div className="sm:flex sm:flex-col sm:align-center"></div>
-          <p className="text-4xl font-extrabold text-foreground sm:text-center sm:text-6xl">
+      <section className="pt-8">
+        <div>
+          <p className="text-sm text-muted-foreground">
             No contribution plans found. Create them in your{' '}
             <a
-              className=""
+              className="text-accent underline underline-offset-4"
               href="https://dashboard.stripe.com/products"
               rel="noopener noreferrer"
               target="_blank"
@@ -97,10 +97,8 @@ export default function Plans({ user, products, subscription }: Props) {
   } else {
     return (
       <section className="w-full">
-        <h1 className="text-4xl font-extrabold text-center">
-          Contribution Plans
-        </h1>
-        <div className="flex flex-wrap md:space-x-12">
+        <PageHeader title="Contribution Plans" />
+        <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {products.map((product) => {
             const prices = product?.prices?.filter(
               (price: any) => price.metadata?.type === 'contribution'
@@ -118,19 +116,17 @@ export default function Plans({ user, products, subscription }: Props) {
               const title = getSubscriptionInterval(price);
 
               return (
-                <Card
-                  key={price.id}
-                  className="w-full md:w-1/2 lg:my-4 lg:w-1/4 mb-4"
-                >
+                <Card key={price.id}>
                   <CardHeader>
                     <CardTitle>{title}</CardTitle>
                     <CardDescription>{product.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <div className="space-y-1">{priceString}</div>
+                    <div className="text-figure text-foreground">{priceString}</div>
                   </CardContent>
                   <CardFooter>
                     <Button
+                      variant="outline"
                       disabled={priceIdLoading === price.id}
                       onClick={() => handleStripeCheckout(price, priceType)}
                     >

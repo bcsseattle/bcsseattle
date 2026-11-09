@@ -62,7 +62,7 @@ export default async function FundraiserPage({ params }: PageProps) {
   }
 
   return (
-    <div className="container py-10">
+    <div className="pb-8 pt-8 lg:pt-16">
       <FundraiserDetails
         fundraiser={fundraiser}
         isAdmin={isAdmin}
