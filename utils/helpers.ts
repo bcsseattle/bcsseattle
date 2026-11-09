@@ -149,7 +149,8 @@ export const getPriceString = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    minimumFractionDigits: 0
+    // Whole dollars stay "$60"; anything with cents shows both digits ("$42.50", not "$42.5").
+    minimumFractionDigits: Math.round(amount) % 100 === 0 ? 0 : 2
   }).format(amount / 100);
 };
 

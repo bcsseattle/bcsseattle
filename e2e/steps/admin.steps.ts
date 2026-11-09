@@ -75,3 +75,37 @@ Then('{string} should be an approved member', async function (this: E2EWorld, na
 Then('the row for {string} should show their email address', async function (this: E2EWorld, name: string) {
   await expect(rowFor(this, name)).toContainText(this.user(name).email);
 });
+
+// ---------------------------------------------------------------- expenses
+
+When(
+  /^I add a (private )?\$([\d.]+) "([^"]+)" expense paid to "([^"]+)"$/,
+  async function (this: E2EWorld, isPrivate: string | undefined, amount: string, category: string, payee: string) {
+    // A unique description finds this scenario's row among parallel ones.
+    const description = `E2E expense ${Math.random().toString(36).slice(2, 10)}`;
+    this.data.expenseDescription = description;
+    this.data.expenseAmount = amount;
+    this.cleanup.push(async () => admin.from('expenses').delete().eq('description', description));
+
+    await this.page.goto('/admin/expenses');
+    await this.page.getByLabel('Amount ($)').fill(amount);
+    await this.page.getByLabel('Category').fill(category);
+    await this.page.getByLabel('Payee').fill(payee);
+    await this.page.getByLabel('Description').fill(description);
+    if (isPrivate) await this.page.getByLabel(/^Private/).check();
+    await this.page.getByRole('button', { name: 'Add Expense' }).click();
+  }
+);
+
+Then('the expense should be listed on the expenses page', async function (this: E2EWorld) {
+  await expect(this.page.getByRole('row').filter({ hasText: this.data.expenseDescription })).toContainText(
+    `$${Number(this.data.expenseAmount).toFixed(2)}`
+  );
+});
+
+Then(/^the expense should be recorded as (public|private)$/, async function (this: E2EWorld, visibility: string) {
+  await expect
+    .poll(async () => (await admin.from('expenses').select('amount, is_private').eq('description', this.data.expenseDescription).maybeSingle()).data)
+    // Stored in cents, like the existing expense rows.
+    .toEqual({ amount: Math.round(Number(this.data.expenseAmount) * 100), is_private: visibility === 'private' });
+});

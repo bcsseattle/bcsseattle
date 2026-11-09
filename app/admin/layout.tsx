@@ -3,7 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Users, Settings, Shield, ArrowLeft } from 'lucide-react';
+import { Users, Settings, Shield, ArrowLeft, Receipt } from 'lucide-react';
 
 export default async function AdminLayout({
   children,
@@ -64,6 +64,12 @@ export default async function AdminLayout({
               <Button variant="ghost" className="flex items-center space-x-2">
                 <Users className="h-4 w-4" />
                 <span>Members</span>
+              </Button>
+            </Link>
+            <Link href="/admin/expenses">
+              <Button variant="ghost" className="flex items-center space-x-2">
+                <Receipt className="h-4 w-4" />
+                <span>Expenses</span>
               </Button>
             </Link>
             <Link href="/admin/elections">
