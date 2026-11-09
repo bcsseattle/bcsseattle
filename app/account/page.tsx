@@ -98,7 +98,7 @@ export default async function Account(props: { searchParams: SearchParams }) {
               {subscriptions.map((sub, index) => (
                 <div key={sub.id} className="space-y-2">
                   {subscriptions.length > 1 && (
-                    <h3 className="text-md font-medium text-gray-700">
+                    <h3 className="text-base font-medium text-muted-foreground">
                       Subscription {index + 1}
                     </h3>
                   )}

@@ -86,7 +86,7 @@ export default function PasswordSignIn({
       <p>
         <Link
           href="/signin/signup"
-          className="text-orange-900 font-light text-sm"
+          className="text-sm text-accent underline-offset-4 hover:underline"
         >
           Don't have an account? Sign up
         </Link>

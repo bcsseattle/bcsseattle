@@ -62,7 +62,7 @@ export default function ForgotPassword({
         </div>
       </form>
       <p>
-        <Link href="/signin/password_signin" className="text-orange-900 font-light text-sm">
+        <Link href="/signin/password_signin" className="text-sm text-accent underline-offset-4 hover:underline">
           Sign in with email and password
         </Link>
       </p>
