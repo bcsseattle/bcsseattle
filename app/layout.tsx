@@ -7,7 +7,7 @@ import { getURL } from '@/utils/helpers';
 import { Inter as FontSans, Source_Serif_4 as FontSerif } from 'next/font/google';
 import { cn } from '@/utils/cn';
 import '@/styles/main.css';
-import Footer from '@/components/Footer';
+import SiteFooter from '@/components/site/site-footer';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
 import { Analytics } from '@vercel/analytics/react';
 import Breadcrumbs from '@/components/ui/breadcrumbs';
@@ -82,7 +82,7 @@ export default async function RootLayout({ children }: PropsWithChildren) {
           {children}
           <Analytics />
         </main>
-        <Footer />
+        <SiteFooter />
         <Suspense>
           <Toaster />
         </Suspense>
