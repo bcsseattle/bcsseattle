@@ -60,7 +60,7 @@ Feature: General donations
     Then I should still be on the BCS Seattle site
     And the donation form should be finished
 
-  @P1 @known-bug @BUG-026
+  @P1 @BUG-026
   Scenario: A guest donor can open their own receipt without an account
     Given a completed $50 donation by a guest donor
     And I am a visitor who is not signed in
