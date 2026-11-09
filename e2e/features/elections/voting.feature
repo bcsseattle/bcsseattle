@@ -73,6 +73,13 @@ Feature: Voting in member elections
     When I vote "No / Oppose" on "Build a community garden" using the combined ballot
     Then my "no" vote on "Build a community garden" should be recorded
 
+  @P2 @BUG-059
+  Scenario: A leadership election is marked "Leadership" in the elections list
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an approved member
+    When I go to "/elections"
+    Then the elections list should mark the election as "Leadership"
+
   @P0 @security @api @BUG-016
   Scenario: A member who voted on the combined ballot can't vote again on the candidate ballot
     Given there is an open election with candidates "Hani" and "Nazir" for "President"

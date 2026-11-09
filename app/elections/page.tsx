@@ -106,10 +106,11 @@ export default async function ElectionsPage(props: Props) {
   const electionsWithCounts = await Promise.all(
     (elections || []).map(async (election) => {
       const [positionsData, initiativesData] = await Promise.all([
+        // Positions are defined per election type, not per election (BUG-059).
         supabase
           .from('election_positions')
           .select('id')
-          .eq('election_id', election.id),
+          .eq('election_type', String(election.type)),
         supabase
           .from('initiatives')
           .select('id')

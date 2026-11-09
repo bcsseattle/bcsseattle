@@ -87,7 +87,7 @@ IDs are stable; reference them in commits and PRs. "Verified" means confirmed by
 | BUG-056 | `app/members/page.tsx:42`, `app/elections/page.tsx:84` | No member row → redirect to `/members/undefined/pending` — **Fixed on `develop`**: `/members`, `/community-funds` and `/elections` send a signed-in user with no member row to `/register`. Gating scenarios cover all three. |
 | BUG-057 | `components/admin/MemberApprovalActions.tsx:193` | ~~Operator precedence: "Reactivate" never renders~~ **Not a bug (E2E 2026-11-08):** the precedence happens to render "Reactivate Member" for an approved member whose status is `inactive`, and reactivation works. |
 | BUG-058 | `app/account/[memberId]/contributions/pdf/route.tsx:25` | Default tax year evaluates to 0 — **Fixed on `develop`**: a missing or invalid `?taxYear` means this year. Gating scenario downloads a statement without choosing a year. |
-| BUG-059 | `app/elections/page.tsx:104-107` | Queries a column that doesn't exist, so the "Leadership" badge never shows |
+| BUG-059 | `app/elections/page.tsx:104-107` | Queries a column that doesn't exist, so the "Leadership" badge never shows — **Fixed on `develop`**: the elections list counts positions by the election's type (`election_positions.election_type`). Gating scenario checks a leadership election is marked "Leadership". |
 | BUG-060 | `utils/election-config.ts:45` | Per-type default settings never apply; `candidate_voting_start` is ignored |
 | BUG-061 | `utils/fundraisers/handlers.ts:47-59, 198, 306` | `beneficiary` is collected but not saved; the confirmation code is generated then discarded |
 | BUG-062 | `app/api/fundraisers/[id]/route.ts:132-150` | DELETE reports success but deletes nothing (no RLS delete policy) |

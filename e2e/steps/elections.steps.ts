@@ -42,6 +42,16 @@ When('I open the candidate ballot', async function (this: E2EWorld) {
   await this.page.goto(`/elections/${this.election!.id}/vote/candidates`);
 });
 
+Then('the elections list should mark the election as {string}', async function (this: E2EWorld, label: string) {
+  // The election's own card: the smallest block holding both its title and its View button.
+  const card = this.page
+    .locator('div')
+    .filter({ has: this.page.getByRole('heading', { name: this.election!.title, exact: true }) })
+    .filter({ has: this.page.getByRole('button', { name: 'View' }) })
+    .last();
+  await expect(card.getByText(label, { exact: true })).toBeVisible();
+});
+
 Then('I should see the election status {string}', async function (this: E2EWorld, status: string) {
   await expect(this.page.getByText(status, { exact: true }).first()).toBeVisible();
 });
