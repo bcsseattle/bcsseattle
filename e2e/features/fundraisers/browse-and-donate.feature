@@ -37,6 +37,15 @@ Feature: Supporting a fundraiser
     And I open the fundraiser
     Then the fundraiser should show "$25.00" raised
 
+  @P1 @payments @BUG-081
+  Scenario: A donation with cents is accepted and counted in full
+    Given I am signed in as an approved member
+    When I donate $25.50 to the fundraiser
+    Then I should be taken to Stripe Checkout for $25.50 for the fundraiser
+    And a pending $25.50 fundraiser donation should be recorded
+    When Stripe confirms the payment for my fundraiser donation
+    Then the fundraiser's total should be $25.50
+
   @P1 @payments @BUG-012
   Scenario: A payment Stripe reports twice is only counted once
     Given I am signed in as an approved member

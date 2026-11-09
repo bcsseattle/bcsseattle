@@ -51,7 +51,7 @@ async function donate(world: E2EWorld, amount: string) {
   world.data.fundraiserDonationId = session.metadata!.donation_id;
 }
 
-When(/^I donate \$(\d+) to the fundraiser$/, async function (this: E2EWorld, amount: string) {
+When(/^I donate \$([\d.]+) to the fundraiser$/, async function (this: E2EWorld, amount: string) {
   await donate(this, String(amount));
 });
 
@@ -105,7 +105,7 @@ Then(/^I should be taken to Stripe Checkout for \$([\d.]+) for the fundraiser$/,
   expect(session.metadata).toMatchObject({ type: 'fundraiser_donation', fundraiser_id: this.fundraiser!.id });
 });
 
-Then(/^a pending \$(\d+) fundraiser donation should be recorded$/, async function (this: E2EWorld, amount: string) {
+Then(/^a pending \$([\d.]+) fundraiser donation should be recorded$/, async function (this: E2EWorld, amount: string) {
   const { data } = await admin
     .from('fundraiser_donations')
     .select('amount, payment_status, fundraiser_id')
@@ -144,7 +144,7 @@ Then('the fundraiser should show {string} raised', async function (this: E2EWorl
   await expect(this.page.getByText(/raised of/)).toBeVisible();
 });
 
-Then(/^the fundraiser's total should be \$(\d+)$/, async function (this: E2EWorld, amount: string) {
+Then(/^the fundraiser's total should be \$([\d.]+)$/, async function (this: E2EWorld, amount: string) {
   const { data } = await admin.from('fundraisers').select('current_amount').eq('id', this.fundraiser!.id).single();
   expect(data?.current_amount).toBe(Number(amount));
 });
