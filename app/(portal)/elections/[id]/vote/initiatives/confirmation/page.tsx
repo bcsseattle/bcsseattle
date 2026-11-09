@@ -19,6 +19,7 @@ import {
   Minus
 } from 'lucide-react';
 import { formatDeadline } from '@/utils/format';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -133,6 +134,7 @@ export default async function InitiativeVoteConfirmationPage(props: Props) {
 
   return (
     <div className="max-w-2xl">
+      <BreadcrumbName id={id} name={election.title} />
       <Card className="border-accent-200 bg-accent-100">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-foreground">

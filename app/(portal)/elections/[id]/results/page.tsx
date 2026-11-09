@@ -17,6 +17,7 @@ import { VotingExplainer } from '@/components/elections/results/voting-explainer
 import { getElectionTypeDescription } from '@/utils/election-types';
 import { ElectionType } from '@/types';
 import { formatDeadline } from '@/utils/format';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 export default function ElectionResultsPage() {
   const params = useParams();
@@ -92,6 +93,7 @@ export default function ElectionResultsPage() {
 
   return (
     <div className="space-y-6">
+      <BreadcrumbName id={id} name={results.election.title} />
       {/* Enhanced Page Header with Type Information */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -120,7 +122,7 @@ export default function ElectionResultsPage() {
 
       {/* Results Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList>
           <TabsTrigger value="overview">
             <BarChart3 className="h-4 w-4 mr-2" />
             Overview

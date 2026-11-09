@@ -141,6 +141,7 @@ export default async function CandidatePage2(props: Props) {
   return (
     <div>
       <BreadcrumbName id={candidateId} name={candidate.full_name} />
+      <BreadcrumbName id={electionId} name={election?.title} />
       <div className="max-w-4xl">
         <div className="mb-6">
           <BackLink href={`/elections/${electionId}`}>Back to Election</BackLink>

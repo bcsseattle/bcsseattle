@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { MemberStatusBadge } from '@/components/portal/member-row';
 
 import { Member, Price, Subscription } from '@/types';
 import Link from 'next/link';
@@ -78,13 +78,7 @@ export default function MemberList({
                   </TableCell>
                   <TableCell>{member.city}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={
-                        member?.status === 'active' ? 'default' : 'destructive'
-                      }
-                    >
-                      {member.status}
-                    </Badge>
+                    <MemberStatusBadge status={member.status} />
                   </TableCell>
                   <TableCell>{member.membershipType}</TableCell>
                   <TableCell>{member.totalMembersInFamily}</TableCell>

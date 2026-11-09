@@ -13,6 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Vote, Download } from 'lucide-react';
 import { formatDeadline } from '@/utils/format';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -90,6 +91,7 @@ export default async function VoteConfirmationPage(props: Props) {
 
   return (
     <div className="w-full">
+      <BreadcrumbName id={id} name={election.title} />
       <div className="max-w-3xl space-y-6">
         {/* Confirmation Header */}
         <Card className="border-badge-green-border bg-badge-green-bg">

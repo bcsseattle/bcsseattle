@@ -9,6 +9,7 @@ import {
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb';
 import { usePathname } from 'next/navigation';
+import { cn } from '@/utils/cn';
 
 // Page titles for route segments. Anything else (a Notion slug) reads as words.
 const TITLES: Record<string, string> = {
@@ -116,7 +117,7 @@ export default function Breadcrumbs({ portal = false }: { portal?: boolean }) {
 
   return (
     <Breadcrumb className={portal ? 'min-w-0' : 'pt-6'}>
-      <BreadcrumbList>
+      <BreadcrumbList className={portal ? 'flex-nowrap' : undefined}>
         {!portal && (
           <>
             <BreadcrumbItem>
@@ -126,21 +127,23 @@ export default function Breadcrumbs({ portal = false }: { portal?: boolean }) {
           </>
         )}
         {breadcrumbss.map((breadcrumb, index) => {
+          // The portal top bar is one line: phones show the last two crumbs.
+          const phoneHidden = portal && index < breadcrumbss.length - 2 ? 'hidden sm:inline-flex' : undefined;
           return (
             <React.Fragment key={index}>
               {breadcrumbss.length - 1 !== index ? (
                 <>
-                  <BreadcrumbItem>
+                  <BreadcrumbItem className={cn('shrink-0', phoneHidden)}>
                     <BreadcrumbLink href={breadcrumb.link}>
                       <span>{breadcrumb.name}</span>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator />
+                  <BreadcrumbSeparator className={phoneHidden} />
                 </>
               ) : (
                 // In an <li>, like every other child of the list (BUG-066).
-                <BreadcrumbItem>
-                  <BreadcrumbPage>
+                <BreadcrumbItem className="min-w-0">
+                  <BreadcrumbPage className="block truncate">
                     {breadcrumb.name}
                   </BreadcrumbPage>
                 </BreadcrumbItem>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Trophy, Users, Clock, ArrowLeft, FileText, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { Database } from '@/types';
+import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 type Election = Database['public']['Tables']['elections']['Row'];
 type Candidate = Database['public']['Tables']['candidates']['Row'];
@@ -115,6 +116,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="space-y-3 sm:space-y-6">
+      <BreadcrumbName id={id} name={election.title} />
       {/* Header - Minimalist Mobile */}
       <div className="space-y-3 sm:space-y-4">
         <div className="flex items-center justify-between">
