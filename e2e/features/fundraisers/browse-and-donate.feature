@@ -31,7 +31,7 @@ Feature: Supporting a fundraiser
     And I open the fundraiser
     Then the fundraiser should show "$25.00" raised
 
-  @P1 @payments @known-bug @BUG-012
+  @P1 @payments @BUG-012
   Scenario: A payment Stripe reports twice is only counted once
     Given I am signed in as an approved member
     And I have started a $25 donation to the fundraiser
