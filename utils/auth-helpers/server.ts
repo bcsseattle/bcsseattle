@@ -68,7 +68,8 @@ export async function signInWithEmail(formData: FormData) {
   let redirectPath: string;
 
   if (!isValidEmail(email)) {
-    redirectPath = getErrorRedirect(
+    // Stop here: without the return the action carried on (BUG-029).
+    return getErrorRedirect(
       '/signin/email_signin',
       'Invalid email address.',
       'Please try again.'
@@ -158,7 +159,8 @@ export async function requestPasswordUpdate(formData: FormData) {
   let redirectPath: string;
 
   if (!isValidEmail(email)) {
-    redirectPath = getErrorRedirect(
+    // Stop here: without the return the action carried on (BUG-029).
+    return getErrorRedirect(
       '/signin/forgot_password',
       'Invalid email address.',
       'Please try again.'
@@ -253,7 +255,8 @@ export async function signUp(formData: FormData) {
   let redirectPath: string;
 
   if (!isValidEmail(email)) {
-    redirectPath = getErrorRedirect(
+    // Stop here: without the return the action carried on (BUG-029).
+    return getErrorRedirect(
       '/signin/signup',
       'Invalid email address.',
       'Please try again.'
@@ -315,7 +318,8 @@ export async function updatePassword(formData: FormData) {
 
   // Check that the password and confirmation match
   if (password !== passwordConfirm) {
-    redirectPath = getErrorRedirect(
+    // Stop here: without the return the action carried on (BUG-029).
+    return getErrorRedirect(
       '/signin/update_password',
       'Your password could not be updated.',
       'Passwords do not match.'
