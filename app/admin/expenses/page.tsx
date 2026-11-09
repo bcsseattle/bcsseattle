@@ -13,7 +13,7 @@ import { addExpense } from './actions';
 // The admin layout already turns away anyone who isn't an admin.
 export default async function AdminExpensesPage() {
   const supabase = await createClient();
-  const { data: expenses } = await supabase
+  const { data: expenses, error } = await supabase
     .from('expenses')
     .select('*')
     .order('date', { ascending: false })
@@ -81,7 +81,9 @@ export default async function AdminExpensesPage() {
           <CardTitle>Expenses</CardTitle>
         </CardHeader>
         <CardContent>
-          {expenses?.length ? (
+          {error ? (
+            <p className="text-sm text-destructive">Could not load expenses: {error.message}</p>
+          ) : expenses?.length ? (
             <Table>
               <TableHeader>
                 <TableRow>
