@@ -53,7 +53,7 @@ Feature: General donations
   # it server-side, and the donor sees nothing happen (no toast, still on the step).
   # "Finished" = the wizard leaves the payment step; the exact confirmation UI is
   # not specified anywhere (PRD §3.3), so the scenario asserts only that.
-  @P1 @known-bug @BUG-018
+  @P1 @BUG-018
   Scenario: Choosing Zelle and pressing Done finishes the donation without a card payment
     Given I am signed in as an approved member
     When I choose to donate $100 by Zelle and finish

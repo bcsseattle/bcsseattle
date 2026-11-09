@@ -38,7 +38,7 @@ import { Card } from '../ui/card';
 import { US_STATES } from '@/utils/constants';
 import { submitDonation } from '@/utils/donation/handlers';
 import { checkoutWithStripeForDonation } from '@/utils/stripe/server';
-import { getErrorRedirect, getPriceString } from '@/utils/helpers';
+import { getErrorRedirect, getPriceString, getStatusRedirect } from '@/utils/helpers';
 import { getStripe } from '@/utils/stripe/client';
 import { Wizard } from '../ui/wizard';
 import Image from 'next/image';
@@ -123,6 +123,20 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
   async function onSubmit(values: z.infer<typeof DonationFormSchema>) {
     setDonationLoading(true);
     const { donation, donor } = await submitDonation(values);
+    // Zelle, check and cash are paid outside Stripe: the pledge is recorded as
+    // pending and the donor follows the instructions shown (BUG-018).
+    if (donation && !['card', 'us_bank_account'].includes(values.paymentMethod)) {
+      setDonationLoading(false);
+      form.reset();
+      setWizardStep(0);
+      return router.push(
+        getStatusRedirect(
+          currentPath,
+          'Thank you!',
+          'Your donation is recorded. Please complete it as shown; we will send your receipt once it arrives.'
+        )
+      );
+    }
     if (donation) {
       const price = product?.prices?.find(
         (price) =>
