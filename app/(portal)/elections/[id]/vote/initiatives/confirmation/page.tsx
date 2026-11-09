@@ -18,6 +18,7 @@ import {
   ThumbsDown,
   Minus
 } from 'lucide-react';
+import { formatDeadline } from '@/utils/format';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -64,7 +65,7 @@ export default async function InitiativeVoteConfirmationPage(props: Props) {
 
   if (!session || sessionError) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="max-w-2xl">
         <Card className="border-badge-red-border bg-badge-red-bg">
           <CardHeader>
             <CardTitle className="text-badge-red-text">
@@ -131,7 +132,7 @@ export default async function InitiativeVoteConfirmationPage(props: Props) {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="max-w-2xl">
       <Card className="border-accent-200 bg-accent-100">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-foreground">
@@ -160,7 +161,7 @@ export default async function InitiativeVoteConfirmationPage(props: Props) {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Submitted:</span>
-                <span>{new Date(session.completed_at!).toLocaleString()}</span>
+                <span>{formatDeadline(session.completed_at!)}</span>
               </div>
             </div>
           </div>

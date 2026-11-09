@@ -114,7 +114,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   const totalPositions = Object.keys(candidatesByPosition).length;
 
   return (
-    <div className="container mx-auto py-3 sm:py-8 space-y-3 sm:space-y-6 px-3 sm:px-4">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header - Minimalist Mobile */}
       <div className="space-y-3 sm:space-y-4">
         <div className="flex items-center justify-between">
@@ -134,7 +134,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
         </div>
         
         <div className="space-y-1 sm:space-y-2">
-          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold">Candidates</h1>
+          <h1 className="text-screen text-foreground">Candidates</h1>
           <p className="text-xs sm:text-base text-muted-foreground line-clamp-1 sm:line-clamp-none">{election.title}</p>
         </div>
         

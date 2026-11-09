@@ -47,7 +47,7 @@ export default async function NominatePage(props: Props) {
   }
 
   return (
-    <main className="max-w-3xl mx-auto p-4">
+    <div className="max-w-3xl">
       <NominateForm
         electionTitle={election.title}
         electionId={election.id}
@@ -55,6 +55,6 @@ export default async function NominatePage(props: Props) {
         positions={positions ?? []}
         member={member}
       />
-    </main>
+    </div>
   );
 }

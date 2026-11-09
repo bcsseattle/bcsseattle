@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Vote, Download } from 'lucide-react';
+import { formatDeadline } from '@/utils/format';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -68,8 +69,8 @@ export default async function VoteConfirmationPage(props: Props) {
 
   if (!userVotes || userVotes.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-2xl mx-auto">
+      <div className="w-full">
+        <Card className="max-w-2xl">
           <CardHeader>
             <CardTitle className="text-center">No Votes Found</CardTitle>
             <CardDescription className="text-center">
@@ -88,8 +89,8 @@ export default async function VoteConfirmationPage(props: Props) {
   const initiativeVotes = userVotes.filter(vote => vote.initiative_id);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="w-full">
+      <div className="max-w-3xl space-y-6">
         {/* Confirmation Header */}
         <Card className="border-badge-green-border bg-badge-green-bg">
           <CardHeader>
@@ -175,7 +176,7 @@ export default async function VoteConfirmationPage(props: Props) {
                   </div>
                   {voteConfirmation.confirmed_at && (
                     <div>
-                      <span className="font-medium">Submitted:</span> {new Date(voteConfirmation.confirmed_at).toLocaleString()}
+                      <span className="font-medium">Submitted:</span> {formatDeadline(voteConfirmation.confirmed_at)}
                     </div>
                   )}
                 </div>

@@ -144,7 +144,7 @@ export default function CandidateVotingForm({
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl space-y-6">
       {/* Election Header */}
       <Card>
         <CardHeader>

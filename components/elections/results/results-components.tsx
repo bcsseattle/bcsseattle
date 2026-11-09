@@ -9,6 +9,7 @@ import { Trophy, TrendingUp, Users, Vote, BarChart3, Crown, Building } from 'luc
 import { ElectionResults } from '@/hooks/useElectionResults';
 import { getElectionTypeDescription, supportsUnopposedCandidates } from '@/utils/election-types';
 import { ElectionType } from '@/types';
+import { formatDeadline } from '@/utils/format';
 
 interface ResultsOverviewProps {
   results: ElectionResults;
@@ -242,9 +243,9 @@ export function ResultsOverview({ results }: ResultsOverviewProps) {
                     <p className="text-sm font-medium text-foreground">Candidate Voting Period</p>
                     <p className="text-sm text-foreground">
                       {results.election.candidateVotingStart ? 
-                        new Date(results.election.candidateVotingStart).toLocaleString() : 
-                        new Date(results.election.startDate).toLocaleString()
-                      } → {new Date(results.election.candidateVotingEnd).toLocaleString()}
+                        formatDeadline(results.election.candidateVotingStart) : 
+                        formatDeadline(results.election.startDate)
+                      } → {formatDeadline(results.election.candidateVotingEnd)}
                     </p>
                     {!results.votingStatus.candidateVotingOpen && (
                       <p className="text-xs text-accent mt-1 font-medium">

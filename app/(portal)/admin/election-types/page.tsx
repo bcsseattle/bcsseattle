@@ -14,6 +14,7 @@ import {
 } from '@/utils/election-types';
 import { ElectionType } from '@/types';
 import { Crown, Building, Vote, Users, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { PageHeader } from '@/components/portal/page-header';
 
 export default function TestElectionTypesPage() {
   const [selectedType, setSelectedType] = useState<ElectionType>('leadership');
@@ -40,13 +41,11 @@ export default function TestElectionTypesPage() {
   const TypeIcon = getTypeIcon(selectedType);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold">Election Type Configuration Test</h1>
-        <p className="text-muted-foreground mt-2">
-          Test the type-aware election configuration system
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Election Type Configuration Test"
+        description="Test the type-aware election configuration system"
+      />
 
       <Card>
         <CardHeader>

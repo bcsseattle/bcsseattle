@@ -4,6 +4,7 @@ import { AlertCircle, Info, Clock, Trophy, Users, Vote } from 'lucide-react';
 import { ElectionResults } from '@/hooks/useElectionResults';
 import { getElectionTypeDescription, supportsUnopposedCandidates } from '@/utils/election-types';
 import { ElectionType } from '@/types';
+import { formatDeadline } from '@/utils/format';
 
 interface VotingExplainerProps {
   results: ElectionResults;
@@ -115,8 +116,7 @@ export function VotingExplainer({ results }: VotingExplainerProps) {
             <div>
               <p className="font-medium text-badge-orange-text">Election Ends:</p>
               <p className="text-badge-orange-text mt-1">
-                {new Date(results.election.endDate).toLocaleDateString()} at{' '}
-                {new Date(results.election.endDate).toLocaleTimeString()}
+                {formatDeadline(results.election.endDate)}
               </p>
             </div>
           </div>

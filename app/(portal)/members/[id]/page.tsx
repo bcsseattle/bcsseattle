@@ -1,4 +1,4 @@
-import { formatMoney } from '@/utils/format';
+import { formatDate, formatMoney } from '@/utils/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PersonIcon } from '@radix-ui/react-icons';
 import { createClient } from '@/utils/supabase/server';
@@ -42,11 +42,7 @@ export default async function Page(props: {
     {
       title: 'Member since',
       icon: ClockIcon,
-      value: new Date(member!.created_at).toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-      })
+      value: formatDate(member!.created_at)
     },
     {
       title: 'Total Family Members',

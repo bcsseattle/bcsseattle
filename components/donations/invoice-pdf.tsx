@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Image
 } from '@react-pdf/renderer';
-import { formatMoney } from '@/utils/format';
+import { formatDate, formatMoney } from '@/utils/format';
 
 const styles = StyleSheet.create({
   page: {
@@ -154,7 +154,7 @@ export default function InvoicePDF({
             <Text>Invoice Number: {donation?.id}</Text>
             <Text>
               Date of Donation:{' '}
-              {new Date(donation?.donation_date).toLocaleDateString()}
+              {formatDate(donation?.donation_date)}
             </Text>
             <Text>
               Description of Donation: {donation?.goods_services_description}

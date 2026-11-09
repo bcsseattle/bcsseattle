@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { FundraiserForm } from '@/components/fundraisers/admin/fundraiser-form';
+import { PageHeader } from '@/components/portal/page-header';
 
 export default async function NewFundraiserPage() {
 
@@ -28,17 +29,13 @@ export default async function NewFundraiserPage() {
 
 
   return (
-    <div className="container max-w-2xl py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Create New Fundraiser</h1>
-        <p className="text-muted-foreground">
-          Set up a new fundraising campaign for your cause.
-        </p>
-      </div>
+    <div className="max-w-2xl space-y-6">
+      <PageHeader
+        title="Create New Fundraiser"
+        description="Set up a new fundraising campaign for your cause."
+      />
 
-      <div className="space-y-8">
-        <FundraiserForm />
-      </div>
+      <FundraiserForm />
     </div>
   );
 }

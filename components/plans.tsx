@@ -96,7 +96,7 @@ export default function Plans({ user, products, subscription }: Props) {
     );
   } else {
     return (
-      <section className="container mx-auto">
+      <section className="w-full">
         <h1 className="text-4xl font-extrabold text-center">
           Contribution Plans
         </h1>

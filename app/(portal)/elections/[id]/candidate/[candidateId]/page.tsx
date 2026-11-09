@@ -7,11 +7,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { CalendarDays, Mail, User, Vote, ArrowLeft, Award } from 'lucide-react';
 import Link from 'next/link';
+import { BackLink } from '@/components/ui/breadcrumb';
 import { useServerFeatureFlag } from '@/utils/server-feature-flags';
 import {
   FEATURE_FLAGS,
   createFeatureFlagArray
 } from '@/utils/feature-flag-constants';
+import { formatDate } from '@/utils/format';
 
 type Props = {
   params: Promise<{ id: string; candidateId: string }>;
@@ -56,7 +58,7 @@ export default async function CandidatePage2(props: Props) {
   if (candidateError || !candidate) {
     return (
       <div className="p-8 text-center">
-        <h1 className="text-xl font-semibold mb-2">Candidate Not Found</h1>
+        <h1 className="mb-2 text-screen text-foreground">Candidate Not Found</h1>
         <p className="text-muted-foreground mb-4">
           Could not find candidate with ID: {candidateId}
         </p>
@@ -124,15 +126,6 @@ export default async function CandidatePage2(props: Props) {
       .slice(0, 2);
   };
 
-  // Format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
   // Get position color for badge
   const getPositionColor = (position: string) => {
     if (position.includes('President'))
@@ -145,13 +138,10 @@ export default async function CandidatePage2(props: Props) {
   };
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div>
+      <div className="max-w-4xl">
         <div className="mb-6">
-          <Button variant="ghost" className="gap-2 hover:bg-card/60" asChild><Link href={`/elections/${electionId}`}>
-              <ArrowLeft className="h-4 w-4" />
-              Back to Election
-            </Link></Button>
+          <BackLink href={`/elections/${electionId}`}>Back to Election</BackLink>
         </div>
 
         {/* Main Content */}
@@ -159,12 +149,12 @@ export default async function CandidatePage2(props: Props) {
           {/* Left Column - Candidate Info */}
           <div className="lg:col-span-2 space-y-6">
             {/* Header Card */}
-            <Card className="border-0 shadow-lg bg-card/70 backdrop-blur-sm">
+            <Card>
               <CardHeader className="pb-6">
                 <div className="flex flex-col sm:flex-row gap-6">
                   {/* Avatar */}
                   <div className="flex-shrink-0">
-                    <Avatar className="h-24 w-24 border-4 border-card shadow-lg">
+                    <Avatar className="h-24 w-24">
                       <AvatarImage
                         src={candidate.photo_url || ''}
                         alt={candidate.full_name}
@@ -205,7 +195,7 @@ export default async function CandidatePage2(props: Props) {
 
             {/* Bio Section */}
             {candidate.bio && (
-              <Card className="border-0 shadow-lg bg-card/70 backdrop-blur-sm">
+              <Card>
                 <CardHeader>
                   <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                     <User className="h-5 w-5" />
@@ -222,7 +212,7 @@ export default async function CandidatePage2(props: Props) {
 
             {/* Platform & Vision */}
             {candidateWithElection.manifesto && (
-              <Card className="border-0 shadow-lg bg-card/70 backdrop-blur-sm">
+              <Card>
                 <CardHeader>
                   <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                     <Vote className="h-5 w-5" />
@@ -243,7 +233,7 @@ export default async function CandidatePage2(props: Props) {
           {/* Right Column - Election Info & Actions */}
           <div className="space-y-6">
             {/* Election Details */}
-            <Card className="border-0 shadow-lg bg-card/70 backdrop-blur-sm">
+            <Card>
               <CardHeader>
                 <h3 className="text-lg font-semibold text-foreground">
                   Election Information
@@ -305,7 +295,7 @@ export default async function CandidatePage2(props: Props) {
             </Card>
 
             {/* Action Buttons */}
-            <Card className="border-0 shadow-lg bg-card/70 backdrop-blur-sm">
+            <Card>
               <CardContent className="pt-6">
                 <div className="space-y-3">
                   {/* Voting Action */}
@@ -358,7 +348,7 @@ export default async function CandidatePage2(props: Props) {
                           <p className="text-sm text-foreground mb-3">
                             Cast your vote for {candidate.full_name}
                           </p>
-                          <Button className="w-full shadow-lg" asChild><Link
+                          <Button className="w-full" asChild><Link
                             href={`/elections/${electionId}/vote/candidates`}
                             className="w-full"
                           >
@@ -392,7 +382,7 @@ export default async function CandidatePage2(props: Props) {
                         <p className="text-sm text-badge-green-text mb-3">
                           Sign in to vote for {candidate.full_name}
                         </p>
-                        <Button className="w-full shadow-lg" asChild><Link
+                        <Button className="w-full" asChild><Link
                           href={`/signin?redirectTo=${encodeURIComponent(`/elections/${electionId}/candidate/${candidateId}`)}`}
                           className="w-full"
                         >
@@ -424,7 +414,7 @@ export default async function CandidatePage2(props: Props) {
 
             {/* Nomination Date */}
             {candidate.created_at && (
-              <Card className="border-0 shadow-lg bg-card/70 backdrop-blur-sm">
+              <Card>
                 <CardContent className="pt-6">
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground mb-1">Nominated on</p>

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, ArrowLeft, Vote } from 'lucide-react';
+import { formatDeadline } from '@/utils/format';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -57,7 +58,7 @@ export default async function CandidateVoteConfirmationPage(props: Props) {
 
   if (!session || sessionError) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="max-w-2xl">
         <Card className="border-badge-red-border bg-badge-red-bg">
           <CardHeader>
             <CardTitle className="text-badge-red-text">Confirmation Not Found</CardTitle>
@@ -91,7 +92,7 @@ export default async function CandidateVoteConfirmationPage(props: Props) {
     .order('candidates(position)');
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="max-w-2xl">
       <Card className="border-badge-green-border bg-badge-green-bg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-badge-green-text">
@@ -117,7 +118,7 @@ export default async function CandidateVoteConfirmationPage(props: Props) {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Submitted:</span>
-                <span>{new Date(session.completed_at!).toLocaleString()}</span>
+                <span>{formatDeadline(session.completed_at!)}</span>
               </div>
             </div>
           </div>

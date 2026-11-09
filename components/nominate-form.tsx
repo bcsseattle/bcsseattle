@@ -213,7 +213,7 @@ export default function NominateForm({
 
   if (loading) {
     return (
-      <section className="my-4 max-w-lg mx-auto">
+      <section className="my-4 max-w-lg">
         <Card>
           <CardContent className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
@@ -227,7 +227,7 @@ export default function NominateForm({
   // Show existing nomination if found
   if (existingNomination) {
     return (
-      <section className="my-4 max-w-lg mx-auto">
+      <section className="my-4 max-w-lg">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -303,7 +303,7 @@ export default function NominateForm({
 
   // Show nomination form if no existing nomination
   return (
-    <section className="my-4 max-w-lg mx-auto">
+    <section className="my-4 max-w-lg">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           <Card>
