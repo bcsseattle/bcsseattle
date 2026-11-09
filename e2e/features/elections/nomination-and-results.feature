@@ -20,7 +20,7 @@ Feature: Standing for election and seeing the results
     When I open the nomination page
     Then I should see "Already Nominated"
 
-  @P1 @security @known-bug @BUG-006
+  @P1 @security @BUG-006
   Scenario: Nominations are refused outside the nomination period
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
     And I am signed in as an approved member

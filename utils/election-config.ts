@@ -248,3 +248,21 @@ export async function getCandidateElectionStatus(electionId: string, candidateId
     totalVotes: 0
   };
 }
+
+/**
+ * Whether the signed-in user may vote: an approved, active member
+ * (bylaws Art. III §3). Checked by the ballot pages and the vote handlers (BUG-007).
+ */
+export async function currentUserIsActiveMember(): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { data: member } = await supabase
+    .from('members')
+    .select('isApproved, status')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  return !!member?.isApproved && member.status === 'active';
+}

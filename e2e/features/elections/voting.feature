@@ -37,7 +37,7 @@ Feature: Voting in member elections
     Then I should see "Initiative Votes Confirmed"
     And my "yes" vote on "Build a community center" should be recorded
 
-  @P0 @critical @known-bug @BUG-007
+  @P0 @critical @BUG-007
   Scenario: Someone whose membership isn't approved can't vote
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
     And I am signed in as a pending applicant
@@ -66,7 +66,7 @@ Feature: Voting in member elections
     When I submit the combined ballot with a vote for "Hani"
     Then my vote for "Hani" should be recorded
 
-  @P1 @security @api @known-bug @BUG-011
+  @P1 @security @api @BUG-011
   Scenario: The ballot refuses two votes in one position, however they're labelled
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
     And I am signed in as an approved member

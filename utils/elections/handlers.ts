@@ -5,6 +5,7 @@ import { getErrorRedirect, getStatusRedirect } from 'utils/helpers';
 import { createClient } from '@/utils/supabase/server';
 // Votes have no insert policy for users: they are written here, after the checks above (BUG-005).
 import { supabaseAdmin } from '@/utils/supabase/admin';
+import { currentUserIsActiveMember } from '@/utils/election-config';
 import {
   Candidate,
   NominateFormSchema,
@@ -53,6 +54,34 @@ interface VotingResult {
 }
 
 // Voting handlers following the same pattern as membership handlers
+/**
+ * Candidates must belong to the election, and at most one vote per position.
+ * Positions come from the database, never from the request (BUG-011).
+ */
+async function validateCandidateVotes(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  electionId: string,
+  candidateVotes: CandidateVote[]
+): Promise<string | null> {
+  if (candidateVotes.length === 0) return null;
+  const candidateIds = candidateVotes.map((v) => v.candidateId);
+  const { data: validCandidates } = await supabase
+    .from('candidates')
+    .select('id, position')
+    .eq('election_id', electionId)
+    .in('id', candidateIds);
+
+  const positionById = new Map((validCandidates ?? []).map((c) => [c.id, c.position]));
+  const invalid = candidateIds.filter((id) => !positionById.has(id));
+  if (invalid.length > 0) return `Invalid candidate IDs: ${invalid.join(', ')}`;
+
+  const positions = candidateIds.map((id) => positionById.get(id));
+  if (new Set(positions).size !== positions.length) {
+    return 'Cannot vote for multiple candidates in the same position';
+  }
+  return null;
+}
+
 export async function submitCandidateVotes(
   candidateVotes: CandidateVote[],
   electionId: string,
@@ -64,6 +93,10 @@ export async function submitCandidateVotes(
 
     if (authError || !user) {
       return { success: false, error: 'Authentication required' };
+    }
+
+    if (!(await currentUserIsActiveMember())) {
+      return { success: false, error: 'Only approved members with active membership can vote' };
     }
 
     // Validate election exists and is active
@@ -105,28 +138,9 @@ export async function submitCandidateVotes(
       return { success: false, error: 'You have already voted for candidates in this election' };
     }
 
-    // Validate candidate votes
-    if (candidateVotes.length > 0) {
-      const candidateIds = candidateVotes.map(v => v.candidateId);
-      const { data: validCandidates } = await supabase
-        .from('candidates')
-        .select('id, position')
-        .eq('election_id', electionId)
-        .in('id', candidateIds);
-
-      const validCandidateIds = validCandidates?.map(c => c.id) || [];
-      const invalidCandidates = candidateIds.filter(id => !validCandidateIds.includes(id));
-
-      if (invalidCandidates.length > 0) {
-        return { success: false, error: `Invalid candidate IDs: ${invalidCandidates.join(', ')}` };
-      }
-
-      // Check for duplicate positions
-      const positions = candidateVotes.map(v => v.position);
-      const uniquePositions = new Set(positions);
-      if (positions.length !== uniquePositions.size) {
-        return { success: false, error: 'Cannot vote for multiple candidates in the same position' };
-      }
+    const candidateError = await validateCandidateVotes(supabase, electionId, candidateVotes);
+    if (candidateError) {
+      return { success: false, error: candidateError };
     }
 
     // Generate confirmation code
@@ -226,6 +240,10 @@ export async function submitInitiativeVotes(
 
     if (authError || !user) {
       return { success: false, error: 'Authentication required' };
+    }
+
+    if (!(await currentUserIsActiveMember())) {
+      return { success: false, error: 'Only approved members with active membership can vote' };
     }
 
     // Validate election exists and is active
@@ -385,6 +403,10 @@ export async function submitCombinedVotes(
       return { success: false, error: 'Authentication required' };
     }
 
+    if (!(await currentUserIsActiveMember())) {
+      return { success: false, error: 'Only approved members with active membership can vote' };
+    }
+
     // Validate election exists and is active
     const { data: election, error: electionError } = await supabase
       .from('elections')
@@ -417,7 +439,11 @@ export async function submitCombinedVotes(
       return { success: false, error: 'You have already voted in this election' };
     }
 
-    // Validate votes (reuse validation logic from separate functions)
+    const candidateError = await validateCandidateVotes(supabase, electionId, candidateVotes);
+    if (candidateError) {
+      return { success: false, error: candidateError };
+    }
+
     const totalVotes = candidateVotes.length + initiativeVotes.length;
     const confirmationCode = generateConfirmationCode();
     const clientIP = headers ? getClientIP(headers) : 'unknown';
@@ -665,7 +691,26 @@ export async function nominateCandidate(
         'Please sign in to nominate yourself.'
       );
     }
-    const finalUserId = userId || user.id;
+    // Always the signed-in user: a userId from the browser is not trusted (BUG-006).
+    const finalUserId = user.id;
+
+    const { data: election } = await supabase
+      .from('elections')
+      .select('nomination_start, nomination_end')
+      .eq('id', electionId)
+      .maybeSingle();
+    const now = Date.now();
+    if (
+      !election?.nomination_start ||
+      !election?.nomination_end ||
+      now < new Date(election.nomination_start).getTime() ||
+      now > new Date(election.nomination_end).getTime()
+    ) {
+      return getErrorRedirect(
+        `/elections/${electionId}/nominate`,
+        'Nominations are not open for this election.'
+      );
+    }
 
     // Check for existing nomination
     const { data: existingNomination, error: checkError } = await supabase
@@ -769,7 +814,26 @@ export async function nominateCandidateWithRollback(
       );
     }
 
-    const finalUserId = userId || user.id;
+    // Always the signed-in user: a userId from the browser is not trusted (BUG-006).
+    const finalUserId = user.id;
+
+    const { data: election } = await supabase
+      .from('elections')
+      .select('nomination_start, nomination_end')
+      .eq('id', electionId)
+      .maybeSingle();
+    const now = Date.now();
+    if (
+      !election?.nomination_start ||
+      !election?.nomination_end ||
+      now < new Date(election.nomination_start).getTime() ||
+      now > new Date(election.nomination_end).getTime()
+    ) {
+      return getErrorRedirect(
+        `/elections/${electionId}/nominate`,
+        'Nominations are not open for this election.'
+      );
+    }
 
     // Check for existing nomination
     const { data: existingNomination, error: checkError } = await supabase
