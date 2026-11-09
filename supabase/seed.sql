@@ -8,26 +8,16 @@ TRUNCATE TABLE public.prices CASCADE;
 
 TRUNCATE TABLE public.products CASCADE;
 
--- create function public.handle_new_user() returns trigger as $$
--- begin
--- insert into
---     public.users (id, full_name, avatar_url)
--- values
---     (
---         new.id,
---         new.raw_user_meta_data ->> 'full_name',
---         new.raw_user_meta_data ->> 'avatar_url'
---     );
+-- The on_auth_user_created trigger is created by the baseline migration.
 
--- return new;
+INSERT INTO public.organization (name, address, city, state, zip, country, phone, email, ein, description)
+VALUES ('Baloch Community Services of Seattle', '123 Test Ave', 'Seattle', 'WA', '98101', 'USA',
+        '206-555-0100', 'info@example.test', '00-0000000', 'Local development organization');
 
--- end;
--- $$ language plpgsql security definer;
-
-create trigger on_auth_user_created
-after
-insert
-    on auth.users for each row execute procedure public.handle_new_user();
+INSERT INTO public.programs (key, value, active) VALUES
+  ('general-purpose', 'General Purpose', true),
+  ('funeral-and-burial', 'Funeral and Burial', true),
+  ('youth-programs', 'Youth Programs', true);
 
 -- Insert products
 INSERT INTO

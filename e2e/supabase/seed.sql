@@ -1,12 +1,6 @@
 -- Reference data for the E2E stack. Per-scenario data (users, members,
 -- elections, fundraisers, donations) is created by e2e/support/db.ts instead.
 
--- Production has this trigger in the `auth` schema, which `db dump` of public
--- doesn't include (verified against prod 2026-11-08).
-CREATE OR REPLACE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
 INSERT INTO public.organization (name, address, city, state, zip, country, phone, email, ein, description)
 VALUES ('Baloch Community Services of Seattle', '123 Test Ave', 'Seattle', 'WA', '98101', 'USA',
         '206-555-0100', 'info@example.test', '00-0000000', 'E2E test organization');

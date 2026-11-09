@@ -2401,3 +2401,10 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 RESET ALL;
+
+
+-- Not part of the dump: production has this trigger in the `auth` schema,
+-- which `supabase db dump` skips (verified against prod 2026-11-08).
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

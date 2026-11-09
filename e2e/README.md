@@ -127,18 +127,13 @@ e2e/
 
 ## Schema maintenance
 
-`supabase/migrations/00000000000000_baseline.sql` is a schema-only dump of
-production taken on 2026-11-08 (project `tljjvmdmahkrvklyrdqq`). Refresh it when
-production's schema changes:
+`e2e/supabase/migrations` is a symlink to the app's `supabase/migrations`, so the
+E2E stack, the local dev stack and new fix migrations share one history. It
+starts from `20261108000000_prod_baseline.sql`, a schema-only dump of production
+taken on 2026-11-08 (project `tljjvmdmahkrvklyrdqq`), followed by
+`20261108000100_develop_fundraisers.sql`, which adds what `develop` has and production
+doesn't (fundraisers). The pre-squash migrations are kept in
+`supabase/migrations_archive/` for reference.
 
-```bash
-pnpm exec supabase db dump --linked -f e2e/supabase/migrations/00000000000000_baseline.sql
-pnpm e2e:db:reset
-```
-
-The repo's `.env.local` currently has a line the CLI can't parse; until it's fixed,
-run the dump from a directory that holds only `supabase/config.toml` and
-`supabase/.temp/`.
-
-`00000000000001_develop_unreleased.sql` adds what `develop` has and production
-doesn't (fundraisers). Fold it into the baseline once those tables are deployed.
+New schema changes go in `supabase/migrations/` as normal (`supabase migration new …`);
+`pnpm e2e:db:reset` picks them up.
