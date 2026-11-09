@@ -29,7 +29,7 @@ Feature: Membership status
     And I go to "/members"
     Then I should see the heading "Membership Status: Pending"
 
-  @P2 @known-bug @BUG-056
+  @P2 @BUG-056
   Scenario: A signed-in user who never registered is sent to registration, not a broken page
     Given I am signed in as a user with no membership
     When I go to "/members"
@@ -58,3 +58,15 @@ Feature: Membership status
     Given I am signed in as a rejected applicant
     When I go to "/members"
     Then I should see "Your membership application was not approved."
+
+  @P2 @BUG-056
+  Scenario Outline: A signed-in user who never registered is sent to registration from <path>
+    Given I am signed in as a user with no membership
+    When I go to "<path>"
+    Then I should be on the registration page
+
+    Examples:
+      | path             |
+      | /members         |
+      | /community-funds |
+      | /elections       |

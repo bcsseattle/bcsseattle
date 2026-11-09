@@ -81,6 +81,11 @@ export default async function ElectionsPage(props: Props) {
       return redirect('/register');
     }
 
+    // Signed in but never registered: there's no member to show a status for (BUG-056).
+    if (!member) {
+      return redirect('/register');
+    }
+
     if (!member?.isApproved) {
       return redirect(`/members/${member?.id}/pending`);
     }

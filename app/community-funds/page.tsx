@@ -57,6 +57,11 @@ export default async function CommunityFunds(props: {
     return redirect('/register');
   }
 
+  // Signed in but never registered: there's no member to show a status for (BUG-056).
+  if (!member) {
+    return redirect('/register');
+  }
+
   if (!member?.isApproved) {
     return redirect(`/members/${member?.id}/pending`);
   }

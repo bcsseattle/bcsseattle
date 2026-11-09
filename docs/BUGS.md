@@ -84,7 +84,7 @@ IDs are stable; reference them in commits and PRs. "Verified" means confirmed by
 | ID | Location | Problem |
 |---|---|---|
 | BUG-055 | `app/resources/immigration/[slug]/page.tsx:25,35` | `isSubscriptionActive` is an array, so it's always truthy and the check never applies |
-| BUG-056 | `app/members/page.tsx:42`, `app/elections/page.tsx:84` | No member row → redirect to `/members/undefined/pending` |
+| BUG-056 | `app/members/page.tsx:42`, `app/elections/page.tsx:84` | No member row → redirect to `/members/undefined/pending` — **Fixed on `develop`**: `/members`, `/community-funds` and `/elections` send a signed-in user with no member row to `/register`. Gating scenarios cover all three. |
 | BUG-057 | `components/admin/MemberApprovalActions.tsx:193` | ~~Operator precedence: "Reactivate" never renders~~ **Not a bug (E2E 2026-11-08):** the precedence happens to render "Reactivate Member" for an approved member whose status is `inactive`, and reactivation works. |
 | BUG-058 | `app/account/[memberId]/contributions/pdf/route.tsx:25` | Default tax year evaluates to 0 |
 | BUG-059 | `app/elections/page.tsx:104-107` | Queries a column that doesn't exist, so the "Leadership" badge never shows |
