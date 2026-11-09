@@ -30,7 +30,7 @@ type Fundraiser = Database['public']['Tables']['fundraisers']['Row'];
 const formSchema = z.object({
   amount: z.coerce.number()
     .positive('Amount must be greater than 0')
-    .min(0.01, 'Minimum amount is $0.01')
+    .min(0.5, 'Minimum donation amount is $0.50')
     .refine(
       (val) => Number.isFinite(val) && val <= 999999.99,
       { message: 'Maximum amount is $999,999.99' }
@@ -202,7 +202,7 @@ export function DonationForm({ fundraiser }: DonationFormProps) {
               <FormControl>
                 <Input
                   type="number"
-                  min={0.01}
+                  min={Math.max(0.5, fundraiser.minimum_donation ?? 0)}
                   max={999999.99}
                   step="0.01"
                   placeholder="0.00"

@@ -174,7 +174,7 @@ export async function submitDonation(
     // Validate fundraiser exists and is active
     const { data: fundraiser, error: fundraiserError } = await supabase
       .from('fundraisers')
-      .select('id, status, ends_at')
+      .select('id, status, ends_at, minimum_donation')
       .eq('id', fundraiserId)
       .single();
 
@@ -188,6 +188,13 @@ export async function submitDonation(
 
     if (fundraiser.ends_at && new Date() > new Date(fundraiser.ends_at)) {
       return { success: false, error: 'This fundraiser has ended' };
+    }
+
+    // The browser's checks can be skipped; Stripe's card minimum is $0.50 (BUG-043).
+    const minimum = Math.max(0.5, Number(fundraiser.minimum_donation ?? 0));
+    const cents = amount * 100;
+    if (!Number.isFinite(amount) || amount < minimum || amount > 999999.99 || Math.abs(cents - Math.round(cents)) > 1e-6) {
+      return { success: false, error: `Please donate between $${minimum.toFixed(2)} and $999,999.99` };
     }
 
     // Generate confirmation code

@@ -71,7 +71,16 @@ Feature: Supporting a fundraiser
     Examples:
       | amount  |
       | 0       |
+      | 0.49    |
       | 1000000 |
+
+  @P1 @BUG-043
+  Scenario: The server refuses a donation below the minimum even if the browser allows it
+    Given the fundraiser's minimum donation is $10
+    And I am signed in as an approved member
+    When I try to donate $25 to the fundraiser but my browser sends $5
+    Then I should not be taken to Stripe Checkout
+    And no donation should be recorded for the fundraiser
 
   @P1 @BUG-021
   Scenario: A visitor who isn't signed in can browse fundraisers

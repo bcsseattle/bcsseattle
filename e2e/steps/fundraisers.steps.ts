@@ -60,8 +60,37 @@ Given(/^I have started a \$(\d+) donation to the fundraiser$/, async function (t
   await this.page.goto('/');
 });
 
-When(/^I try to donate \$(\d+) to the fundraiser$/, async function (this: E2EWorld, amount: string) {
+When(/^I try to donate \$([\d.]+) to the fundraiser$/, async function (this: E2EWorld, amount: string) {
   await fillDonation(this, String(amount));
+});
+
+When(/^I try to donate \$(\d+) to the fundraiser but my browser sends \$([\d.]+)$/, async function (this: E2EWorld, amount: string, sent: string) {
+  // Rewrites the amount argument of the submitDonation server action (BUG-043).
+  const id = this.fundraiser!.id;
+  await this.page.route('**/*', async (route) => {
+    const body = route.request().postData();
+    const from = `"${id}",${amount},`;
+    if (route.request().headers()['next-action'] && body?.includes(from)) {
+      this.data.rewrote = 'yes';
+      return route.continue({ postData: body.replace(from, `"${id}",${sent},`) });
+    }
+    return route.continue();
+  });
+  const answered = this.page.waitForResponse((r) => !!r.request().headers()['next-action'] && (r.request().postData() ?? '').includes(id));
+  await fillDonation(this, String(amount));
+  await answered;
+  expect(this.data.rewrote, 'the submitDonation request was not rewritten').toBe('yes');
+  this.cleanup.push(async () => admin.from('fundraiser_donations').delete().eq('fundraiser_id', id));
+});
+
+Given(/^the fundraiser's minimum donation is \$(\d+)$/, async function (this: E2EWorld, dollars: string) {
+  const { error } = await admin.from('fundraisers').update({ minimum_donation: Number(dollars) }).eq('id', this.fundraiser!.id);
+  expect(error).toBeNull();
+});
+
+Then('no donation should be recorded for the fundraiser', async function (this: E2EWorld) {
+  const { count } = await admin.from('fundraiser_donations').select('id', { count: 'exact', head: true }).eq('fundraiser_id', this.fundraiser!.id);
+  expect(count).toBe(0);
 });
 
 Then('I should not be taken to Stripe Checkout', async function (this: E2EWorld) {
