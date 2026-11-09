@@ -37,6 +37,8 @@ async function currentUserId(world: E2EWorld) {
 
 When('I register as an individual member living in Seattle, WA', async function (this: E2EWorld) {
   await fillRegistration(this.page);
+  // Registration is done once the server sends the member on to the fee page.
+  await expect(this.page).toHaveURL(/\/membership-fee/, { timeout: 20_000 });
 });
 
 When('I submit the registration form without a {string}', async function (this: E2EWorld, field: string) {
