@@ -33,7 +33,7 @@ Feature: Admins review membership applications
     When I deactivate the membership of "Hani"
     Then "Hani" should be listed as "Inactive"
 
-  @P1 @known-bug @BUG-036
+  @P1 @BUG-036
   Scenario: The admin can see each applicant's email address
     Given there is a pending applicant named "Hani"
     When I go to "/admin/members"

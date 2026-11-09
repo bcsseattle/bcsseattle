@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
+import { supabaseAdmin } from '@/utils/supabase/admin';
 import { redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -53,22 +54,15 @@ export default async function AdminMembersPage() {
     console.error('Error fetching members:', error);
   }
 
-  // Get user emails from auth for each member
-  const membersWithEmails = await Promise.all(
-    (members || []).map(async (member) => {
-      if (member.user_id) {
-        const { data: { user: authUser } } = await supabase.auth.admin.getUserById(member.user_id);
-        return {
-          ...member,
-          email: authUser?.email || 'No email'
-        };
-      }
-      return {
-        ...member,
-        email: 'No email'
-      };
-    })
-  );
+  // Emails live in auth.users, which only the service role can list: one call,
+  // not one per member (BUG-036).
+  // ponytail: first 1000 accounts; page through listUsers if the site outgrows that.
+  const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+  const emailById = new Map(authUsers?.users.map((u) => [u.id, u.email]) ?? []);
+  const membersWithEmails = (members || []).map((member) => ({
+    ...member,
+    email: (member.user_id && emailById.get(member.user_id)) || 'No email'
+  }));
 
   // pending: applied, not approved (older applications were saved as 'inactive');
   // rejected: application refused; active / inactive: approved members (BUG-035).
