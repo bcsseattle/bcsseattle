@@ -10,9 +10,11 @@ Restyle the BCS Seattle site to the Figma mocks without changing how anything wo
   - Component pages: Actions & Forms, Navigation, Status, Transactions, Containers, Overlays, Data & States.
 - Current-UI baseline `N7bAk3uF4nyuFl5rcea6BB`: Foundations 3:2.
 
+The EIN shown in the mocks' footer and donate note (99-2495973) is the one today's footer already prints, so it is site copy, not sample data.
+
 All token values below come from `get_variable_defs`, not from screenshots.
 
-**Status: waiting for your go-ahead.** No code has changed; this branch (`ui-overhaul/plan`) holds only this file.
+**Status: approved with the recommended defaults.** Phase PRs go from `ui/phase-N-…` branches into the `ui-overhaul` integration branch (Decision 6.4).
 
 ## Corrections to the brief
 
@@ -255,7 +257,6 @@ These go in the PR descriptions.
 | Ballot: "Your ballot is saved as you go" | There are no saved drafts | Sentence dropped |
 | Ballot phases: "Results · Published 2 Dec 2026" | There is no results date | "After voting closes" |
 | Sidebar: pending-member count next to Members ("3") | It would need a new query in the layout | No count |
-| Footer and donate receipt note: EIN 99-2495973 | Sample value | The EIN is shown only where the page already reads `organization` (the receipt) |
 | Home hero "Community photo" | Placeholder; no photo asset exists | Image column omitted; copy spans the width |
 
 ---
