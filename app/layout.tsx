@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Navbar from '@/components/ui/Navbar';
 import { Toaster } from '@/components/ui/Toasts/toaster';
+import { Toaster as SonnerToaster } from 'sonner';
 import { PropsWithChildren, Suspense } from 'react';
 import { getURL } from '@/utils/helpers';
 import { Inter as FontSans } from 'next/font/google';
@@ -77,6 +78,8 @@ export default async function RootLayout({ children }: PropsWithChildren) {
         <Suspense>
           <Toaster />
         </Suspense>
+        {/* Seven components report success and errors with sonner's toast() (BUG-022). */}
+        <SonnerToaster richColors closeButton />
       </body>
     </html>
   );

@@ -11,7 +11,8 @@ Feature: Admins review membership applications
   Scenario: An admin approves a pending application
     Given there is a pending applicant named "Hani"
     When I approve the membership of "Hani"
-    Then "Hani" should be listed as "Active"
+    Then I should be told that "Hani" has been approved
+    And "Hani" should be listed as "Active"
     And "Hani" should be an approved member
 
   @P1

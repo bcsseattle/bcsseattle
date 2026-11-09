@@ -109,3 +109,8 @@ Then(/^the expense should be recorded as (public|private)$/, async function (thi
     // Stored in cents, like the existing expense rows.
     .toEqual({ amount: Math.round(Number(this.data.expenseAmount) * 100), is_private: visibility === 'private' });
 });
+
+Then('I should be told that {string} has been approved', async function (this: E2EWorld, name: string) {
+  // A sonner toast (BUG-022: the sonner toaster wasn't mounted, so this never showed).
+  await expect(this.page.getByText(`${this.user(name).fullName} has been approved as a member`)).toBeVisible();
+});
