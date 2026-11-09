@@ -80,7 +80,7 @@ Feature: The site works on phones and with assistive technology
     Given there are no active fundraisers
     And I am signed in as an approved member
     When I go to the fundraisers page
-    Then I should see "No fundraisers found."
+    Then I should see "No active fundraisers right now"
 
   @P2 @a11y @BUG-066
   Scenario Outline: <path> has no controls nested in each other and no broken lists

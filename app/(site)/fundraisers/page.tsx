@@ -28,17 +28,20 @@ export default async function FundraisersPage() {
     isCurrentUserAdmin()
   ]);
 
+  // Fundraisers (Figma 6:301, empty state 6:534).
   return (
-    <div className="container py-10 space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Fundraisers</h1>
-          <p className="text-muted-foreground">
-            Support our community&apos;s causes and make a difference.
+    <div className="flex flex-col gap-8 pb-8 pt-8 lg:pt-16">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex max-w-3xl flex-col gap-2">
+          <p className="mt-0 text-overline uppercase text-muted-foreground">Fundraisers</p>
+          <h1 className="text-display text-foreground">Support a community cause</h1>
+          <p className="mt-0 text-sm text-muted-foreground">
+            Give to a specific need, from emergency relief to education. Every fundraiser is set up and reviewed by the
+            BCS Seattle board.
           </p>
         </div>
         {isAdmin && (
-          <Button asChild>
+          <Button variant="outline" asChild>
             <Link href="/fundraisers/admin/new">New Fundraiser</Link>
           </Button>
         )}
