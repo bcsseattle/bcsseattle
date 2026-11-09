@@ -2,14 +2,6 @@ import { Expenses } from '@/components/expenses';
 import { columns } from '@/components/payments/columns';
 import RecentDonations from '@/components/recent-donations';
 import RecentFunds from '@/components/recent-funds';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  // CardFooter,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
 import { formatDate, formatMoney } from '@/utils/format';
 import {
   getBankBalance,
