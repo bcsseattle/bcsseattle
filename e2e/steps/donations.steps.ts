@@ -1,7 +1,8 @@
 import { Given, Then, When } from '@cucumber/cucumber';
 import type { Page } from '@playwright/test';
-import { admin, createDonation, deleteUserByEmail, uniqueEmail } from '../support/db';
+import { admin, createDonation, deleteUserByEmail, findAuthUserId, uniqueEmail } from '../support/db';
 import { expect } from '../support/expect';
+import { env } from '../support/env';
 import { checkoutCompleted, postWebhook, sessionFromCheckoutUrl } from '../support/stripe';
 import type { E2EWorld } from '../support/world';
 
@@ -38,6 +39,7 @@ async function enterDonor(world: E2EWorld, email: string, phone = '206-555-0100'
 /** The donor's email: a signed-in persona's own, or a fresh one for a guest (cleaned up after). */
 function donorEmail(world: E2EWorld) {
   if (world.me) return world.me.email;
+  if (world.data.returningDonorEmail) return world.data.returningDonorEmail;
   const email = uniqueEmail('guest-donor');
   // The app creates an auth user, a Stripe customer and donor rows for a guest donor.
   world.cleanup.push(() => deleteUserByEmail(email));
@@ -188,3 +190,40 @@ Then('the donation should not be marked as receipted', async function (this: E2E
   const { data } = await admin.from('donations').select('tax_receipt_generated').eq('id', this.donation!.id).single();
   expect(data?.tax_receipt_generated).toBe(false);
 });
+
+// ---------------------------------------------------------------- donor accounts (BUG-053)
+
+Given(/^a returning guest donor whose account is followed by (\d+) newer accounts$/, async function (this: E2EWorld, n: string) {
+  // Users are listed newest first, so the donor ends up past the first page of 50.
+  const email = uniqueEmail('returning-donor');
+  const { data, error } = await admin.auth.admin.createUser({ email });
+  expect(error).toBeNull();
+  this.data.returningDonorEmail = email;
+  this.data.returningDonorId = data.user!.id;
+  this.cleanup.push(() => deleteUserByEmail(email));
+  const fillers = Array.from({ length: Number(n) }, () => uniqueEmail('filler'));
+  for (const f of fillers) {
+    await admin.auth.admin.createUser({ email: f });
+    this.cleanup.push(() => deleteUserByEmail(f));
+  }
+});
+
+Then("the donation should be linked to the returning donor's account", async function (this: E2EWorld) {
+  // Checkout links the donor's existing account to a Stripe customer, not a new one.
+  const { data } = await admin.from('customers').select('stripe_customer_id').eq('id', this.data.returningDonorId).maybeSingle();
+  expect(data?.stripe_customer_id).toMatch(/^cus_/);
+});
+
+Then("nobody should be able to sign in to the donor's account with a shared password", async function (this: E2EWorld) {
+  // As if the donor later confirmed their email: only then does a password matter.
+  const id = await findAuthUserId(this.donation!.donor_email);
+  expect(id, 'checkout created no account for the donor').toBeTruthy();
+  await admin.auth.admin.updateUserById(id!, { email_confirm: true });
+  const { error } = await anonSignIn(this.donation!.donor_email, process.env.SUPABASE_DEFAULT_PASSWORD || 'e2e-default-password');
+  expect(error, 'signed in with the shared default password').not.toBeNull();
+});
+
+async function anonSignIn(email: string, password: string) {
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient(env.supabaseUrl, env.anonKey, { auth: { persistSession: false } }).auth.signInWithPassword({ email, password });
+}

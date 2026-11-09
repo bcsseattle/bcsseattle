@@ -94,3 +94,17 @@ Feature: General donations
     Given I am a visitor who is not signed in
     When I donate $100 once by card
     Then I should be taken to Stripe Checkout for $100.00 as a one-time payment
+
+  @P1 @BUG-053
+  Scenario: A returning guest donor can donate however many accounts the site has
+    Given a returning guest donor whose account is followed by 55 newer accounts
+    And I am a visitor who is not signed in
+    When I donate $100 once by card
+    Then I should be taken to Stripe Checkout for $100.00 as a one-time payment
+    And the donation should be linked to the returning donor's account
+
+  @P1 @security @BUG-053
+  Scenario: A guest donor's new account has no shared password
+    Given I am a visitor who is not signed in
+    When I donate $100 once by card
+    Then nobody should be able to sign in to the donor's account with a shared password
