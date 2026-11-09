@@ -125,3 +125,28 @@ Feature: Personal data is protected at the database and API level
       | find_invalid_votes       |
       | find_orphaned_votes      |
       | check_unique_constraints |
+
+  @P0 @api @BUG-046
+  Scenario: A member cannot create an election through the public API
+    Given there is an approved member named "Bilal"
+    When "Bilal" creates an election through the public API
+    Then no election should have been created
+
+  @P0 @api @BUG-046
+  Scenario: A candidate cannot withdraw once voting has opened, so votes for them stay
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And there is an approved member named "Bilal"
+    And there is an approved member named "Zara"
+    And "Bilal" is standing as "Hani"
+    And "Zara" has voted for "Hani"
+    When "Bilal" withdraws as "Hani" through the public API
+    Then "Hani" should still be on the ballot
+    And the vote for "Hani" should still be counted
+
+  @P1 @api @BUG-046
+  Scenario: A candidate can withdraw before voting opens
+    Given there is an upcoming election with candidates "Hani" and "Nazir" for "President"
+    And there is an approved member named "Bilal"
+    And "Bilal" is standing as "Hani"
+    When "Bilal" withdraws as "Hani" through the public API
+    Then "Hani" should no longer be on the ballot

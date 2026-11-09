@@ -1,5 +1,5 @@
 import { Given, Then, When } from '@cucumber/cucumber';
-import { admin, anonClient, clientAs, createDonation, getMember } from '../support/db';
+import { admin, anonClient, castCandidateVotes, clientAs, createDonation, getMember } from '../support/db';
 import { env } from '../support/env';
 import { expect } from '../support/expect';
 import { givePaidContribution } from '../support/stripe';
@@ -163,4 +163,57 @@ Then('the call should be refused', async function (this: E2EWorld) {
 Then('I should get the voting security report', async function (this: E2EWorld) {
   expect(this.response!.status, this.response!.body).toBe(200);
   expect(this.response!.body).toContain('securityStatus');
+});
+
+// ---------------------------------------------------------------- election permissions (BUG-046)
+
+const candidateNamed = (world: E2EWorld, name: string) => world.election!.candidates.find((c) => c.full_name === name)!;
+
+Given('{string} is standing as {string}', async function (this: E2EWorld, user: string, candidate: string) {
+  const { error } = await admin.from('candidates').update({ user_id: this.user(user).id }).eq('id', candidateNamed(this, candidate).id);
+  expect(error).toBeNull();
+});
+
+Given('{string} has voted for {string}', async function (this: E2EWorld, voter: string, candidate: string) {
+  await castCandidateVotes(this.user(voter).id, this.election!.id, [candidateNamed(this, candidate).id]);
+});
+
+When('{string} withdraws as {string} through the public API', async function (this: E2EWorld, user: string, candidate: string) {
+  const { error } = await (await clientAs(this.user(user))).from('candidates').delete().eq('id', candidateNamed(this, candidate).id);
+  this.apiError = error?.message ?? '';
+});
+
+Then('{string} should still be on the ballot', async function (this: E2EWorld, candidate: string) {
+  const { count } = await admin.from('candidates').select('id', { count: 'exact', head: true }).eq('id', candidateNamed(this, candidate).id);
+  expect(count, this.apiError).toBe(1);
+});
+
+Then('{string} should no longer be on the ballot', async function (this: E2EWorld, candidate: string) {
+  const { count } = await admin.from('candidates').select('id', { count: 'exact', head: true }).eq('id', candidateNamed(this, candidate).id);
+  expect(count, this.apiError).toBe(0);
+});
+
+Then('the vote for {string} should still be counted', async function (this: E2EWorld, candidate: string) {
+  const { count } = await admin.from('votes').select('id', { count: 'exact', head: true }).eq('candidate_id', candidateNamed(this, candidate).id);
+  expect(count).toBe(1);
+});
+
+When('{string} creates an election through the public API', async function (this: E2EWorld, user: string) {
+  const u = this.user(user);
+  this.data.rogueElection = `Rogue election ${Date.now()}`;
+  const { error } = await (await clientAs(u)).from('elections').insert({
+    title: this.data.rogueElection,
+    type: 'leadership',
+    is_active: true,
+    start_date: new Date().toISOString(),
+    end_date: new Date(Date.now() + 86_400_000).toISOString(),
+    created_by: u.id,
+  });
+  this.apiError = error?.message ?? '';
+  this.cleanup.push(async () => admin.from('elections').delete().eq('title', this.data.rogueElection));
+});
+
+Then('no election should have been created', async function (this: E2EWorld) {
+  const { count } = await admin.from('elections').select('id', { count: 'exact', head: true }).eq('title', this.data.rogueElection);
+  expect(count, this.apiError).toBe(0);
 });
