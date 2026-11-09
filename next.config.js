@@ -36,6 +36,17 @@ const nextConfig = {
     ],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60
+  },
+  // The breadcrumbs link every prefix of the URL; these prefixes have no page of their own.
+  async redirects() {
+    const uuid = '([0-9a-f-]{36})';
+    return [
+      { source: '/admin', destination: '/admin/members', permanent: false },
+      { source: '/fundraisers/admin', destination: '/fundraisers', permanent: false },
+      { source: `/fundraisers/admin/:id${uuid}`, destination: '/fundraisers/admin/:id/edit', permanent: false },
+      { source: '/fundraisers/:id/donations', destination: '/fundraisers/:id', permanent: false },
+      { source: '/fundraisers/:id/donations/:donationId', destination: '/fundraisers/:id/donations/:donationId/confirmation', permanent: false }
+    ];
   }
 };
 

@@ -19,7 +19,7 @@ import {
 import { Button } from '../button';
 import { User } from '@supabase/supabase-js';
 import { Member } from '@/types';
-import { Shield, Users, Vote, Settings } from 'lucide-react';
+import { Shield, Users, Vote, Receipt } from 'lucide-react';
 
 const components: { title: string; href: string; description: string }[] = [
   { title: 'What we do', href: '/what-we-do', description: '' },
@@ -146,9 +146,9 @@ export default function Navlinks({ user, member, isAdmin }: NavlinksProps) {
                   <Shield className="h-4 w-4 mr-2 inline" />
                   Create and manage fundraisers
                 </ListItem>
-                <ListItem href="/admin/settings" title="Settings">
-                  <Settings className="h-4 w-4 mr-2 inline" />
-                  System configuration and settings
+                <ListItem href="/admin/expenses" title="Expenses">
+                  <Receipt className="h-4 w-4 mr-2 inline" />
+                  Record the organization&apos;s expenses
                 </ListItem>
               </ul>
             </NavigationMenuContent>

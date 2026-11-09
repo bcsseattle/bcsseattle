@@ -58,3 +58,12 @@ Feature: Admins manage fundraisers
     And I am signed in as an admin
     When I rename the fundraiser to "Help the Rahimi family rebuild"
     Then the fundraiser should be saved as "Help the Rahimi family rebuild"
+
+  @P1
+  Scenario: An admin posts an update on a fundraiser
+    Given I am signed in as an admin
+    And there is an active fundraiser "Roof repair" with a goal of $2,000
+    When I open the fundraiser
+    And I post the update "We are halfway there, thank you!"
+    Then I should see "We are halfway there, thank you!"
+    And the fundraiser should have the update "We are halfway there, thank you!"

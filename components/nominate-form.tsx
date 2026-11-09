@@ -202,7 +202,7 @@ export default function NominateForm({
 
       form.reset();
       setPreviewUrl(null);
-      router.push(res || '/elections/thank-you');
+      router.push(res || `/elections/${electionId}`);
     } catch (err) {
       console.error('Error submitting nomination:', err);
       setSubmitError('Failed to submit nomination. Please try again.');

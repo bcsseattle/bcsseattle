@@ -15,6 +15,7 @@ Feature: Members-only and admin-only pages are protected
       | /account               |
       | /admin/members         |
       | /admin/expenses        |
+      | /admin/elections       |
       | /elections             |
       | /community-funds       |
       | /members               |
