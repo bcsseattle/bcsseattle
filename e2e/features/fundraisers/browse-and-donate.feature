@@ -67,7 +67,7 @@ Feature: Supporting a fundraiser
       | 0       |
       | 1000000 |
 
-  @P1 @known-bug @BUG-021
+  @P1 @BUG-021
   Scenario: A visitor who isn't signed in can browse fundraisers
     Given I am a visitor who is not signed in
     When I go to the fundraisers page
