@@ -61,13 +61,14 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en">
-      <GoogleAnalytics />
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased',
           fontSans.variable
         )}
       >
+        {/* Inside <body>: a <script> directly under <html> is invalid (BUG-063). */}
+        <GoogleAnalytics />
         <Navbar />
         <main id="skip" className="mx-auto p-2 sm:p-12">
           <Breadcrumbs />

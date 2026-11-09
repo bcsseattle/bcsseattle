@@ -86,3 +86,9 @@ Feature: The public website
       | /fundraisers     |
       | /get-involved    |
       | /signin/password_signin |
+
+  @P2 @BUG-063
+  Scenario: Google Analytics isn't loaded when no measurement id is configured
+    Given I am a visitor who is not signed in
+    When I go to "/"
+    Then the page should not load Google Analytics without a measurement id

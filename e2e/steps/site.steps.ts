@@ -181,3 +181,10 @@ Then('BCS Seattle should receive a message from {string}', async function (this:
     }, { timeout: 20_000 })
     .toBeGreaterThan(0);
 });
+
+Then('the page should not load Google Analytics without a measurement id', async function (this: E2EWorld) {
+  // next/script's lazyOnload injects the tag after the load event (BUG-063).
+  await this.page.waitForLoadState('networkidle');
+  const tags = await this.page.locator('script[src*="googletagmanager"]').evaluateAll((s) => s.map((x) => (x as HTMLScriptElement).src));
+  expect(tags).toEqual([]);
+});
