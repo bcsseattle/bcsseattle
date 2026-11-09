@@ -12,7 +12,7 @@ Feature: The public website
 
     Examples:
       | page     | path              | heading                                            |
-      | home     | /                 | Our Programs & Services                            |
+      | home     | /                 | How we support the community                       |
       | about    | /about-us         | About Baloch Community Services of Seattle         |
       | mission  | /about-us/mission | Our Mission                                        |
       | vision   | /about-us/vision  | Our Vision                                         |
