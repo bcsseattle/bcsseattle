@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-import { formatMoney } from '@/utils/format';
+import { formatDate, formatMoney } from '@/utils/format';
 import {
   getBankBalance,
   getDonations,
@@ -22,6 +22,9 @@ import {
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+import { PageHeader } from '@/components/portal/page-header';
+import { Panel } from '@/components/portal/panel';
+import { StatTile } from '@/components/ui/stat-tile';
 import Loading from '../loading';
 
 type SearchParams = Promise<{ [key: string]: string | undefined }>;
@@ -122,142 +125,42 @@ export default async function CommunityFunds(props: {
   // Real bank balance once linked (scripts/link-bank-account.mjs); until then, estimate from records.
   const bankAmount =
     bank?.amount ?? (fundsInBank || 0) + (totalDonations || 0) - totalExpenses;
-  const bankAsOf = bank
-    ? `As of ${new Date(bank.asOf * 1000).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      })}`
-    : 'Estimated from records';
+  const bankAsOf = bank ? `As of ${formatDate(bank.asOf * 1000)}` : 'Estimated from records';
 
-  const bankBalance = formatMoney(bankAmount);
-  const expensesString = formatMoney(totalExpenses);
-  const availableFunds = formatMoney(bankAmount + stripeAmount);
-  const stripeBalance = formatMoney(stripeAmount);
-  const stripeFeesString = formatMoney(totalStripeFees);
-
+  // Community funds (Figma 12:1281): the four totals, then contributions,
+  // donations and public expenses in panels. The data and the tables'
+  // filters and paging are unchanged.
   return (
-    <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bank Balance</CardTitle>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{bankBalance}</div>
-            <p className="text-xs text-muted-foreground">{bankAsOf}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expenses</CardTitle>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">-{expensesString}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Processing Fees
-            </CardTitle>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">-{stripeFeesString}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Available Funds
-            </CardTitle>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{availableFunds}</div>
-            <p className="text-xs text-muted-foreground">
-              Bank + {stripeBalance} in Stripe
-            </p>
-          </CardContent>
-        </Card>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Community funds"
+        description="Where BCS Seattle’s money is and where it goes. Shared with approved members; private expenses are not shown."
+      />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile label="Bank balance" value={formatMoney(bankAmount)} note={bankAsOf} />
+        <StatTile label="Expenses" value={formatMoney(-totalExpenses)} note="Public expenses" />
+        <StatTile label="Processing fees" value={formatMoney(-totalStripeFees)} note="Stripe fees" />
+        <StatTile
+          label="Available funds"
+          value={formatMoney(bankAmount + stripeAmount)}
+          note={`Bank + ${formatMoney(stripeAmount)} in Stripe`}
+        />
       </div>
-      <div className="col-span-4">
+      <Panel title="Recent contributions" subtitle="Member contributions">
+        <div className="px-4 pb-2">
+          <Suspense fallback={<Loading />}>
+            <RecentFunds members={members as any} columns={columns} month={month} year={year} showTitle={false} />
+          </Suspense>
+        </div>
+      </Panel>
+      <Panel title="Recent donations" subtitle="Completed gifts from members and the public">
         <Suspense fallback={<Loading />}>
-          <RecentDonations donations={donations || []} />
+          <RecentDonations donations={donations || []} showTitle={false} />
         </Suspense>
-      </div>
-      <div className="col-span-4">
-        <Suspense fallback={<Loading />}>
-          <RecentFunds
-            members={members as any}
-            columns={columns}
-            month={month}
-            year={year}
-          />
-        </Suspense>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Administrative Expenses</CardTitle>
-            <CardDescription>
-              Details of administrative expenses
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Expenses expenses={expenses || []} />
-          </CardContent>
-        </Card>
-      </div>
-    </>
+      </Panel>
+      <Panel title="Administrative expenses" subtitle="Public expenses recorded by the board">
+        <Expenses expenses={expenses || []} />
+      </Panel>
+    </div>
   );
 }
