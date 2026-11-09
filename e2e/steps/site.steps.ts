@@ -208,3 +208,10 @@ Then('every page in the sitemap should open', async function (this: E2EWorld) {
   }
   expect(dead).toEqual([]);
 });
+
+Then('the breadcrumbs should not show any raw IDs', async function (this: E2EWorld) {
+  const crumbs = this.page.getByRole('navigation', { name: 'breadcrumb' });
+  await expect(crumbs).toBeVisible();
+  expect(await crumbs.innerText()).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/i);
+  await expect(crumbs).toContainText('Details');
+});

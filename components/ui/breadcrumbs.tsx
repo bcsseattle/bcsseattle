@@ -13,9 +13,12 @@ import { usePathname } from 'next/navigation';
 export default function Breadcrumbs() {
   const paths = usePathname();
   const pathNames = paths.split('/').filter((path) => path);
+  // IDs read as "Details" and slugs as words, not raw UUIDs and hyphens (BUG-048).
+  // Prefixes without a page of their own redirect (next.config.js).
+  const isId = (segment: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment);
   const breadcrumbss = pathNames.map((path, index) => {
     return {
-      name: path,
+      name: isId(path) ? 'Details' : decodeURIComponent(path).replace(/[-_]/g, ' '),
       link: `/${pathNames.slice(0, index + 1).join('/')}`
     };
   });

@@ -105,3 +105,10 @@ Feature: The public website
     Given I am a visitor who is not signed in
     Then robots.txt should keep crawlers out of sign-in and point to the sitemap
     And every page in the sitemap should open
+
+  @P2 @BUG-048
+  Scenario: Breadcrumbs name pages instead of showing raw IDs
+    Given there is an active fundraiser "Roof repair" with a goal of $2,000
+    And I am a visitor who is not signed in
+    When I open the fundraiser
+    Then the breadcrumbs should not show any raw IDs
