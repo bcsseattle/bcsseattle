@@ -90,7 +90,7 @@ IDs are stable; reference them in commits and PRs. "Verified" means confirmed by
 | BUG-059 | `app/elections/page.tsx:104-107` | Queries a column that doesn't exist, so the "Leadership" badge never shows — **Fixed on `develop`**: the elections list counts positions by the election's type (`election_positions.election_type`). Gating scenario checks a leadership election is marked "Leadership". |
 | BUG-060 | `utils/election-config.ts:45` | Per-type default settings never apply; `candidate_voting_start` is ignored |
 | BUG-061 | `utils/fundraisers/handlers.ts:47-59, 198, 306` | `beneficiary` is collected but not saved; the confirmation code is generated then discarded |
-| BUG-062 | `app/api/fundraisers/[id]/route.ts:132-150` | DELETE reports success but deletes nothing (no RLS delete policy) |
+| BUG-062 | `app/api/fundraisers/[id]/route.ts:132-150` | DELETE reports success but deletes nothing (no RLS delete policy) — **Fixed on `develop`**: DELETE is admin-only, refuses (409) a fundraiser that has donations (they'd be deleted by the cascade; cancel it instead), deletes with the service role and answers 404 if nothing was deleted. Gating @api scenarios cover all three cases. |
 | BUG-063 | `components/GoogleAnalytics.tsx:9,12` | Loads `gtag/js?id=undefined` when unset; script rendered outside `<body>` |
 | BUG-064 | `utils/auth-helpers/server.ts:98,122` | `/signin/email_sigin` typo; redirect to a sign-in view that doesn't exist — **Fixed on `develop`**: fixed in `af42882` (dead-end links): email sign-in errors go to `/signin/email_signin`; OTP failures return to `/signin/verify_otp` with the email. |
 | BUG-065 | `app/about-us/bylaws/page.tsx:75-78, 396, 577` | Bylaws page typos and an empty list |

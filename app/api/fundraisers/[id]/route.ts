@@ -1,4 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
+import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
+import { supabaseAdmin } from '@/utils/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { FundraiserFormSchema } from '@/types';
 
@@ -127,47 +129,32 @@ export async function DELETE(
   { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
   const params = await paramsPromise;
-  const supabase = await createClient();
 
-  // Check if user is authenticated and is admin
-  const {
-    data: { user },
-    error: authError
-  } = await supabase.auth.getUser();
+  // Admins only. RLS has no delete policy, so the old creator-only delete with
+  // the user's client removed nothing yet answered success (BUG-062).
+  if (!(await isCurrentUserAdmin())) {
+    return NextResponse.json({ error: 'Only admins can delete fundraisers' }, { status: 403 });
+  }
 
-  if (authError || !user) {
+  // Deleting would cascade to the donations: a fundraiser that has any is a
+  // financial record and should be cancelled instead.
+  const { count } = await supabaseAdmin
+    .from('fundraiser_donations')
+    .select('id', { count: 'exact', head: true })
+    .eq('fundraiser_id', params.id);
+  if (count) {
     return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
+      { error: 'This fundraiser has donations; set its status to cancelled instead' },
+      { status: 409 }
     );
   }
 
-  // For now, creators can delete their own fundraisers
-  // TODO: Add admin check when admin role is implemented
-  const { data: fundraiser } = await supabase
-    .from('fundraisers')
-    .select('created_by')
-    .eq('id', params.id)
-    .single();
-
-  if (!fundraiser || fundraiser.created_by !== user.id) {
-    return NextResponse.json(
-      { error: 'Only the creator can delete this fundraiser' },
-      { status: 403 }
-    );
+  const { data, error } = await supabaseAdmin.from('fundraisers').delete().eq('id', params.id).select('id');
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  const { error: deleteError } = await supabase
-    .from('fundraisers')
-    .delete()
-    .eq('id', params.id);
-
-  if (deleteError) {
-    return NextResponse.json(
-      { error: deleteError.message },
-      { status: 500 }
-    );
+  if (!data?.length) {
+    return NextResponse.json({ error: 'Fundraiser not found' }, { status: 404 });
   }
-
   return NextResponse.json({ success: true });
 }

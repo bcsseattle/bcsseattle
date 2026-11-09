@@ -275,3 +275,24 @@ Then('the guest\'s saved name and phone should be unchanged', async function (th
   const { data } = await admin.from('fundraiser_donors').select('full_name, phone').eq('id', this.data.guestDonorId).single();
   expect(data).toEqual({ full_name: 'Guest Donor', phone: '206-555-0177' });
 });
+
+// ---------------------------------------------------------------- delete (BUG-062)
+
+When('I delete the fundraiser through the API', async function (this: E2EWorld) {
+  const res = await this.page.request.delete(`/api/fundraisers/${this.fundraiser!.id}`);
+  this.response = { status: res.status(), body: await res.text() };
+});
+
+Given('the fundraiser has a donation', async function (this: E2EWorld) {
+  const { error } = await admin.from('fundraiser_donations').insert({ fundraiser_id: this.fundraiser!.id, amount: 25, donor_name: 'E2E', payment_status: 'completed' });
+  expect(error).toBeNull();
+});
+
+Then(/^the fundraiser should (still exist|be gone)$/, async function (this: E2EWorld, state: string) {
+  const { count } = await admin.from('fundraisers').select('id', { count: 'exact', head: true }).eq('id', this.fundraiser!.id);
+  expect(count, this.response?.body).toBe(state === 'be gone' ? 0 : 1);
+});
+
+Then('the delete should be refused with {int}', async function (this: E2EWorld, status: number) {
+  expect(this.response!.status, this.response!.body).toBe(status);
+});

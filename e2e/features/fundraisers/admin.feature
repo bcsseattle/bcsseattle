@@ -67,3 +67,27 @@ Feature: Admins manage fundraisers
     And I post the update "We are halfway there, thank you!"
     Then I should see "We are halfway there, thank you!"
     And the fundraiser should have the update "We are halfway there, thank you!"
+
+  @P2 @api @BUG-062
+  Scenario: An admin deletes a fundraiser that has no donations
+    Given I am signed in as an admin
+    And there is an active fundraiser "Test drive" with a goal of $500
+    When I delete the fundraiser through the API
+    Then the fundraiser should be gone
+
+  @P2 @api @BUG-062
+  Scenario: A fundraiser with donations can't be deleted
+    Given I am signed in as an admin
+    And there is an active fundraiser "Roof repair" with a goal of $2,000
+    And the fundraiser has a donation
+    When I delete the fundraiser through the API
+    Then the delete should be refused with 409
+    And the fundraiser should still exist
+
+  @P2 @api @BUG-062
+  Scenario: A member who isn't an admin can't delete a fundraiser
+    Given I am signed in as an approved member
+    And there is an active fundraiser "Roof repair" with a goal of $2,000
+    When I delete the fundraiser through the API
+    Then the delete should be refused with 403
+    And the fundraiser should still exist
