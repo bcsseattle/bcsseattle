@@ -11,9 +11,11 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 24.6 76% 67.3%;
+    /* Darkened from 67.3% lightness: white on orange and orange on white were
+       ~2:1; now 4.8:1, WCAG AA (BUG-025). */
+    --primary: 24.6 76% 40%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 194.3 89.8% 34.7%;
+    --secondary: 194.3 89.8% 33%; /* 4.8:1 on white (was 4.4) */
     --secondary-foreground: 222.2 47.4% 100%;
     --tertiary: 200.4 44.6% 22%;
     --muted: 210 40% 96.1%;

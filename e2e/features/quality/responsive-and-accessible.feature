@@ -29,7 +29,7 @@ Feature: The site works on phones and with assistive technology
       | /donate                 |
       | /about-us               |
 
-  @P2 @a11y @known-bug @BUG-025
+  @P2 @a11y @BUG-025
   Scenario: Text on the home page has enough contrast to read
     Given I am a visitor who is not signed in
     When I go to "/"
