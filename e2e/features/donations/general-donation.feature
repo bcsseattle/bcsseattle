@@ -7,11 +7,6 @@ Feature: General donations
   The suite stops at Stripe's hosted Checkout page and then plays Stripe's part
   by posting a signed checkout.session.completed event to the webhook.
 
-  Card donations in the gating runs are made by signed-in donors. A *guest*
-  card donation triggers BUG-073, which breaks the server's admin database
-  client for every later request, so that path lives in the known-bug scenario
-  at the end and runs only in the known-bugs job, against its own server.
-
   @P0 @smoke @critical
   Scenario: A member starts a one-time $100 card donation
     Given I am signed in as an approved member
@@ -79,11 +74,7 @@ Feature: General donations
     When I open the receipt for that donation
     Then I should not see "Donation Receipt"
 
-  # getOrCreateUser() calls auth.signUp() on the shared service-role client, which
-  # then runs as the new donor: the customer upsert fails RLS ("Unable to access
-  # customer record.") and every later admin query on that server instance does too.
-  # Restart the app server after running this locally (`pnpm e2e:serve`).
-  @P0 @critical @known-bug @BUG-073 @poisons-server
+  @P0 @critical @BUG-073
   Scenario: A first-time guest can start a card donation
     Given I am a visitor who is not signed in
     When I donate $100 once by card

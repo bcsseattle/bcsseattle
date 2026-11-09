@@ -66,11 +66,6 @@ jobs:
       - name: Run the ${{ matrix.profile }} profile
         run: pnpm e2e --profile ${{ matrix.profile }}
 
-      # Leaves the server's admin client broken (BUG-073), so it runs alone and last.
-      - name: Run server-poisoning known-bug scenarios
-        if: always() && matrix.profile == 'bugs'
-        run: pnpm e2e --profile last
-
       - name: Upload reports, traces and server log
         if: always()
         uses: actions/upload-artifact@v4

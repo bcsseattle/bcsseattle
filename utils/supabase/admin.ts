@@ -748,18 +748,21 @@ const getOrCreateUser = async ({
       return { data: userExists, error: null };
     }
 
-    // Step 2: Sign up the user
-    const { data, error: signUpError } = await supabaseAdmin.auth.signUp({
-      email,
-      password: process.env.SUPABASE_DEFAULT_PASSWORD || ''
-    });
+    // Step 2: Create the user. Not auth.signUp(): that stores the new user's
+    // session on this shared service-role client, which then runs under RLS
+    // as that user for every later call on this server instance (BUG-073).
+    const { data, error: signUpError } =
+      await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: process.env.SUPABASE_DEFAULT_PASSWORD || ''
+      });
 
     if (signUpError) {
-      console.error('Error signing up user:', signUpError.message);
+      console.error('Error creating user:', signUpError.message);
       return { data: null, error: signUpError.message };
     }
 
-    console.log('User signed up successfully:', data);
+    console.log('User created successfully:', data.user?.email);
     return { data: data.user, error: null };
   } catch (error) {
     console.error('Unexpected error:', error);

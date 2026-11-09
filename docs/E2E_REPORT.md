@@ -2,6 +2,7 @@
 
 - **Date:** 2026-11-08, `develop` @ `410377a` plus the suite (uncommitted at the time of writing)
 - **Suite:** Playwright 1.65 + Cucumber 13.3 + TypeScript, in [`e2e/`](../e2e/README.md)
+- **Update 2026-11-08 (after `621d3f3`):** BUG-073 fixed. Its scenario now gates (86 gating / 46 known-bug) and the `last` profile is gone. Results below are as first measured.
 - **Run against:** production's schema (schema-only dump of `tljjvmdmahkrvklyrdqq`), develop's unreleased fundraiser tables, a production build of the app, and Stripe **test mode**.
 
 ## 1. Codebase analysis summary
@@ -75,7 +76,7 @@ e2e/scripts/    write-env (blanks integrations), next.mjs (guarded build/serve),
 - **Reports.** The HTML report shows passed, failed and skipped scenarios with durations; JSON and JUnit outputs are for CI.
 - **CI.** `.github/workflows/e2e.yml`:
   - Pull requests: `@smoke` on Chromium.
-  - Nightly and manual: full regression on Chromium, Firefox and WebKit, plus the non-gating bug ledger, which runs the `last` profile at the end.
+  - Nightly and manual: full regression on Chromium, Firefox and WebKit, plus the non-gating bug ledger.
   - Artifacts are kept for 14 days.
   - It needs two repository secrets: `STRIPE_TEST_SECRET_KEY` and `STRIPE_TEST_PUBLISHABLE_KEY`.
 
@@ -108,7 +109,7 @@ Full rows, with locations, are in [BUGS.md](BUGS.md).
 
 | ID | Severity | Defect | Evidence |
 |---|---|---|---|
-| BUG-073 | **Critical** | `getOrCreateUser` signs up guest donors on the shared service-role client, which then runs as that donor. The first guest card donation fails ("Unable to access customer record."), and every later admin query on that server instance fails RLS. | E2E (`--profile last`), server log |
+| BUG-073 | **Critical** | `getOrCreateUser` signs up guest donors on the shared service-role client, which then runs as that donor. The first guest card donation fails ("Unable to access customer record."), and every later admin query on that server instance fails RLS. | E2E, server log. **Fixed** (`auth.admin.createUser`) |
 | BUG-074 | High | Opening a fundraiser by in-app navigation (list card, or the redirect after creating one) stays on the loading skeleton for over 30 s. A full load works. Suspected cause: BUG-039. | E2E ×2 scenarios |
 | BUG-071 | High | Production migration history says the fundraiser, campaign and profile migrations ran, but the tables don't exist. A future `db push` would skip them. | prod dump + `migration list` |
 | BUG-072 | Medium | A new applicant sees "membership is inactive… contact support" instead of "pending". | E2E |
@@ -152,7 +153,7 @@ Residue: card donations by signed-in members create customers in the Stripe **te
 
 ## 8. Recommended next steps
 
-1. **Fix BUG-073 first.** It breaks guest giving and, on a shared instance, every later donation and webhook.
+1. ~~Fix BUG-073 first.~~ Done.
 2. **Repair the migration history (BUG-071) before releasing fundraisers**, then refresh the e2e baseline dump and drop the overlay migration.
 3. Add the two Stripe test secrets to GitHub and let the workflow run once. Make `smoke · chromium` a required check on `main` and `develop`.
 4. Close RLS bugs BUG-001–003 and 005. Their scenarios turn green when fixed; then remove `@known-bug` and keep the `@BUG-0xx` tag.

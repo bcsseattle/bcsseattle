@@ -47,13 +47,12 @@ it writes `.next/`, so run `pnpm dev` or `pnpm build` again afterwards for norma
 | Smoke (fast P0 subset, runs on every PR) | `pnpm e2e:smoke` |
 | Critical journeys | `pnpm e2e:critical` |
 | Known-bug ledger (expected to fail) | `pnpm e2e:bugs` |
-| Server-poisoning bug (BUG-073), alone and last | `pnpm e2e --profile last`, then restart `pnpm e2e:serve` |
 | Every scenario | `pnpm e2e --profile all` |
 | One feature | `pnpm e2e e2e/features/elections/voting.feature` |
 | One scenario (line) | `pnpm e2e e2e/features/elections/voting.feature:17` |
 | By name | `pnpm e2e --name "votes for a candidate"` |
 | By tag | `pnpm e2e --tags "@fundraisers and @P0"` |
-| One bug | `pnpm e2e --profile all --tags @BUG-073` |
+| One bug | `pnpm e2e --profile all --tags @BUG-012` |
 | Other browser | `BROWSER=firefox pnpm e2e` / `BROWSER=webkit pnpm e2e` |
 | Headed | `pnpm e2e:headed` |
 | Step-through debugging (Playwright Inspector) | `pnpm e2e:debug e2e/features/…feature:LINE` |
@@ -80,7 +79,6 @@ Every run writes `e2e/reports/`:
 | `@smoke` | Fast P0 subset run on every pull request |
 | `@critical` | Business-critical journeys |
 | `@known-bug` + `@BUG-0xx` | Asserts intended behaviour of a documented bug; excluded from gating runs |
-| `@poisons-server` | Leaves the app server broken (BUG-073); only in the `last` profile |
 | `@api` | Calls Supabase or HTTP endpoints directly (no page interaction) |
 | `@security` `@payments` `@a11y` `@mobile` | Concern-based tags; `@mobile` uses a 375×812 viewport |
 | `@serial` | Asserts on global state (empty lists); never runs alongside another scenario |
@@ -93,7 +91,7 @@ and update the bug's status in `docs/BUGS.md`.
 
 ```
 e2e/
-  cucumber.mjs          profiles (default, smoke, critical, bugs, last, all)
+  cucumber.mjs          profiles (default, smoke, critical, bugs, all)
   features/<area>/      Gherkin, written from the user's point of view
   steps/                step definitions, one file per area
   support/
@@ -125,8 +123,7 @@ e2e/
   Sonner toasts are never rendered (BUG-022), so don't assert on them.
 - **Waiting.** No sleeps. Use web-first assertions or `expect.poll` for database state.
 - **Payments.** Stop at `checkout.stripe.com` and verify the session through the
-  Stripe test API, then use `postWebhook(checkoutCompleted(...))`. Card donations
-  in gating scenarios use signed-in donors (see BUG-073).
+  Stripe test API, then use `postWebhook(checkoutCompleted(...))`.
 
 ## Schema maintenance
 
