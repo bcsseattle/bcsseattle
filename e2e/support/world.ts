@@ -26,6 +26,8 @@ export class E2EWorld extends World {
   cleanup: Array<() => Promise<unknown>> = [];
   consoleErrors: string[] = [];
   failedRequests: string[] = [];
+  /** Requests sent but not finished, with their start time; reported on failure. */
+  pendingRequests = new Map<import('@playwright/test').Request, number>();
 
   constructor(options: IWorldOptions) {
     super(options);
