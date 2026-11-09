@@ -53,6 +53,19 @@ interface VotingResult {
   error?: string;
 }
 
+/**
+ * Whether the user already has votes of this kind in the election, cast through
+ * any ballot (combined, candidates or initiatives). The votes themselves are the
+ * record, so every path checks them the same way (BUG-016).
+ */
+async function hasVoted(userId: string, electionId: string, kind: 'candidates' | 'initiatives' | 'any') {
+  let query = supabaseAdmin.from('votes').select('id').eq('user_id', userId).eq('election_id', electionId);
+  if (kind === 'candidates') query = query.not('candidate_id', 'is', null);
+  if (kind === 'initiatives') query = query.not('initiative_id', 'is', null);
+  const { data } = await query.limit(1);
+  return (data?.length ?? 0) > 0;
+}
+
 // Voting handlers following the same pattern as membership handlers
 /**
  * Candidates must belong to the election, and at most one vote per position.
@@ -134,7 +147,7 @@ export async function submitCandidateVotes(
       .eq('session_type', 'candidates')
       .single();
 
-    if (existingSession?.completed_at) {
+    if (existingSession?.completed_at || (await hasVoted(user.id, electionId, 'candidates'))) {
       return { success: false, error: 'You have already voted for candidates in this election' };
     }
 
@@ -275,7 +288,7 @@ export async function submitInitiativeVotes(
       .eq('session_type', 'initiatives')
       .single();
 
-    if (existingSession?.completed_at) {
+    if (existingSession?.completed_at || (await hasVoted(user.id, electionId, 'initiatives'))) {
       return { success: false, error: 'You have already voted for initiatives in this election' };
     }
 
@@ -427,15 +440,8 @@ export async function submitCombinedVotes(
       return { success: false, error: 'Voting is not currently open for this election' };
     }
 
-    // Check if user has already voted
-    const { data: existingVotes } = await supabase
-      .from('votes')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('election_id', electionId)
-      .limit(1);
-
-    if (existingVotes && existingVotes.length > 0) {
+    // Already voted through any ballot? (BUG-016)
+    if (await hasVoted(user.id, electionId, 'any')) {
       return { success: false, error: 'You have already voted in this election' };
     }
 

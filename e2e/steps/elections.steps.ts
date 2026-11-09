@@ -108,6 +108,23 @@ When('I submit the combined ballot with a vote for {string}', async function (th
   expect(res.status(), await res.text()).toBe(200);
 });
 
+When('I submit the candidate ballot with a vote for {string}', async function (this: E2EWorld, name: string) {
+  const res = await this.page.request.post(`/api/elections/${this.election!.id}/vote/candidates`, {
+    data: { candidateVotes: [{ candidateId: candidate(this, name).id, position: 'President' }] },
+  });
+  this.response = { status: res.status(), body: await res.text() };
+});
+
+Then('the ballot should be refused as already voted', async function (this: E2EWorld) {
+  expect(this.response!.status, this.response!.body).toBe(400);
+  expect(this.response!.body).toContain('already voted');
+});
+
+Then('only my vote for {string} should be counted', async function (this: E2EWorld, name: string) {
+  const { data } = await admin.from('votes').select('candidate_id').eq('election_id', this.election!.id).eq('user_id', this.me!.id);
+  expect(data).toEqual([{ candidate_id: candidate(this, name).id }]);
+});
+
 Then('no votes should be recorded for the election', async function (this: E2EWorld) {
   const { count } = await admin.from('votes').select('id', { count: 'exact', head: true }).eq('election_id', this.election!.id);
   expect(count, `API said ${this.response?.status}: ${this.response?.body}`).toBe(0);

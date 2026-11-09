@@ -66,6 +66,15 @@ Feature: Voting in member elections
     When I submit the combined ballot with a vote for "Hani"
     Then my vote for "Hani" should be recorded
 
+  @P0 @security @api @BUG-016
+  Scenario: A member who voted on the combined ballot can't vote again on the candidate ballot
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an approved member
+    When I submit the combined ballot with a vote for "Hani"
+    And I submit the candidate ballot with a vote for "Nazir"
+    Then the ballot should be refused as already voted
+    And only my vote for "Hani" should be counted
+
   @P1 @security @api @BUG-011
   Scenario: The ballot refuses two votes in one position, however they're labelled
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
