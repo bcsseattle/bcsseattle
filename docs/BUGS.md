@@ -98,7 +98,7 @@ IDs are stable; reference them in commits and PRs. "Verified" means confirmed by
 | BUG-067 | `test-feature-flags.mjs:11` | Imports a `.js` file that doesn't exist, so the script can't run — **Fixed on `develop`**: removed: even with the import fixed it can't run outside Next (`resolveFeatureFlags` reads request cookies). Feature-flag behaviour is covered by the e2e BUG-020 scenario. |
 | BUG-068 | `jest.config.js` | `moduleNameMapping` typo (should be `moduleNameMapper`); TypeScript tests probably don't parse — **Fixed on `develop`**: `moduleNameMapper` spelled correctly, and the `projects` split removed: with `projects`, Jest ignored the root config, so next/jest's TypeScript transform never applied. The suites now parse and run (23 tests: 1 passes, 22 fail). The failures are the tests' own: placeholder keys, IDs that aren't UUIDs, and direct vote inserts that BUG-005's fix blocks by design. That voting behaviour is covered by the e2e suite; the Jest bodies need rewriting or removing (your call). |
 | BUG-069 | `package.json` scripts | `supabase:push`, `supabase:pull` and `supabase:reset` call CLI commands that don't exist (should be `supabase db …`). **Fixed on `develop`.** |
-| BUG-070 | `seed.ts:28` | Seeds the org as "Bangladeshi Community in Seattle" |
+| BUG-070 | `seed.ts:28` | Seeds the org as "Bangladeshi Community in Seattle" — **Fixed on `develop`**: `seed.ts` names the organisation "Baloch Community Services of Seattle". |
 
 ## Found by the E2E suite (2026-11-08)
 

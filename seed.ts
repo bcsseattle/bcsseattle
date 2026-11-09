@@ -26,7 +26,7 @@ const main = async () => {
   console.log("Creating organization...");
   // Create organization
   const organization = await seed.organization({
-    name: "Bangladeshi Community in Seattle",
+    name: "Baloch Community Services of Seattle",
     address: cc.streetAddress(),
     city: "Seattle",
     state: "WA",
@@ -35,7 +35,7 @@ const main = async () => {
     phone: cc.phoneNumber(),
     email: "info@bcsseattle.org", 
     ein: "12-3456789",
-    description: "Supporting the Bangladeshi community in Seattle area"
+    description: "Supporting the Baloch community in the Seattle area"
   });
   
   console.log("Creating programs...");
