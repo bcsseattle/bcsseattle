@@ -73,7 +73,7 @@ await reopenCandidateVoting('election-id');
 ## 🧪 Testing
 
 ### Test Page Available:
-- Visit `/test-voting-config` to see all elections and their voting status
+- Visit `/admin/voting-config` to see all elections and their voting status
 - Shows current configuration and real-time status
 
 ### Test Queries:
@@ -101,7 +101,7 @@ await reopenCandidateVoting('election-id');
 ## 🚀 Next Steps
 
 1. **Test the implementation** by visiting your election pages
-2. **Use the test page** (`/test-voting-config`) to verify configuration
+2. **Use the test page** (`/admin/voting-config`) to verify configuration
 3. **Update specific elections** using the SQL queries provided
 4. **Monitor voting behavior** to ensure everything works as expected
 
@@ -131,7 +131,7 @@ WHERE "id" = 'abc123';
 
 - [ ] Database migration applied successfully
 - [ ] Election detail pages load without errors
-- [ ] Test page (`/test-voting-config`) shows correct status
+- [ ] Test page (`/admin/voting-config`) shows correct status
 - [ ] Candidate voting can be closed via database update
 - [ ] "Elected Unopposed" badge appears when expected
 - [ ] Initiative voting continues when candidate voting is closed
