@@ -80,6 +80,14 @@ Feature: Voting in member elections
     When I go to "/elections"
     Then the elections list should mark the election as "Leadership"
 
+  @P1 @api @BUG-060
+  Scenario: Candidate voting doesn't open before its own start date
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And candidate voting for the election only starts tomorrow
+    And I am signed in as an approved member
+    When I submit the candidate ballot with a vote for "Hani"
+    Then the ballot should be refused as not open yet
+
   @P0 @security @api @BUG-016
   Scenario: A member who voted on the combined ballot can't vote again on the candidate ballot
     Given there is an open election with candidates "Hani" and "Nazir" for "President"

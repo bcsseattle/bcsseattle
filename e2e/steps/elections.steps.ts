@@ -135,6 +135,20 @@ When('I submit the candidate ballot with a vote for {string}', async function (t
   this.response = { status: res.status(), body: await res.text() };
 });
 
+Given('candidate voting for the election only starts tomorrow', async function (this: E2EWorld) {
+  // Only the start is set: separate periods come from the leadership type's default.
+  const { error } = await admin
+    .from('elections')
+    .update({ candidate_voting_start: new Date(Date.now() + 86_400_000).toISOString() })
+    .eq('id', this.election!.id);
+  expect(error).toBeNull();
+});
+
+Then('the ballot should be refused as not open yet', async function (this: E2EWorld) {
+  expect(this.response!.status, this.response!.body).toBe(400);
+  expect(this.response!.body).toContain('not currently open');
+});
+
 Then('the ballot should be refused as already voted', async function (this: E2EWorld) {
   expect(this.response!.status, this.response!.body).toBe(400);
   expect(this.response!.body).toContain('already voted');

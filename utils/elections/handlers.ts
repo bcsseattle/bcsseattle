@@ -5,7 +5,7 @@ import { getErrorRedirect, getStatusRedirect } from 'utils/helpers';
 import { createClient } from '@/utils/supabase/server';
 // Votes have no insert policy for users: they are written here, after the checks above (BUG-005).
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { currentUserIsActiveMember } from '@/utils/election-config';
+import { currentUserIsActiveMember, isCandidateVotingOpen } from '@/utils/election-config';
 import {
   Candidate,
   NominateFormSchema,
@@ -123,18 +123,8 @@ export async function submitCandidateVotes(
       return { success: false, error: 'Election not found' };
     }
 
-    // Check if candidate voting is open
-    const now = new Date();
-    const startDate = new Date(election.start_date);
-    const endDate = new Date(election.end_date);
-    
-    // Use candidate-specific end date if separate voting periods are enabled
-    let candidateEndDate = endDate;
-    if (election.enable_separate_voting_periods && election.candidate_voting_end) {
-      candidateEndDate = new Date(election.candidate_voting_end);
-    }
-
-    if (now < startDate || now > candidateEndDate) {
+    // Same window as everywhere else, including candidate_voting_start (BUG-060).
+    if (!(await isCandidateVotingOpen(electionId))) {
       return { success: false, error: 'Candidate voting is not currently open for this election' };
     }
 
