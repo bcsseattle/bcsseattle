@@ -35,7 +35,7 @@ Then('my interest in the funeral and burial fund should be recorded', async func
 });
 
 Then('every link in the programs section should open a page that exists', async function (this: E2EWorld) {
-  const section = this.page.locator('section, div').filter({ has: this.page.getByRole('heading', { name: 'How we support the community' }) }).last();
+  const section = this.page.getByRole('region', { name: 'How we support the community' });
   const hrefs = await section.getByRole('link').evaluateAll((links) => links.map((a) => a.getAttribute('href')!));
   expect(hrefs.length).toBeGreaterThan(0);
   for (const href of hrefs) {

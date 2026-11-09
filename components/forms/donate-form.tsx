@@ -291,14 +291,15 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
           render={({ field }) => (
             <FormItem>
               <FormLabel>Other amount (USD)</FormLabel>
-              <FormControl>
-                <div className="relative max-w-xs">
-                  <span aria-hidden className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-sm text-muted-foreground">
-                    USD
-                  </span>
+              {/* FormControl goes on the input itself, so the label names it. */}
+              <div className="relative max-w-xs">
+                <span aria-hidden className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-sm text-muted-foreground">
+                  USD
+                </span>
+                <FormControl>
                   <Input type="number" inputMode="decimal" placeholder="1,000" {...field} className="pl-12" />
-                </div>
-              </FormControl>
+                </FormControl>
+              </div>
               <FormMessage />
             </FormItem>
           )}
