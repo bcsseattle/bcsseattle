@@ -20,7 +20,7 @@ Feature: Standing for election and seeing the results
     When I open the nomination page
     Then I should see "Already Nominated"
 
-  @P1 @security @known-bug @BUG-006
+  @P1 @security @BUG-006
   Scenario: Nominations are refused outside the nomination period
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
     And I am signed in as an approved member
@@ -45,7 +45,16 @@ Feature: Standing for election and seeing the results
     When I fetch the published results of the election
     Then "Hani" should have 66.67 percent of the "President" vote
 
-  @P1 @api @known-bug @BUG-019
+  # The tally route counts with the service role since the BUG-019 fix, so it
+  # must not reveal counts while candidate voting is still open.
+  @P1 @api @security @BUG-019
+  Scenario: Vote counts are not available while voting is open
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an approved member
+    When I fetch the candidate results as a member
+    Then the request should be refused
+
+  @P1 @api @BUG-019
   Scenario: A member can see each candidate's real vote count
     Given there is a closed election with candidates "Hani" and "Nazir" for "President"
     And "Hani" received 2 votes and "Nazir" received 1 vote

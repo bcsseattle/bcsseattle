@@ -20,6 +20,8 @@ Feature: Members-only and admin-only pages are protected
       | /membership-fee        |
       | /contribute            |
       | /fundraisers/admin/new |
+      | /admin/voting-config   |
+      | /admin/election-types  |
 
   @P0 @smoke @critical
   Scenario: An admin can open member management

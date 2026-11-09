@@ -1,6 +1,16 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { FundraiserFormSchema } from '@/types';
+
+// What the admin edit form sends (BUG-017): the create schema plus status, with
+// the optional fields allowed to be cleared (null).
+const FundraiserUpdateSchema = FundraiserFormSchema.extend({
+  status: z.enum(['draft', 'active', 'paused', 'completed', 'cancelled']),
+  category: FundraiserFormSchema.shape.category.nullable(),
+  beneficiary: z.string().nullable(),
+  ends_at: z.string().datetime().nullable(),
+  image_url: z.string().url('Invalid image URL').nullable()
+}).partial();
 import { z } from 'zod';
 
 export async function GET(
@@ -63,7 +73,7 @@ export async function PATCH(
     }
 
     const json = await request.json();
-    const body = FundraiserFormSchema.partial().parse(json);
+    const body = FundraiserUpdateSchema.parse(json);
 
     // Convert any Date objects to ISO strings
     const formattedBody = {

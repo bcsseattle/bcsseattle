@@ -10,17 +10,19 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { FundraiserProgress } from './fundraiser-progress';
 import { FundraiserUpdates } from './fundraiser-updates';
-import { FundraiserDonors } from './fundraiser-donors';
 import { Fundraiser } from '@/types';
 
 interface FundraiserDetailsProps {
   fundraiser: Fundraiser;
   isAdmin?: boolean;
+  /** The donor wall, a server component rendered by the page. */
+  donors: React.ReactNode;
 }
 
 export function FundraiserDetails({
   fundraiser,
-  isAdmin = false
+  isAdmin = false,
+  donors
 }: FundraiserDetailsProps) {
   const searchParams = useSearchParams();
   const success = searchParams.get('success');
@@ -88,7 +90,7 @@ export function FundraiserDetails({
 
       <div className="space-y-8">
         <FundraiserUpdates fundraiserId={fundraiser.id} isAdmin={isAdmin} />
-        <FundraiserDonors fundraiserId={fundraiser.id} />
+        {donors}
       </div>
     </div>
   );

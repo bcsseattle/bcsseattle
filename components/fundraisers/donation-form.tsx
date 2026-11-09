@@ -123,7 +123,7 @@ export function DonationForm({ fundraiser }: DonationFormProps) {
         product_id: 'prod_fundraiser_donation',
         trial_period_days: null,
         type: 'one_time' as const,
-        unit_amount: data.amount * 100,
+        unit_amount: Math.round(data.amount * 100), // whole cents (BUG-014)
       };
 
       const donorInfo: Database['public']['Tables']['donors']['Row'] = {

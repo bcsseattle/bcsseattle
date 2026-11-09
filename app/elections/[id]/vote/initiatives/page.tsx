@@ -1,3 +1,4 @@
+import { currentUserIsActiveMember } from '@/utils/election-config';
 import { createClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import InitiativeVotingClient from '@/components/elections/initiative-voting-client';
@@ -39,6 +40,11 @@ export default async function InitiativeVotePage(props: Props) {
   const isVotingOpen = now >= start && now <= end;
 
   if (!isVotingOpen) {
+    redirect(`/elections/${id}`);
+  }
+
+  // Only approved, active members get a ballot (BUG-007).
+  if (!(await currentUserIsActiveMember())) {
     redirect(`/elections/${id}`);
   }
 

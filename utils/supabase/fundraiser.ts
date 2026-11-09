@@ -15,7 +15,7 @@ export async function updateFundraiserDonation(data: {
   payment_status: 'completed' | 'failed' | 'pending';
   amount: number;
 }) {
-  const { payment_intent_id, fundraiser_id, donation_id, payment_status, amount } = data;
+  const { payment_intent_id, donation_id, payment_status } = data;
 
   // Update fundraiser_donations table
   const { error: donationError } = await supabaseAdmin
@@ -28,26 +28,8 @@ export async function updateFundraiserDonation(data: {
 
   if (donationError) throw donationError;
 
-  // Update fundraiser's current_amount if payment is completed
-  if (payment_status === 'completed') {
-    // First get the current amount
-    const { data: fundraiser, error: fetchError } = await supabaseAdmin
-      .from('fundraisers')
-      .select('current_amount')
-      .eq('id', fundraiser_id)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    const { error: fundraiserError } = await supabaseAdmin
-      .from('fundraisers')
-      .update({
-        current_amount: (fundraiser.current_amount || 0) + amount
-      })
-      .eq('id', fundraiser_id);
-
-    if (fundraiserError) throw fundraiserError;
-  }
-
+  // fundraisers.current_amount is maintained by the update_fundraiser_amount
+  // trigger, which counts a donation once, when it first becomes completed;
+  // a replayed webhook changes nothing (BUG-012).
   return { success: true };
 }

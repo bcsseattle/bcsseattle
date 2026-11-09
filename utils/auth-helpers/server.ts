@@ -2,9 +2,10 @@
 
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
+import { internalAuthHeader } from '@/utils/internal-api';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getURL, getErrorRedirect, getStatusRedirect } from 'utils/helpers';
+import { getURL, getErrorRedirect, getStatusRedirect, safeRedirectPath } from 'utils/helpers';
 import { getAuthTypes } from 'utils/auth-helpers/settings';
 import { createOrRetrieveCustomer } from '../supabase/admin';
 import { ContactFormSchema, FuneralFundFormSchema } from '@/types';
@@ -16,6 +17,18 @@ function isValidEmail(email: string) {
 
 export async function redirectToPath(path: string) {
   return redirect(path);
+}
+
+/** Whether the signed-in user is an admin (users.is_admin). Never trust
+ *  user_metadata for this: users can edit it themselves (BUG-004). */
+export async function isCurrentUserAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { data } = await supabase.from('users').select('is_admin').eq('id', user.id).maybeSingle();
+  return data?.is_admin ?? false;
 }
 
 export async function getSession() {
@@ -55,7 +68,8 @@ export async function signInWithEmail(formData: FormData) {
   let redirectPath: string;
 
   if (!isValidEmail(email)) {
-    redirectPath = getErrorRedirect(
+    // Stop here: without the return the action carried on (BUG-029).
+    return getErrorRedirect(
       '/signin/email_signin',
       'Invalid email address.',
       'Please try again.'
@@ -145,7 +159,8 @@ export async function requestPasswordUpdate(formData: FormData) {
   let redirectPath: string;
 
   if (!isValidEmail(email)) {
-    redirectPath = getErrorRedirect(
+    // Stop here: without the return the action carried on (BUG-029).
+    return getErrorRedirect(
       '/signin/forgot_password',
       'Invalid email address.',
       'Please try again.'
@@ -206,10 +221,8 @@ export async function signInWithPassword(formData: FormData) {
       path: '/'
     });
     try {
-      // Remove leading slash from redirectTo if it exists to avoid double slashes
-      const cleanRedirectTo = redirectTo?.startsWith('/') ? redirectTo : `/${redirectTo}`;
       redirectPath = getStatusRedirect(
-        cleanRedirectTo || '/community-funds',
+        safeRedirectPath(redirectTo),
         'Success!',
         'You are now signed in.'
       );
@@ -240,7 +253,8 @@ export async function signUp(formData: FormData) {
   let redirectPath: string;
 
   if (!isValidEmail(email)) {
-    redirectPath = getErrorRedirect(
+    // Stop here: without the return the action carried on (BUG-029).
+    return getErrorRedirect(
       '/signin/signup',
       'Invalid email address.',
       'Please try again.'
@@ -302,7 +316,8 @@ export async function updatePassword(formData: FormData) {
 
   // Check that the password and confirmation match
   if (password !== passwordConfirm) {
-    redirectPath = getErrorRedirect(
+    // Stop here: without the return the action carried on (BUG-029).
+    return getErrorRedirect(
       '/signin/update_password',
       'Your password could not be updated.',
       'Passwords do not match.'
@@ -456,6 +471,7 @@ export async function sendEmail(values: z.infer<typeof ContactFormSchema>) {
   try {
     const response = fetch(api_url, {
       method: 'POST',
+      headers: internalAuthHeader(),
       body: JSON.stringify({ name, email, message })
     });
     return getStatusRedirect('/', 'Success!', 'Your message has been sent.');
@@ -485,6 +501,7 @@ export async function signUpFuneralBurial(
   try {
     const response = fetch(api_url, {
       method: 'POST',
+      headers: internalAuthHeader(),
       body: JSON.stringify({
         fullName,
         email,

@@ -35,7 +35,7 @@ export async function submitDonation(
     const donationDetails: Omit<Donation, 'id'> = {
       donor_id: donor!.id,
       is_anonymous: values.isAnonymous,
-      donation_amount: Number(values.amount) * 100,
+      donation_amount: Math.round(Number(values.amount) * 100),
       donation_date: new Date().toISOString(),
       payment_method: values.paymentMethod,
       currency: 'USD',

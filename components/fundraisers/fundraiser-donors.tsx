@@ -7,17 +7,17 @@ import {
 } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import { formatCurrency } from '@/utils/helpers';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/utils/supabase/server';
 
 interface FundraiserDonorsProps {
   fundraiserId: string;
 }
 
+// Server component: rendered by the page and passed into the client-side
+// FundraiserDetails as a prop. Importing it from a client component made it an
+// async client component, which suspends forever on client navigation (BUG-074).
 export async function FundraiserDonors({ fundraiserId }: FundraiserDonorsProps) {
-
-  console.log("fundraiserId:", fundraiserId);
-
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: donors, error } = await supabase
     .from('fundraiser_donations')
     .select('id, amount, donor_name, message, created_at, is_anonymous')

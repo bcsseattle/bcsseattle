@@ -1,3 +1,4 @@
+import { currentUserIsActiveMember } from '@/utils/election-config';
 import { createClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import CandidateVotingClient from '@/components/elections/candidate-voting-client';
@@ -46,6 +47,11 @@ export default async function CandidateVotePage(props: Props) {
   }
 
   if (!isCandidateVotingOpen) {
+    redirect(`/elections/${id}`);
+  }
+
+  // Only approved, active members get a ballot (BUG-007).
+  if (!(await currentUserIsActiveMember())) {
     redirect(`/elections/${id}`);
   }
 

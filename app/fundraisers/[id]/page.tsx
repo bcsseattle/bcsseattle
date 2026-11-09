@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { FundraiserDetails } from '@/components/fundraisers/fundraiser-details';
+import { FundraiserDonors } from '@/components/fundraisers/fundraiser-donors';
 import { getSession } from '@/utils/auth-helpers/server';
 
 interface PageProps {
@@ -62,7 +63,11 @@ export default async function FundraiserPage({ params }: PageProps) {
 
   return (
     <div className="container py-10">
-      <FundraiserDetails fundraiser={fundraiser} isAdmin={isAdmin} />
+      <FundraiserDetails
+        fundraiser={fundraiser}
+        isAdmin={isAdmin}
+        donors={<FundraiserDonors fundraiserId={fundraiser.id} />}
+      />
     </div>
   );
 }

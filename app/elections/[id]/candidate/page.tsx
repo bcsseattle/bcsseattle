@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,8 +21,10 @@ interface CandidateWithResults extends Candidate {
 
 async function getCandidateResults(electionId: string): Promise<CandidateWithResults[]> {
   try {
+    // Forward the member's session: the results route is for members only.
     const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/elections/${electionId}/candidate-results`, {
-      cache: 'no-store'
+      cache: 'no-store',
+      headers: { cookie: (await cookies()).toString() }
     });
     
     if (!response.ok) {

@@ -18,7 +18,7 @@ export const config = {
     "/admin/:path*",
     "/community-funds/:path*",
     "/contribute/:path*",
-    "/donate/:path*", // keeps /donate public, protects /donate/confirmation/*
+    "/donate/:path*", // session refresh only: /donate and its receipts are public
     "/elections/:path*",
     "/fundraisers/:path*",
     "/members/:path*",

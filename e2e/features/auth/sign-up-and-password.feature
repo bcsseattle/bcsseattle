@@ -26,7 +26,7 @@ Feature: Creating an account and managing passwords
     Then I should see "Please check your email for a password reset link"
     And "Amina" should receive a password reset email
 
-  @P1 @security @known-bug @BUG-029
+  @P1 @security @BUG-029
   Scenario: A new password is not saved when the confirmation doesn't match
     Given I am signed in as an approved member
     When I change my password to "new-password-1" confirmed as "different-password-2"

@@ -1,6 +1,6 @@
 /**
  * Test page to verify candidate voting configuration
- * Visit /test-voting-config to see this page
+ * Visit /admin/voting-config to see this page
  */
 
 import { createClient } from '@/utils/supabase/server';

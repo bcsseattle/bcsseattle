@@ -31,7 +31,7 @@ Feature: Supporting a fundraiser
     And I open the fundraiser
     Then the fundraiser should show "$25.00" raised
 
-  @P1 @payments @known-bug @BUG-012
+  @P1 @payments @BUG-012
   Scenario: A payment Stripe reports twice is only counted once
     Given I am signed in as an approved member
     And I have started a $25 donation to the fundraiser
@@ -48,7 +48,7 @@ Feature: Supporting a fundraiser
     And I open the fundraiser
     Then the donor wall should list my donation
 
-  @P0 @critical @known-bug @BUG-074
+  @P0 @critical @BUG-074
   Scenario: A member opens a fundraiser from the list
     Given I am signed in as an approved member
     When I go to the fundraisers page
@@ -67,7 +67,7 @@ Feature: Supporting a fundraiser
       | 0       |
       | 1000000 |
 
-  @P1 @known-bug @BUG-021
+  @P1 @BUG-021
   Scenario: A visitor who isn't signed in can browse fundraisers
     Given I am a visitor who is not signed in
     When I go to the fundraisers page

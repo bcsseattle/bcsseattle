@@ -37,14 +37,14 @@ Feature: Voting in member elections
     Then I should see "Initiative Votes Confirmed"
     And my "yes" vote on "Build a community center" should be recorded
 
-  @P0 @critical @known-bug @BUG-007
+  @P0 @critical @BUG-007
   Scenario: Someone whose membership isn't approved can't vote
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
     And I am signed in as a pending applicant
     When I open the candidate ballot
     Then I should not be offered a ballot
 
-  @P1 @known-bug @BUG-015
+  @P1 @BUG-015
   Scenario Outline: A <window> election says "<status>" and offers no ballot
     Given there is a <window> election with candidates "Hani" and "Nazir" for "President"
     And I am signed in as an approved member
@@ -66,14 +66,14 @@ Feature: Voting in member elections
     When I submit the combined ballot with a vote for "Hani"
     Then my vote for "Hani" should be recorded
 
-  @P1 @security @api @known-bug @BUG-011
+  @P1 @security @api @BUG-011
   Scenario: The ballot refuses two votes in one position, however they're labelled
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
     And I am signed in as an approved member
     When I submit a ballot for both "Hani" and "Nazir", labelling one with another position
     Then no votes should be recorded for the election
 
-  @P1 @security @known-bug @BUG-020
+  @P1 @security @BUG-020
   Scenario: A URL parameter can't switch off the membership check in production
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
     And I am signed in as a pending applicant

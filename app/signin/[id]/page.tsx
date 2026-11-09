@@ -1,3 +1,4 @@
+import { safeRedirectPath } from '@/utils/helpers';
 import Logo from '@/components/icons/Logo';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
@@ -58,8 +59,7 @@ export default async function SignIn(props: {
 
   if (user && viewProp !== 'update_password') {
     // If user is already logged in, redirect to the intended destination or home
-    const redirectTo = searchParams?.redirectTo || '/';
-    return redirect(redirectTo);
+    return redirect(safeRedirectPath(searchParams?.redirectTo));
   } else if (!user && viewProp === 'update_password') {
     return redirect('/signin');
   }

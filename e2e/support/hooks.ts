@@ -61,6 +61,11 @@ Before(async function (this: E2EWorld, hook) {
       this.failedRequests.push(`${req.method()} ${req.url()} — ${req.failure()?.errorText}`);
     }
   });
+  // Playwright's trace records a request only once it finishes; a hung request is
+  // invisible there, so track what is still in flight and report it on failure.
+  this.page.on('request', (req) => this.pendingRequests.set(req, Date.now()));
+  this.page.on('requestfinished', (req) => this.pendingRequests.delete(req));
+  this.page.on('requestfailed', (req) => this.pendingRequests.delete(req));
   this.page.on('response', (res) => {
     if (res.status() >= 500) this.failedRequests.push(`${res.status()} ${res.request().method()} ${res.url()}`);
   });
@@ -82,6 +87,11 @@ After(async function (this: E2EWorld, hook) {
     }
     if (failed && this.consoleErrors.length) this.attach(`Browser console errors:\n${this.consoleErrors.join('\n')}`, 'text/plain');
     if (failed && this.failedRequests.length) this.attach(`Failed requests:\n${this.failedRequests.join('\n')}`, 'text/plain');
+    if (failed && this.pendingRequests.size) {
+      const now = Date.now();
+      const lines = [...this.pendingRequests].map(([req, t]) => `${req.method()} ${req.url()} — pending ${now - t} ms`);
+      this.attach(`Requests still pending at failure:\n${lines.join('\n')}`, 'text/plain');
+    }
   } finally {
     await this.context?.close();
     for (const undo of this.cleanup.reverse()) {

@@ -38,6 +38,11 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/about-us/') ||
     pathname === '/contact-us' ||
     pathname === '/donate' ||
+    // Guest donors land here after checkout; the unguessable donation id is the key (BUG-026).
+    pathname.startsWith('/donate/confirmation/') ||
+    // Anyone can browse and give to fundraisers; managing them stays protected (BUG-021).
+    pathname === '/fundraisers' ||
+    (pathname.startsWith('/fundraisers/') && !pathname.startsWith('/fundraisers/admin')) ||
     pathname === '/funeral-burial' ||
     pathname === '/funeral-burials' ||
     pathname === '/get-help' ||

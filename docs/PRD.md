@@ -115,7 +115,7 @@ Baloch Community Services of Seattle (BCSS) is a 501(c)(3) serving Baloch famili
 | Separate candidate voting period, early close, "Elected Unopposed" | ❌ | | Logic always returns "open"; can only be set in SQL |
 | Feature flags (env, database, URL override) | ⚠️ | `utils/feature-flags.ts` | The URL override works in production for anyone (BUG-020) |
 | Security self-test endpoint | ⚠️ | `/api/elections/security` | Admin check is commented out |
-| Debug pages | ❌ | `/test-voting-config`, `/test-election-types` | Public in production |
+| Debug pages | ✅ | `/admin/voting-config`, `/admin/election-types` | Admin-only since 2026-11-08 (BUG-078) |
 
 ---
 
@@ -132,7 +132,7 @@ All 70 bugs (BUG-001–070) are tracked in [BUGS.md](BUGS.md), grouped as Critic
 - **GAP-A1. Election admin.** Only `/admin/members` exists. Creating elections, positions, candidates and initiatives, and closing voting early, all need SQL. The helpers in `utils/election-admin.ts` have no callers.
 - **GAP-A2. Fundraiser admin.** Can create, but can't edit (BUG-017), post updates, see a donation list, export donors, publish from draft, or set a minimum donation.
 - **GAP-A3. One admin model.** Admin is decided in four ways: `users.is_admin`, `profiles.is_admin`, `user_metadata.role`, plus a `user_roles` table and `profiles.role` column that don't exist. Pick one and enforce it in RLS. There is no UI to grant admin.
-- **GAP-A4. Debug pages.** `/test-voting-config` and `/test-election-types` are the documented way to operate elections and are public. They should move behind admin.
+- ~~**GAP-A4. Debug pages.**~~ Done 2026-11-08: moved to `/admin/voting-config` and `/admin/election-types` (BUG-078).
 
 ### 5.2 Membership lifecycle
 
@@ -253,7 +253,7 @@ These need an owner's answer before some fixes can be built.
 
 ## Appendix A — Route inventory
 
-**Public:** `/`, `/about-us`, `/about-us/mission`, `/about-us/vision`, `/about-us/bylaws`, `/contact-us`, `/donate`, `/funeral-burials`, `/funeral-burial` (stub), `/what-we-do`, `/get-help`, `/get-involved`, `/youth-programs`, `/resources`, `/privacy`, `/terms` (stubs or near-stubs), `/test-voting-config`, `/test-election-types` (debug).
+**Public:** `/`, `/about-us`, `/about-us/mission`, `/about-us/vision`, `/about-us/bylaws`, `/contact-us`, `/donate`, `/funeral-burials`, `/funeral-burial` (stub), `/what-we-do`, `/get-help`, `/get-involved`, `/youth-programs`, `/resources`, `/privacy`, `/terms` (stubs or near-stubs).
 
 **Sign-in:** `/signin/[id]`, `/auth/callback`, `/auth/reset_password`.
 

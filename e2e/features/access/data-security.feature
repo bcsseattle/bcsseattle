@@ -70,6 +70,18 @@ Feature: Personal data is protected at the database and API level
     When "Bilal" reads that donation through the public API
     Then they should not see that donation
 
+  @P0 @api @BUG-079
+  Scenario: Nobody can record a paid fundraiser donation through the public API
+    Given there is an active fundraiser "Help the Rahimi family" with a goal of $1,000
+    When an anonymous visitor records a paid $500 donation to the fundraiser through the public API
+    Then the fundraiser's total should be $0
+
+  @P0 @api @BUG-080
+  Scenario: Someone who isn't signed in cannot read fundraiser donors' contact details
+    Given a guest has left their contact details with a fundraiser donation
+    When an anonymous visitor reads the "fundraiser_donors" table through the public API
+    Then no record should be returned
+
   @P0 @BUG-005
   Scenario: A member cannot record a vote directly, bypassing the ballot
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
@@ -77,7 +89,7 @@ Feature: Personal data is protected at the database and API level
     When "Bilal" inserts a vote for "Hani" directly through the public API
     Then the vote should be rejected
 
-  @P0 @known-bug @BUG-008
+  @P0 @BUG-008
   Scenario: An anonymous caller cannot make the site send a "payment failed" email
     When an anonymous caller asks the site to send a payment-failed email to "victim@example.test"
     Then the request should be refused before any email is attempted

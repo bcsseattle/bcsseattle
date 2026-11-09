@@ -43,7 +43,7 @@ Feature: General donations
       | not-an-email       | 206-555-0100 | Invalid email address      |
       | donor@example.test | call me      | Phone number must be valid |
 
-  @P1 @known-bug @BUG-014
+  @P1 @BUG-014
   Scenario: A custom amount with cents can be donated
     Given I am signed in as an approved member
     When I donate a custom amount of $19.99 once by card
@@ -53,14 +53,14 @@ Feature: General donations
   # it server-side, and the donor sees nothing happen (no toast, still on the step).
   # "Finished" = the wizard leaves the payment step; the exact confirmation UI is
   # not specified anywhere (PRD §3.3), so the scenario asserts only that.
-  @P1 @known-bug @BUG-018
+  @P1 @BUG-018
   Scenario: Choosing Zelle and pressing Done finishes the donation without a card payment
     Given I am signed in as an approved member
     When I choose to donate $100 by Zelle and finish
     Then I should still be on the BCS Seattle site
     And the donation form should be finished
 
-  @P1 @known-bug @BUG-026
+  @P1 @BUG-026
   Scenario: A guest donor can open their own receipt without an account
     Given a completed $50 donation by a guest donor
     And I am a visitor who is not signed in
