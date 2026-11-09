@@ -28,7 +28,8 @@ Given('there is an active fundraiser {string} with no end date', async function 
 Then(
   /^I should see the fundraiser "([^"]+)" with "([^"]+)" towards a "([^"]+)"$/,
   async function (this: E2EWorld, _title: string, raised: string, goal: string) {
-    const card = this.page.getByRole('link').filter({ hasText: this.fundraiser!.title });
+    // The card is an <article>; its title is the link to the fundraiser.
+    const card = this.page.getByRole('article').filter({ has: this.page.getByRole('link', { name: this.fundraiser!.title, exact: true }) });
     await expect(card).toBeVisible();
     await expect(card).toContainText(raised);
     await expect(card).toContainText(goal.replace(/ goal$/, ''));
@@ -201,7 +202,7 @@ Then('the fundraiser should be saved as {string}', async function (this: E2EWorl
 });
 
 When('I open the fundraiser from the list', async function (this: E2EWorld) {
-  await this.page.getByRole('link').filter({ hasText: this.fundraiser!.title }).click();
+  await this.page.getByRole('link', { name: this.fundraiser!.title, exact: true }).click();
   await expect(this.page).toHaveURL(new RegExp(`/fundraisers/${this.fundraiser!.id}$`));
 });
 
