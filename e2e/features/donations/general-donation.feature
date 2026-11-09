@@ -43,7 +43,7 @@ Feature: General donations
       | not-an-email       | 206-555-0100 | Invalid email address      |
       | donor@example.test | call me      | Phone number must be valid |
 
-  @P1 @known-bug @BUG-014
+  @P1 @BUG-014
   Scenario: A custom amount with cents can be donated
     Given I am signed in as an approved member
     When I donate a custom amount of $19.99 once by card

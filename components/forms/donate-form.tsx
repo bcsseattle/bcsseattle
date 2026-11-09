@@ -129,7 +129,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
           price.interval === values.frequency || price.type === 'one_time'
       );
       if (price) {
-        price.unit_amount = Number(values.amount) * 100;
+        price.unit_amount = Math.round(Number(values.amount) * 100); // whole cents (BUG-014)
         const { errorRedirect, sessionId } =
           await checkoutWithStripeForDonation(
             price,
@@ -645,7 +645,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
                 <Button className="" variant="secondary" type="submit">
                   {form.watch('paymentMethod') === 'card' ||
                   form.watch('paymentMethod') === 'us_bank_account'
-                    ? `Donate ${getPriceString(Number(form.watch('amount')) * 100)} Now`
+                    ? `Donate ${getPriceString(Math.round(Number(form.watch('amount')) * 100))} Now`
                     : 'Done'}
                 </Button>
               </div>
