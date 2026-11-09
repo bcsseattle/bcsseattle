@@ -180,7 +180,7 @@ Essentially none of it is implemented yet:
 ### 5.7 Platform and engineering
 
 - **CI and lint.** No CI (`.github/` doesn't exist). No ESLint config, so `next lint` doesn't run.
-- **Tests.** Only three test files, all for voting, and the Jest config is likely broken (BUG-068). No tests for auth, membership, payments, the webhook or the UI.
+- **Tests.** A Playwright + Cucumber BDD suite now lives in `e2e/` (132 scenarios: 85 gating, 47 known-bug reproductions) and runs in GitHub Actions; see [E2E_REPORT.md](E2E_REPORT.md). The three Jest files for voting still don't run (BUG-068).
 - **Environment variables.** `.env.example` lists 3 variables, but the code reads about 28.
 - **Database types.** `types_db.ts` is out of date with the migrations.
 - **Migrations.** Need squashing or rebaselining against production (BUG-027).
@@ -212,7 +212,7 @@ Essentially none of it is implemented yet:
 
 These need an owner's answer before some fixes can be built.
 
-1. **What is live in Supabase?** Which RLS policies are deployed, and which of the three `20250807000000` migrations ran? This changes the severity of BUG-001–003, 005 and 027. *(It needs the Supabase connector authorised, or a dump of production policies.)*
+1. **What is live in Supabase?** ~~Which RLS policies are deployed, and which of the three `20250807000000` migrations ran?~~ **Answered 2026-11-08** from a schema-only dump of production: BUG-001–003 and 005 are live; none of the `20250807*` fundraiser/profile/campaign tables exist even though the migration history marks them applied (BUG-071); BUG-028 is not live.
 2. **Who is eligible to vote?** `isApproved AND status = 'active'`, or dues paid up to date?
 3. **Officer elections.** Should members vote for officers directly? If yes, the bylaws need amending; if no, the product needs a director election.
 4. **Results during voting.** Should results be visible while voting is open?

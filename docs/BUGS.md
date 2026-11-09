@@ -3,7 +3,8 @@
 Moved out of [PRD.md](PRD.md) §4. Gaps, open decisions and the recommended order of work stay in the PRD.
 
 - **Last audited:** 2026-10-02, against `develop` @ `e76f16e`; line references rechecked 2026-11-08 @ `4fbb84f`
-- **RLS caveat:** items marked "needs live check" come from `supabase/migrations/` and must be confirmed against production before acting (PRD §7, decision 1).
+- **E2E verification (2026-11-08):** the BDD suite in `e2e/` runs against a schema-only dump of production (project `tljjvmdmahkrvklyrdqq`), so RLS items it reproduces are confirmed live. Every bug with an executable reproduction is tagged `@BUG-0xx` in `e2e/features/`; run them with `pnpm e2e:bugs` (they fail until fixed). See [E2E_REPORT.md](E2E_REPORT.md).
+- **RLS caveat:** items still marked "needs live check" come from `supabase/migrations/` and must be confirmed against production before acting (PRD §7, decision 1).
 
 **How to keep this current:** when you ship a fix, change the bug's status in the table rather than deleting the row.
 
@@ -13,11 +14,11 @@ IDs are stable; reference them in commits and PRs. "Verified" means confirmed by
 
 | ID | Area | Location | Problem | Verified |
 |---|---|---|---|---|
-| BUG-001 | Auth | `supabase/migrations/20250619204105_remote_schema.sql:911`, `:1480`; `20250807002100_add_is_admin_to_users.sql` | The policy "Can update own user data" allows updating any column of your own `users` row, including `is_admin`. Any signed-in user can make themselves admin from the browser console with the public key. | SQL ✓, needs live check |
-| BUG-002 | Membership | `20250629210450_remote_schema.sql:44-52` | Members can update their own row without column limits, so they can set `isApproved = true, status = 'active'` and approve themselves. | SQL ✓, needs live check |
-| BUG-003 | Privacy | `20250619204105_remote_schema.sql:931-971` | `members`, `donations`, `donors`, `customers`, `subscriptions`, `email_logs`, `sms_notifications` and `organization` are readable by anyone, signed in or not (`USING (true)`). Names, phones, addresses, emails and Stripe IDs are exposed through the public API. | SQL ✓, needs live check |
+| BUG-001 | Auth | `supabase/migrations/20250619204105_remote_schema.sql:911`, `:1480`; `20250807002100_add_is_admin_to_users.sql` | The policy "Can update own user data" allows updating any column of your own `users` row, including `is_admin`. Any signed-in user can make themselves admin from the browser console with the public key. | SQL ✓, live in prod ✓ (E2E) |
+| BUG-002 | Membership | `20250629210450_remote_schema.sql:44-52` | Members can update their own row without column limits, so they can set `isApproved = true, status = 'active'` and approve themselves. | SQL ✓, live in prod ✓ (E2E) |
+| BUG-003 | Privacy | `20250619204105_remote_schema.sql:931-971` | `members`, `donations`, `donors`, `customers`, `subscriptions`, `email_logs`, `sms_notifications` and `organization` are readable by anyone, signed in or not (`USING (true)`). Names, phones, addresses, emails and Stripe IDs are exposed through the public API. | SQL ✓, live in prod ✓ (E2E) |
 | BUG-004 | Auth | `app/fundraisers/page.tsx:31`, `app/fundraisers/admin/[id]/edit/page.tsx:29` | These pages treat `user_metadata.role === 'admin'` as admin, and users can set that field themselves. Real admins (`users.is_admin`) are locked out of the edit page. | ✓ |
-| BUG-005 | Elections | `20250619230000_add_separate_voting_sessions.sql:189-202` | The vote insert policy allows `session_id IS NULL`, so a user can insert votes directly. That skips the voting window, sessions and one-vote-per-position. | SQL ✓, needs live check |
+| BUG-005 | Elections | `20250619230000_add_separate_voting_sessions.sql:189-202` | The vote insert policy allows `session_id IS NULL`, so a user can insert votes directly. That skips the voting window, sessions and one-vote-per-position. | SQL ✓, live in prod ✓ (E2E) |
 | BUG-006 | Elections | `utils/elections/handlers.ts:648-666`; `20250619210730_update_voting_tables_for_feature.sql:170-175` | `nominateCandidate` trusts a `userId` sent from the browser and writes with the service-role key: anyone can nominate anyone, outside the nomination window. Separately, any signed-in user can edit or delete initiatives, which deletes their votes. | ✓ |
 | BUG-007 | Elections | `utils/elections/handlers.ts:54-104, 216-260, 372-416` | No membership or dues check when voting. `user_has_active_membership()` exists but is never called. Any account can vote, against bylaws Art. III §3. | ✓ |
 | BUG-008 | Email | `app/api/send-email/payment-failed/route.tsx:7-23`; `welcome`, `new-member-joined`, `send-email/route.ts` | Email endpoints have no auth and no rate limit. Anyone can send a BCSS-branded "Payment failed" email with their own link to any address (phishing), or flood the org's inboxes. | ✓ |
@@ -35,8 +36,8 @@ IDs are stable; reference them in commits and PRs. "Verified" means confirmed by
 | BUG-015 | Elections | `utils/election-config.ts:68-70` → `app/elections/[id]/page.tsx:225-253` | `isCandidateVotingOpen` returns `true` whenever separate periods are off (the default) and ignores dates. Closed and upcoming elections show "Voting Open" and a vote button. "Elected Unopposed" never appears. | ✓ |
 | BUG-016 | Elections | `utils/elections/handlers.ts:93-104` vs `406-416` | The combined and per-ballot vote paths check different tables, so a user can vote once through each and both count. | ✓ |
 | BUG-017 | Fundraisers | `components/fundraisers/admin/fundraiser-update-form.tsx:90`; `types.ts:223` | Edit sends `PUT`, the API has only `PATCH`, so every edit fails. Even with the method fixed, `status` isn't in the schema, so pause and complete are dropped. | ✓ |
-| BUG-018 | Payments | `components/forms/donate-form.tsx:123-164`; `utils/stripe/server.ts:208` | Choosing Zelle, check or cash still calls Stripe with `payment_method_types: ['zelle']`. The user sees an error and a pending donation row is left behind. | ✓ |
-| BUG-019 | Elections | `app/api/elections/[id]/candidate-results/route.ts:21,42`; `components/elections/candidates.tsx:34` | Tallies use the user's own client, but users can only read their own votes, so everyone sees 0 votes and wrong winner badges. | Needs live check |
+| BUG-018 | Payments | `components/forms/donate-form.tsx:123-164`; `utils/stripe/server.ts:208` | Choosing Zelle, check or cash still calls Stripe with `payment_method_types: ['zelle']`. Stripe rejects it server-side; the donor sees nothing happen (no message, still on the step) and a pending donation row is left behind. | ✓ |
+| BUG-019 | Elections | `app/api/elections/[id]/candidate-results/route.ts:21,42`; `components/elections/candidates.tsx:34` | Tallies use the user's own client, but users can only read their own votes, so everyone sees 0 votes and wrong winner badges. | ✓ (E2E: a member sees 0 votes) |
 | BUG-020 | Platform | `utils/feature-flags.ts:211-213` | `?configoverride={"features":{"skipMembershipCheck":true}}` works in production for anyone. The docs say it is limited. | ✓ |
 | BUG-021 | Fundraisers | `middleware.ts:21`; `utils/supabase/middleware.ts:35-54` | `/fundraisers` requires login, so signed-out visitors clicking "Fundraisers" in the nav are sent to sign-in. | ✓ |
 | BUG-022 | Platform | 7 components import `toast` from `sonner`; `app/layout.tsx:78` mounts only the Radix `Toaster` | No success or error messages appear in the vote, donation, fundraiser-admin or member-approval flows. | ✓ |
@@ -45,7 +46,7 @@ IDs are stable; reference them in commits and PRs. "Verified" means confirmed by
 | BUG-025 | Platform | `styles/main.css:13-14` | Primary orange button with near-white text is about 2:1 contrast (WCAG AA needs 4.5:1). Affects every default button (Donate, Send, Learn more). | ✓ |
 | BUG-026 | Payments | `middleware.ts:21`; `utils/supabase/middleware.ts:40` | Guest donors on `/donate` are redirected to `/donate/confirmation/{id}`, which requires login, so they can't see their receipt. | ✓ |
 | BUG-027 | Database | `supabase/migrations/20250807000000_*` (3 files), `20250807001000`, `20250808044402` | Three migrations share one version number and create the same tables and types with different columns. Another is empty. A fresh `supabase db reset` will fail; the history can't be replayed. | ✓ |
-| BUG-028 | Database | `20250807002000_add_profiles_table.sql:24-35` | Replaces `handle_new_user` with a version that only writes `profiles`. New sign-ups after this get no `users` row, so `is_admin`, name updates and billing details silently do nothing. | SQL ✓, needs live check |
+| BUG-028 | Database | `20250807002000_add_profiles_table.sql:24-35` | Replaces `handle_new_user` with a version that only writes `profiles`. New sign-ups after this get no `users` row, so `is_admin`, name updates and billing details silently do nothing. | Not live: prod still has the `users` version of `handle_new_user` (dump 2026-11-08). Would be introduced if this migration were applied. |
 | BUG-029 | Auth | `utils/auth-helpers/server.ts:304-315` (same pattern at 57, 147, 242) | Validation failure sets a redirect but doesn't return, so the password changes even when the confirmation doesn't match. | ✓ |
 | BUG-030 | Payments | `20250809010000_create_fundraiser_donors_table.sql`; `utils/fundraisers/handlers.ts:149` | `fundraiser_donors` (emails, phones) has no RLS. Submitting a donation with someone else's email overwrites their name and phone. | ✓ |
 
@@ -61,7 +62,7 @@ IDs are stable; reference them in commits and PRs. "Verified" means confirmed by
 | BUG-036 | Admin | `app/admin/members/page.tsx:60` | Calls an admin-only auth API with the regular client, so every email shows "No email" and the `mailto:` link is blank. Also an N+1 query. |
 | BUG-037 | Elections | `app/api/elections/[id]/results/route.ts:72-76, 189-191` | Results API is public, includes draft and inactive elections, and divides each candidate's share by votes across *all* positions. |
 | BUG-038 | Fundraisers | `app/fundraisers/[id]/donate/page.tsx:45` | No end date → `new Date(null)` = 1970, so open-ended fundraisers always show as closed. |
-| BUG-039 | Fundraisers | `components/fundraisers/fundraiser-details.tsx:1,91`; `fundraiser-donors.tsx:16` | An async server component is rendered inside a client component, so the donor wall will likely error. |
+| BUG-039 | Fundraisers | `components/fundraisers/fundraiser-details.tsx:1,91`; `fundraiser-donors.tsx:16` | An async server component is rendered inside a client component, so the donor wall will likely error. **E2E 2026-11-08:** not reproduced on a full page load; the donor wall renders. Client-side navigation to a fundraiser hangs instead (BUG-074, suspected same cause). |
 | BUG-040 | Payments | `app/community-funds/page.tsx:80-87` | "Outside Stripe" counts pending and subscription donations. Since d157b60 this only affects the fallback bank estimate shown before a bank account is linked. |
 | BUG-041 | Payments | `app/api/webhooks/route.ts:78-96, 163` | Doesn't check `payment_status`, so ACH counts as paid before settling. Unhandled event types return 400, so Stripe retries and may disable the endpoint. |
 | BUG-042 | Payments | `app/donate/confirmation/[donationId]/pdf/route.tsx:72-83` | Receipts render for pending or abandoned donations; a GET request marks the receipt as generated. |
@@ -84,7 +85,7 @@ IDs are stable; reference them in commits and PRs. "Verified" means confirmed by
 |---|---|---|
 | BUG-055 | `app/resources/immigration/[slug]/page.tsx:25,35` | `isSubscriptionActive` is an array, so it's always truthy and the check never applies |
 | BUG-056 | `app/members/page.tsx:42`, `app/elections/page.tsx:84` | No member row → redirect to `/members/undefined/pending` |
-| BUG-057 | `components/admin/MemberApprovalActions.tsx:193` | Operator precedence: "Reactivate" never renders |
+| BUG-057 | `components/admin/MemberApprovalActions.tsx:193` | ~~Operator precedence: "Reactivate" never renders~~ **Not a bug (E2E 2026-11-08):** the precedence happens to render "Reactivate Member" for an approved member whose status is `inactive`, and reactivation works. |
 | BUG-058 | `app/account/[memberId]/contributions/pdf/route.tsx:25` | Default tax year evaluates to 0 |
 | BUG-059 | `app/elections/page.tsx:104-107` | Queries a column that doesn't exist, so the "Leadership" badge never shows |
 | BUG-060 | `utils/election-config.ts:45` | Per-type default settings never apply; `candidate_voting_start` is ignored |
@@ -98,3 +99,16 @@ IDs are stable; reference them in commits and PRs. "Verified" means confirmed by
 | BUG-068 | `jest.config.js` | `moduleNameMapping` typo (should be `moduleNameMapper`); TypeScript tests probably don't parse |
 | BUG-069 | `package.json` scripts | `supabase:push`, `supabase:pull` and `supabase:reset` call CLI commands that don't exist (should be `supabase db …`) |
 | BUG-070 | `seed.ts:28` | Seeds the org as "Bangladeshi Community in Seattle" |
+
+## Found by the E2E suite (2026-11-08)
+
+| ID | Severity | Area | Location | Problem | Verified |
+|---|---|---|---|---|---|
+| BUG-071 | High | Database | Production migration history vs schema | `supabase migration list --linked` marks `20250807000000`, `20250807000001`, `20250807002000`, `20250807002100` and `20250807010000` as applied, but production has no `fundraisers`, `fundraiser_*`, `campaigns` or `profiles` tables. A future `supabase db push` would skip them, so the fundraiser feature would ship without its tables. Repair the history (`supabase migration repair --status reverted …`) before releasing fundraisers. | ✓ (prod dump + migration list) |
+| BUG-072 | Medium | Membership | `utils/membership/handlers.ts:59-60`; `app/members/[id]/pending/page.tsx` | A new registration is saved as `status: 'inactive'`, so the applicant is told "Your membership is inactive. Please contact support" instead of "Membership Status: Pending". | ✓ (E2E) |
+| BUG-073 | Critical | Payments | `utils/supabase/admin.ts:752` (`getOrCreateUser`) | Calls `supabaseAdmin.auth.signUp()` on the shared, module-level service-role client. supabase-js keeps the returned session, so from then on that client runs as the new donor and RLS applies: the first guest's customer upsert fails ("Unable to access customer record."), and every later admin query on the same server instance (donations, customers, webhook updates) fails too. No first-time guest can donate by card; on Fluid Compute the damage lasts for the instance's lifetime. Use `auth.admin.createUser()` or a separate, non-persisting client. Repro: `pnpm e2e --profile last` on a fresh server. | ✓ (E2E) |
+| BUG-074 | High | Fundraisers | `app/fundraisers/[id]/page.tsx`, `components/fundraisers/fundraiser-details.tsx` | Navigating to a fundraiser inside the app (clicking a card on `/fundraisers`, or the redirect after creating one) leaves the page on its loading skeleton indefinitely (>30 s). A full page load works. Suspected cause: BUG-039. | ✓ (E2E) |
+| BUG-075 | Low | Contact | `components/ui/ctonact-form.tsx:33-35` | The form has no `defaultValues`, so an untouched field is `undefined` and shows zod's generic "Required" instead of "Name is required" / "Message is required". Sending is still blocked. | ✓ (E2E) |
+| BUG-076 | Medium | Database | `supabase/seed.sql:27-30` | Plain `create trigger on_auth_user_created` after migration `20250807002000` already created it, so seeding fails with "trigger already exists" (once BUG-027 is fixed). | ✓ (code) |
+| BUG-077 | Medium | Payments | `types.ts:67-70`; `components/forms/donate-form.tsx:72,98` | On `/donate`, Phone is effectively required (the default `''` fails `.regex().optional()`), and the donor-name check is skipped at step 2, so a missing name only fails at the final submit on a field that's no longer on screen: the button silently does nothing. | ✓ (code) |
+

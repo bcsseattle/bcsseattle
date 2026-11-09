@@ -30,7 +30,20 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:integration": "jest --testPathPattern=integration",
-    "test:unit": "jest --testPathPattern=unit"
+    "test:unit": "jest --testPathPattern=unit",
+    "e2e:db:start": "supabase start --workdir e2e -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta",
+    "e2e:db:stop": "supabase stop --workdir e2e",
+    "e2e:db:reset": "supabase db reset --workdir e2e",
+    "e2e:env": "node e2e/scripts/write-env.mjs",
+    "e2e:build": "node e2e/scripts/next.mjs build",
+    "e2e:serve": "node e2e/scripts/next.mjs start",
+    "e2e": "cucumber-js --config e2e/cucumber.mjs",
+    "e2e:smoke": "cucumber-js --config e2e/cucumber.mjs --profile smoke",
+    "e2e:critical": "cucumber-js --config e2e/cucumber.mjs --profile critical",
+    "e2e:bugs": "cucumber-js --config e2e/cucumber.mjs --profile bugs",
+    "e2e:headed": "HEADED=1 cucumber-js --config e2e/cucumber.mjs --parallel 1",
+    "e2e:debug": "PWDEBUG=1 HEADED=1 cucumber-js --config e2e/cucumber.mjs --parallel 0",
+    "e2e:check": "cucumber-js --config e2e/cucumber.mjs --profile all --dry-run --format summary && tsc -p e2e"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -90,6 +103,9 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@cucumber/cucumber": "^13.3.0",
+    "@playwright/test": "^1.65.0",
     "@snaplet/copycat": "^6.0.0",
     "@snaplet/seed": "0.98.0",
     "@testing-library/jest-dom": "^6.5.0",
@@ -117,6 +133,7 @@
     "react-email": "3.0.4",
     "supabase": "^2.33.9",
     "supertest": "^7.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.2"
   },
   "pnpm": {
