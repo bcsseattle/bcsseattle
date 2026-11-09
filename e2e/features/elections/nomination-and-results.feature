@@ -77,3 +77,16 @@ Feature: Standing for election and seeing the results
     And I am signed in as an approved member
     When I fetch the candidate results as a member
     Then "Hani" should have 2 votes
+
+  @P2 @BUG-045
+  Scenario: The results page picks up other members' votes while it's open
+    Given there is a closed election with candidates "Hani" and "Nazir" for "President"
+    And "Hani" received 2 votes and "Nazir" received 1 vote
+    And I am signed in as an approved member
+    And the page's clock is under the test's control
+    When I open the election results
+    And I open the "Leadership Results" tab
+    Then I should see "3 total votes cast"
+    When another member votes for "Nazir"
+    And 15 seconds pass
+    Then I should see "4 total votes cast"

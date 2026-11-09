@@ -236,6 +236,18 @@ Given(/^"([^"]+)" is the only candidate for "([^"]+)" and received (\d+) votes$/
   await giveVotes(this, data.id, Number(n));
 });
 
+Given("the page's clock is under the test's control", async function (this: E2EWorld) {
+  await this.page.clock.install();
+});
+
+When('another member votes for {string}', async function (this: E2EWorld, name: string) {
+  await giveVotes(this, candidate(this, name).id, 1);
+});
+
+When('{int} seconds pass', async function (this: E2EWorld, seconds: number) {
+  await this.page.clock.runFor(seconds * 1000);
+});
+
 When('I open the election results', async function (this: E2EWorld) {
   await this.page.goto(`/elections/${this.election!.id}/results`);
   await expect(this.page.getByRole('heading', { name: 'Election Results' })).toBeVisible();

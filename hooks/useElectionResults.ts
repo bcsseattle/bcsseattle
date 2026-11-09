@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
 
 interface CandidateResult {
   id: string;
@@ -89,63 +88,15 @@ export function useElectionResults(electionId: string) {
     fetchResults();
   }, [electionId]);
 
-  // Set up realtime subscription for vote updates
+  // Refresh while the page is open. Realtime can't do this: it applies RLS, and
+  // voters may only read their own votes, so other people's never arrived
+  // (BUG-045). The results API counts every vote with the service role.
+  // ponytail: 15s polling per open results page; push from the server if traffic grows.
   useEffect(() => {
-    const supabase = createClient();
-    
-    const channel = supabase
-      .channel(`election-results-${electionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'votes',
-          filter: `election_id=eq.${electionId}`
-        },
-        (payload) => {
-          console.log('Vote update received:', payload);
-          fetchResults();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'vote_sessions',
-          filter: `election_id=eq.${electionId}`
-        },
-        (payload) => {
-          console.log('Vote session update received:', payload);
-          fetchResults();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'vote_confirmations',
-          filter: `election_id=eq.${electionId}`
-        },
-        (payload) => {
-          console.log('Vote confirmation update received:', payload);
-          fetchResults();
-        }
-      )
-      .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to realtime updates');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('Realtime subscription error');
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchResults();
+    }, 15_000);
+    return () => clearInterval(timer);
   }, [electionId]);
 
   return {
