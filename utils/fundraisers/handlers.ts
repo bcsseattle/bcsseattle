@@ -7,21 +7,6 @@ import { createClient } from '@/utils/supabase/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { FundraiserFormSchema } from '@/types/forms';
 import { Fundraiser } from '@/types';
-import crypto from 'crypto';
-
-// Helper function to generate confirmation code for donations
-function generateConfirmationCode(): string {
-  return crypto.randomBytes(16).toString('hex').toUpperCase();
-}
-
-// Helper function to get client IP from headers
-function getClientIP(headers: Headers): string {
-  const forwarded = headers.get('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  return headers.get('x-real-ip') || 'unknown';
-}
 
 export async function createFundraiser(
   formValue: z.infer<typeof FundraiserFormSchema>
@@ -56,6 +41,7 @@ export async function createFundraiser(
         ends_at: formValue.ends_at ? new Date(formValue.ends_at).toISOString() : null,
         category: formValue.category,
         image_url: formValue.image_url || null,
+        beneficiary: formValue.beneficiary || null, // was collected but not saved (BUG-061)
         created_by: user.id,
         status: 'active'
       })
@@ -197,11 +183,6 @@ export async function submitDonation(
       return { success: false, error: `Please donate between $${minimum.toFixed(2)} and $999,999.99` };
     }
 
-    // Generate confirmation code
-    const confirmationCode = generateConfirmationCode();
-    const clientIP = headers ? getClientIP(headers) : 'unknown';
-    const userAgent = headers?.get('user-agent') || 'unknown';
-
     // Create donation record
     const donationData = {
       fundraiser_id: fundraiserId,
@@ -226,7 +207,6 @@ export async function submitDonation(
 
     return {
       success: true,
-      confirmationCode,
       donation
     };
 

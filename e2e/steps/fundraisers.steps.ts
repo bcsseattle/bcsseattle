@@ -157,11 +157,12 @@ Then('the donor wall should list my donation', async function (this: E2EWorld) {
 
 // ---------------------------------------------------------------- admin
 
-async function fillFundraiserForm(world: E2EWorld, fields: { title?: string; description?: string; goal?: string }) {
+async function fillFundraiserForm(world: E2EWorld, fields: { title?: string; description?: string; goal?: string; beneficiary?: string }) {
   await world.page.goto('/fundraisers/admin/new');
   await world.page.getByLabel('Title').fill(fields.title ?? `E2E Fundraiser ${Date.now()}`);
   await world.page.getByLabel('Description').fill(fields.description ?? 'Raising money to cover costs for a family in need.');
   await world.page.getByLabel('Goal Amount ($)').fill(fields.goal ?? '1000');
+  if (fields.beneficiary) await world.page.getByLabel('Beneficiary').fill(fields.beneficiary);
   const inAMonth = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
   await world.page.getByLabel('End Date').fill(inAMonth);
   await world.page.getByRole('combobox').click();
@@ -295,4 +296,17 @@ Then(/^the fundraiser should (still exist|be gone)$/, async function (this: E2EW
 
 Then('the delete should be refused with {int}', async function (this: E2EWorld, status: number) {
   expect(this.response!.status, this.response!.body).toBe(status);
+});
+
+When('I create a fundraiser for the beneficiary {string}', async function (this: E2EWorld, beneficiary: string) {
+  await fillFundraiserForm(this, { beneficiary });
+  await expect(this.page).toHaveURL(/\/fundraisers\/[0-9a-f-]{36}$/);
+  const id = this.page.url().split('/').pop()!;
+  this.cleanup.push(async () => admin.from('fundraisers').delete().eq('id', id));
+  this.data.createdFundraiserId = id;
+});
+
+Then('the fundraiser should name {string} as its beneficiary', async function (this: E2EWorld, beneficiary: string) {
+  const { data } = await admin.from('fundraisers').select('beneficiary').eq('id', this.data.createdFundraiserId).single();
+  expect(data?.beneficiary).toBe(beneficiary);
 });

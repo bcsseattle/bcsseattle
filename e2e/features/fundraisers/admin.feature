@@ -91,3 +91,9 @@ Feature: Admins manage fundraisers
     When I delete the fundraiser through the API
     Then the delete should be refused with 403
     And the fundraiser should still exist
+
+  @P2 @BUG-061
+  Scenario: The beneficiary entered on a new fundraiser is saved
+    Given I am signed in as an admin
+    When I create a fundraiser for the beneficiary "The Rahimi family"
+    Then the fundraiser should name "The Rahimi family" as its beneficiary
