@@ -39,9 +39,10 @@ export default async function Navbar() {
         <div className="self-center justify-start w-96">
           <Link href={'/'} className="flex justify-center items-center">
             <Logo className="object-cover h-36" />
-            <h1 className="text-xl ml-4 text-secondary">
+            {/* Not a heading: it's on every page, which then had two h1s (BUG-051). */}
+            <span className="text-xl ml-4 text-secondary">
               Baloch Community Services of Seattle
-            </h1>
+            </span>
           </Link>
         </div>
 

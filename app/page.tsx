@@ -10,7 +10,7 @@ export default async function PricingPage() {
     <>
       <Hero />
       <div className="border-b" />
-      <Mission />
+      <Mission heading="h2" />
       <ProgramsAndServices />
       <ContactForm />
       {/* <ThreeRows /> */}

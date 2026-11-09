@@ -35,11 +35,22 @@ Feature: The site works on phones and with assistive technology
     When I go to "/"
     Then an accessibility scan should find no colour-contrast problems
 
-  @P2 @a11y @known-bug @BUG-051
-  Scenario: The home page has a single main heading
+  @P2 @a11y @BUG-051
+  Scenario Outline: <path> has a single main heading
     Given I am a visitor who is not signed in
-    When I go to "/"
+    When I go to "<path>"
     Then the page should have exactly one level-1 heading
+
+    Examples:
+      | path                    |
+      | /                       |
+      | /about-us               |
+      | /about-us/mission       |
+      | /what-we-do             |
+      | /donate                 |
+      | /fundraisers            |
+      | /contact-us             |
+      | /signin/password_signin |
 
   @P2 @a11y
   Scenario: A member can sign in using only the keyboard

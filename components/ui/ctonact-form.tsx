@@ -28,7 +28,8 @@ import { ContactFormSchema } from '@/types';
 import Link from 'next/link';
 import { sendEmail } from '@/utils/auth-helpers/server';
 
-export default function ContactForm() {
+// h1 on /contact-us, h2 as a section of the home page (BUG-051).
+export default function ContactForm({ heading = 'h2' }: { heading?: 'h1' | 'h2' }) {
   const router = useRouter();
   const form = useForm<z.infer<typeof ContactFormSchema>>({
     resolver: zodResolver(ContactFormSchema),
@@ -46,7 +47,7 @@ export default function ContactForm() {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card className="max-w-screen py-4 mt-4">
           <CardHeader>
-            <CardTitle>Contact Us</CardTitle>
+            <CardTitle as={heading}>Contact Us</CardTitle>
             <CardDescription>
               Send us a message and we'll get back to you shortly
             </CardDescription>

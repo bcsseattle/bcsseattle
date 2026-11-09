@@ -17,9 +17,9 @@ export default function Page() {
           </p>
           <div className="sm:justify-between">
             <div className="my-10">
-              <h1 className="text-4xl font-extrabold sm:text-center sm:text-5xl">
+              <h2 className="text-4xl font-extrabold sm:text-center sm:text-5xl">
                 Mission Statement
-              </h1>
+              </h2>
               <p className="mt-5 text-xl sm:text-2xl">
                 BCS Seattle aims to enhance the cultural heritage and community
                 welfare of the Baloch community in the Greater Seattle area. We
@@ -32,9 +32,9 @@ export default function Page() {
               </p>
             </div>
             <div className="my-10">
-              <h1 className="text-4xl font-extrabold sm:text-center sm:text-5xl">
+              <h2 className="text-4xl font-extrabold sm:text-center sm:text-5xl">
                 Vision Statement
-              </h1>
+              </h2>
               <p className="mt-5 text-xl sm:text-2xl">
                 Our vision is to be a vibrant hub of cultural exchange and
                 support within the Greater Seattle area, where the Baloch
