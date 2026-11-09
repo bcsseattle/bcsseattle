@@ -1,7 +1,8 @@
-import { Then, When } from '@cucumber/cucumber';
+import { Given, Then, When } from '@cucumber/cucumber';
 import type { Page } from '@playwright/test';
 import { findAuthUserId, getMember } from '../support/db';
 import { expect } from '../support/expect';
+import { giveSubscription, postWebhook, stripe } from '../support/stripe';
 import type { E2EWorld } from '../support/world';
 
 const VALID = { Name: 'Hani Baloch', Phone: '206-555-0142', Address: '100 Pine St', City: 'Seattle', Zip: '98101' };
@@ -81,4 +82,27 @@ Then('I should still be an approved member', async function (this: E2EWorld) {
 Then('I should not be on a page for an undefined member', async function (this: E2EWorld) {
   await this.page.waitForLoadState();
   expect(this.page.url()).not.toContain('/members/undefined');
+});
+
+// ---------------------------------------------------------------- subscriptions (BUG-023, BUG-024)
+
+Given(/^I have an active (contribution plan|recurring donation)$/, async function (this: E2EWorld, plan: string) {
+  const kind = plan === 'contribution plan' ? 'contribution' : 'donation';
+  const sub = await giveSubscription(this.cleanup, this.me!, kind);
+  this.data[`${kind}Subscription`] = sub.subscriptionId;
+  this.data.stripeCustomer = sub.customerId;
+});
+
+When(/^Stripe reports my (contribution plan|recurring donation) as (cancelled|active)$/, async function (this: E2EWorld, plan: string, state: string) {
+  const id = this.data[`${plan === 'contribution plan' ? 'contribution' : 'donation'}Subscription`];
+  if (state === 'cancelled') await stripe.subscriptions.cancel(id);
+  const res = await postWebhook({
+    type: state === 'cancelled' ? 'customer.subscription.deleted' : 'customer.subscription.updated',
+    data: { object: { id, object: 'subscription', customer: this.data.stripeCustomer } },
+  });
+  expect(res.status, res.body).toBe(200);
+});
+
+Then(/^my membership should be (active|inactive)$/, async function (this: E2EWorld, status: string) {
+  await expect.poll(async () => (await getMember(this.me!.id))?.status).toBe(status);
 });

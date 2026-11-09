@@ -34,3 +34,21 @@ Feature: Membership status
     Given I am signed in as a user with no membership
     When I go to "/members"
     Then I should not be on a page for an undefined member
+
+  @P0 @critical @payments @BUG-023
+  Scenario: Cancelling the contribution plan ends the membership
+    Given I am signed in as an approved member
+    And I have an active contribution plan
+    When Stripe reports my contribution plan as active
+    Then my membership should be active
+    When Stripe reports my contribution plan as cancelled
+    Then my membership should be inactive
+
+  @P1 @payments @BUG-024
+  Scenario: A cancelled recurring donation doesn't end an active membership
+    Given I am signed in as an approved member
+    And I have an active contribution plan
+    And I have an active recurring donation
+    When Stripe reports my contribution plan as active
+    And Stripe reports my recurring donation as cancelled
+    Then my membership should be active

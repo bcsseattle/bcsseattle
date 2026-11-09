@@ -92,3 +92,66 @@ export async function givePaidContribution(
   const member = await admin.from('members').update({ stripe_customer_id: user.id }).eq('user_id', user.id);
   if (member.error) throw new Error(`link member: ${member.error.message}`);
 }
+
+/**
+ * A monthly test-mode price on a real Stripe product, mirrored into the prices table
+ * (subscriptions.price_id references it). Marked inactive so no plan list shows it.
+ */
+async function ensureMonthlyPrice(productId: string, name: string, type: string, cents: number): Promise<string> {
+  try {
+    await stripe.products.retrieve(productId);
+  } catch {
+    await stripe.products.create({ id: productId, name, metadata: { e2e: 'true', type } }).catch((err) => {
+      if ((err as Stripe.errors.StripeError).code !== 'resource_already_exists') throw err;
+    });
+  }
+  const lookupKey = `${productId}_monthly`;
+  const find = async () => (await stripe.prices.list({ lookup_keys: [lookupKey] })).data[0];
+  const price =
+    (await find()) ??
+    (await stripe.prices
+      .create({ product: productId, unit_amount: cents, currency: 'usd', recurring: { interval: 'month' }, lookup_key: lookupKey })
+      .catch(async (err) => (await find()) ?? Promise.reject(err))); // another worker won the race
+  const row = await admin.from('prices').upsert({
+    id: price.id,
+    product_id: productId,
+    active: false,
+    unit_amount: cents,
+    currency: 'usd',
+    type: 'recurring',
+    interval: 'month',
+    interval_count: 1,
+    trial_period_days: 0,
+  });
+  if (row.error) throw new Error(`mirror price: ${row.error.message}`);
+  return price.id;
+}
+
+/** A real test-mode subscription for the member: a contribution plan or a recurring donation. */
+export async function giveSubscription(
+  cleanup: Array<() => Promise<unknown>>,
+  user: { id: string; email: string },
+  kind: 'contribution' | 'donation'
+): Promise<{ subscriptionId: string; customerId: string }> {
+  const priceId =
+    kind === 'contribution'
+      ? await ensureMonthlyPrice('prod_e2e_contribution', 'Contribution Plans', 'contribution', 500)
+      : await ensureMonthlyPrice(DONATION_PRODUCT_ID, 'BCS Donation', 'donation', 10000);
+
+  const { data: linked } = await admin.from('customers').select('stripe_customer_id').eq('id', user.id).maybeSingle();
+  let customerId = linked?.stripe_customer_id as string | undefined;
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: user.email,
+      payment_method: 'pm_card_visa',
+      invoice_settings: { default_payment_method: 'pm_card_visa' },
+      metadata: { e2e: 'true' },
+    });
+    customerId = customer.id;
+    cleanup.push(() => stripe.customers.del(customer.id)); // also cancels its subscriptions
+    const link = await admin.from('customers').upsert({ id: user.id, stripe_customer_id: customer.id });
+    if (link.error) throw new Error(`link customer: ${link.error.message}`);
+  }
+  const subscription = await stripe.subscriptions.create({ customer: customerId, items: [{ price: priceId }] });
+  return { subscriptionId: subscription.id, customerId };
+}
