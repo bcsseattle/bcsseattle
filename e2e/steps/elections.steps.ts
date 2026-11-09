@@ -28,6 +28,14 @@ Given('I have already voted for {string}', async function (this: E2EWorld, name:
   await castCandidateVotes(this.me!.id, this.election!.id, [candidate(this, name).id]);
 });
 
+/** The election page's ballot: Review votes, Submit ballot, then confirm in the dialog. */
+async function submitBallot(page: E2EWorld['page']) {
+  await page.getByRole('button', { name: 'Review votes' }).click();
+  await page.getByRole('button', { name: 'Submit ballot' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Submit ballot' }).click();
+  await expect(page.getByRole('heading', { name: 'Your ballot is in' })).toBeVisible();
+}
+
 function candidate(world: E2EWorld, name: string) {
   const c = world.election!.candidates.find((x) => x.full_name === name);
   if (!c) throw new Error(`No candidate "${name}" in this scenario's election`);
@@ -56,10 +64,9 @@ Then('I should see the election status {string}', async function (this: E2EWorld
 
 When('I vote for {string} as {string}', async function (this: E2EWorld, name: string, _position: string) {
   await this.page.goto(`/elections/${this.election!.id}`);
-  await this.page.getByRole('link', { name: 'Vote for Candidates' }).or(this.page.getByRole('button', { name: 'Vote for Candidates' })).first().click();
   await this.page.locator(`[id="${candidate(this, name).id}"]`).click();
-  await this.page.getByRole('button', { name: 'Review Votes' }).click();
-  await this.page.getByRole('button', { name: 'Submit Candidate Votes' }).click();
+  await submitBallot(this.page);
+  await this.page.getByRole('link', { name: 'View confirmation for leadership positions' }).click();
   await expect(this.page).toHaveURL(/\/vote\/candidates\/confirmation\?code=/);
 });
 
@@ -67,10 +74,9 @@ When('I vote {string} on {string}', async function (this: E2EWorld, choice: stri
   const initiative = this.election!.initiatives.find((i) => i.title === title)!;
   const prefix = { 'Yes / Support': 'yes', 'No / Oppose': 'no', 'Abstain / No preference': 'abstain' }[choice];
   await this.page.goto(`/elections/${this.election!.id}`);
-  await this.page.getByRole('link', { name: 'Vote on Initiatives' }).or(this.page.getByRole('button', { name: 'Vote on Initiatives' })).first().click();
   await this.page.locator(`[id="${prefix}-${initiative.id}"]`).click();
-  await this.page.getByRole('button', { name: 'Review Votes' }).click();
-  await this.page.getByRole('button', { name: 'Submit Initiative Votes' }).click();
+  await submitBallot(this.page);
+  await this.page.getByRole('link', { name: 'View confirmation for community initiatives' }).click();
   await expect(this.page).toHaveURL(/\/vote\/initiatives\/confirmation\?code=/);
 });
 

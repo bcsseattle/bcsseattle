@@ -1,28 +1,23 @@
-import { Suspense } from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Vote, Trophy, UserPlus, Clock, AlertCircle, Crown, Building } from 'lucide-react';
-import VotingForm from '@/components/elections/voting-form';
-import LeadershipPositions from '@/components/leadership-positions';
+import { Banner } from '@/components/ui/banner';
+import { TransactionStep, TransactionSteps } from '@/components/ui/transaction-step';
+import { PageHeader } from '@/components/portal/page-header';
+import { Ballot } from '@/components/elections/ballot';
 import Candidates from '@/components/elections/candidates';
 import dayjs from '@/libs/dayjs';
 import { Database } from '@/types_db';
-import { getElectionTypeDescription, supportsUnopposedCandidates } from '@/utils/election-types';
+import { supportsUnopposedCandidates } from '@/utils/election-types';
 import { ElectionType } from '@/types';
+import { formatDate, formatDeadline } from '@/utils/format';
 
 // Import voting period helper functions
 import {
+  currentUserIsActiveMember,
   isCandidateVotingOpen,
   getCandidateVotingPeriod,
   shouldShowUnopposedStatus
@@ -242,424 +237,214 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
     dayjs.utc(election.nomination_start).isBefore(nowUtc) &&
     nowUtc.isBefore(dayjs.utc(election.nomination_end));
 
-  // Helper function to get election status
-  function getElectionStatus() {
-    if (isNominationOpen)
-      return {
-        label: 'Nominations Open',
-        variant: 'default' as const,
-        icon: UserPlus
-      };
-    if (isVotingOpen)
-      return {
-        label: 'Voting Open',
-        variant: 'destructive' as const,
-        icon: Vote
-      };
-    if (isClosed)
-      return {
-        label: 'Completed',
-        variant: 'secondary' as const,
-        icon: Trophy
-      };
-    if (isUpcoming)
-      return { label: 'Upcoming', variant: 'outline' as const, icon: Clock };
-    return {
-      label: 'Closed',
-      variant: 'secondary' as const,
-      icon: AlertCircle
-    };
-  }
+  const supportsUnopposed = supportsUnopposedCandidates(election.type as ElectionType);
 
-  const status = getElectionStatus();
+  // The ballot is offered only to approved, active members (BUG-007), the same
+  // check the vote pages and endpoints make.
+  const canVote = !!user && (await currentUserIsActiveMember());
 
-  // Get election type information for enhanced display
-  const electionType = election.type as ElectionType;
-  const typeDescription = getElectionTypeDescription(electionType);
-  const supportsUnopposed = supportsUnopposedCandidates(electionType);
+  // What is still open to this member. Candidate voting has its own window
+  // when separate periods are on (BUG-015, BUG-060).
+  const offerCandidates =
+    candidateVotingOpen && !hasCandidateVotes && !candidatesElectedUnopposed && !!candidates?.length;
+  const offerInitiatives = isInitiativeVotingOpen && !hasInitiativeVotes && !!initiatives?.length;
+  const showBallot = isVotingOpen && canVote && (offerCandidates || offerInitiatives);
 
-  // Get type-specific icon
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'leadership':
-        return Crown;
-      case 'board':
-        return Building;
-      case 'initiative':
-        return Vote;
-      default:
-        return Trophy;
-    }
-  };
+  const ballotPositions = offerCandidates
+    ? positionOrder
+        .map((p) => ({
+          position: p.position,
+          description: p.description,
+          candidates: (candidates ?? [])
+            .filter((c) => c.position === p.position)
+            .map((c) => ({ id: c.id, name: c.full_name, detail: c.bio }))
+        }))
+        .filter((p) => p.candidates.length > 0)
+    : [];
+  const ballotInitiatives = offerInitiatives
+    ? (initiatives ?? []).map((i) => ({
+        id: i.id,
+        title: i.title,
+        description: i.description,
+        url: i.additional_info_url
+      }))
+    : [];
 
-  const TypeIcon = getTypeIcon(election.type || 'leadership');
+  // Phase timeline (TransactionStep, Figma 11:1196).
+  const nominationState =
+    election.nomination_start && election.nomination_end
+      ? isNominationOpen
+        ? 'current'
+        : nowUtc.isAfter(dayjs.utc(election.nomination_end))
+          ? 'done'
+          : 'upcoming'
+      : null;
+  const votingDetail = isVotingOpen
+    ? `Closes ${formatDeadline(election.end_date)}`
+    : isUpcoming
+      ? `Opens ${formatDeadline(election.start_date)}`
+      : `Closed ${formatDate(election.end_date)}`;
+
+  const votedRows = (kind: 'candidates' | 'initiatives') =>
+    (userVotes ?? [])
+      .filter((vote) => (kind === 'candidates' ? vote.candidate_id && vote.vote_type === 'candidates' : vote.initiative_id && vote.vote_type === 'initiatives'))
+      .map((vote) =>
+        kind === 'candidates'
+          ? ([vote.candidates?.position ?? '', vote.candidates?.full_name ?? ''] as const)
+          : ([vote.initiatives?.title ?? '', vote.vote_value === 'yes' ? 'Support' : vote.vote_value === 'no' ? 'Oppose' : 'Abstain'] as const)
+      );
+
+  const phase = isNominationOpen
+    ? { label: 'Nominations open', tone: 'blue' as const }
+    : isVotingOpen
+      ? { label: 'Voting open', tone: 'green' as const }
+      : isClosed
+        ? { label: 'Completed', tone: 'neutral' as const }
+        : isUpcoming
+          ? { label: 'Upcoming', tone: 'neutral' as const }
+          : { label: 'Closed', tone: 'neutral' as const };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <TypeIcon className="h-8 w-8 text-muted-foreground" />
-                <div>
-                  <CardTitle className="text-3xl">{election.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground capitalize mt-1">
-                    {typeDescription}
-                  </p>
-                </div>
-              </div>
-              <CardDescription className="text-lg">
-                {election.description}
-              </CardDescription>
-            </div>
-            <div className="flex flex-col gap-2 items-end">
-              <Badge variant={status.variant} className="flex items-center gap-1">
-                <status.icon className="w-3 h-3" />
-                {status.label}
-              </Badge>
-              <Badge variant="outline" className="capitalize">
-                {election.type} Election
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        badge={<Badge tone={phase.tone}>{phase.label}</Badge>}
+        back={{ href: '/elections', label: 'Elections' }}
+        title={election.title}
+        description={election.description}
+        actions={
+          isVotingOpen ? (
+            <Link href={`/elections/${election.id}/results`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+              View live results
+            </Link>
+          ) : undefined
+        }
+      />
 
-        <CardContent className="space-y-4">
-          {/* Type-specific context */}
-          {supportsUnopposed && candidatesElectedUnopposed && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="font-medium text-blue-900">Candidates Elected Unopposed</p>
-                  <p className="text-sm text-blue-700">
-                    All candidates for this {election.type} election are running unopposed and have been automatically elected.
-                  </p>
-                </div>
-              </div>
-            </div>
+      <TransactionSteps>
+        {nominationState && (
+          <TransactionStep
+            label="Nomination period"
+            state={nominationState}
+            detail={`${formatDate(election.nomination_start!)} – ${formatDate(election.nomination_end!)}`}
+          />
+        )}
+        {candidateVotingPeriod.end && (
+          <TransactionStep
+            label="Candidate voting"
+            state={candidateVotingOpen ? 'current' : nowUtc.isAfter(dayjs.utc(candidateVotingPeriod.end)) ? 'done' : 'upcoming'}
+            detail={`Closes ${formatDeadline(candidateVotingPeriod.end)}`}
+          />
+        )}
+        <TransactionStep
+          label="Voting period"
+          state={isVotingOpen ? 'current' : isClosed ? 'done' : 'upcoming'}
+          detail={votingDetail}
+        />
+        <TransactionStep
+          label="Results"
+          state={isClosed ? 'done' : 'upcoming'}
+          detail={isClosed ? 'Available now' : 'After voting closes'}
+        />
+      </TransactionSteps>
+
+      {supportsUnopposed && candidatesElectedUnopposed && (
+        <Banner tone="success" title="Candidates elected unopposed">
+          All candidates for this {election.type} election are running unopposed and have been automatically elected.
+        </Banner>
+      )}
+
+      {isNominationOpen && (
+        <Banner
+          tone="info"
+          title="Nominations are open"
+          action={
+            <Link href={`/elections/${election.id}/nominate`} className={buttonVariants({ size: 'sm' })}>
+              Nominate yourself
+            </Link>
+          }
+        >
+          Submit your nomination for this election.
+        </Banner>
+      )}
+
+      {isVotingOpen && !user && (
+        <Banner
+          tone="info"
+          title="Voting is open"
+          action={
+            <Link
+              href={`/signin?redirectTo=${encodeURIComponent(`/elections/${id}`)}`}
+              className={buttonVariants({ size: 'sm' })}
+            >
+              Sign in to vote
+            </Link>
+          }
+        >
+          Sign in to cast your vote.
+        </Banner>
+      )}
+
+      {isVotingOpen && user && !canVote && (
+        <Banner tone="attention" title="Only approved members with active membership can vote">
+          If you think this is wrong, contact BCS Seattle.
+        </Banner>
+      )}
+
+      {/* The same fallback as before: an election with neither candidates nor initiatives. */}
+      {isVotingOpen && canVote && !candidates?.length && !initiatives?.length && (
+        <Link href={`/elections/${election.id}/vote`} className={buttonVariants({ className: 'self-start' })}>
+          Vote now
+        </Link>
+      )}
+
+      {showBallot && (
+        <Ballot
+          electionId={election.id}
+          electionTitle={election.title}
+          closesAt={election.end_date}
+          positions={ballotPositions}
+          initiatives={ballotInitiatives}
+        />
+      )}
+
+      {(hasCandidateVotes || hasInitiativeVotes) && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {hasCandidateVotes && candidateSession && (
+            <VotedCard
+              title="Your leadership votes"
+              code={candidateSession.confirmation_code}
+              href={`/elections/${election.id}/vote/candidates/confirmation?code=${candidateSession.confirmation_code}`}
+              when={candidateSession.completed_at}
+              rows={votedRows('candidates')}
+            />
           )}
-
-          {/* Election Timeline */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {election.nomination_start && election.nomination_end && (
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                <UserPlus className="w-5 h-5 text-blue-600" />
-                <div>
-                  <p className="font-medium text-blue-900">Nomination Period</p>
-                  <p className="text-sm text-blue-700">
-                    {dayjs.utc(election.nomination_start).tz('America/Los_Angeles').format('MMM D, h:mm A')} →{' '}
-                    {dayjs.utc(election.nomination_end).tz('America/Los_Angeles').format('MMM D, h:mm A')}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-              <Vote className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="font-medium text-green-900">General Voting Period</p>
-                <p className="text-sm text-green-700">
-                  {dayjs.utc(election.start_date).tz('America/Los_Angeles').format('MMM D, h:mm A')} →{' '}
-                  {dayjs.utc(election.end_date).tz('America/Los_Angeles').format('MMM D, h:mm A')}
-                </p>
-              </div>
-            </div>
-
-            {/* Candidate Voting Period - Show only if separate periods are enabled */}
-            {candidateVotingPeriod.end && (
-              <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg md:col-span-2">
-                <Trophy className="w-5 h-5 text-purple-600" />
-                <div>
-                  <p className="font-medium text-purple-900">Candidate Voting Period</p>
-                  <p className="text-sm text-purple-700">
-                    {candidateVotingPeriod.start ? 
-                      dayjs.utc(candidateVotingPeriod.start).tz('America/Los_Angeles').format('MMM D, h:mm A') : 
-                      dayjs.utc(election.start_date).tz('America/Los_Angeles').format('MMM D, h:mm A')
-                    } →{' '}
-                    {dayjs.utc(candidateVotingPeriod.end).tz('America/Los_Angeles').format('MMM D, h:mm A')}
-                  </p>
-                  {!candidateVotingOpen && (
-                    <p className="text-xs text-purple-600 mt-1">
-                      ⚠️ Candidate voting has ended early
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Position Information */}
-          {positionOrder.length > 0 && (
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <LeadershipPositions positions={positionOrder} />
-            </div>
+          {hasInitiativeVotes && initiativeSession && (
+            <VotedCard
+              title="Your initiative votes"
+              code={initiativeSession.confirmation_code}
+              href={`/elections/${election.id}/vote/initiatives/confirmation?code=${initiativeSession.confirmation_code}`}
+              when={initiativeSession.completed_at}
+              rows={votedRows('initiatives')}
+            />
           )}
-        </CardContent>
+        </div>
+      )}
 
-        <CardFooter className="flex flex-col gap-4">
-          {/* Nomination Section */}
-          {isNominationOpen && (
-            <div className="w-full p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-blue-900">
-                    Nominations Open
-                  </h4>
-                  <p className="text-sm text-blue-700">
-                    Submit your nomination for this election
-                  </p>
-                </div>
-                <Button
-                    size="lg"
-                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg" asChild><Link href={`/elections/${election.id}/nominate`}>
-                    <UserPlus className="w-5 h-5 mr-2" />
-                    Nominate Yourself
-                  </Link></Button>
-              </div>
-            </div>
-          )}
+      {isClosed && (
+        <Banner
+          tone="info"
+          title="This election is complete"
+          action={
+            <Link href={`/elections/${election.id}/results`} className={buttonVariants({ size: 'sm' })}>
+              View results
+            </Link>
+          }
+        >
+          See the final results.
+        </Banner>
+      )}
 
-          {!isNominationOpen && !isVotingOpen && !isClosed && (
-            <div className="w-full p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-center">
-                <Button
-                  disabled
-                  variant="outline"
-                  size="lg"
-                  className="cursor-not-allowed"
-                >
-                  <UserPlus className="w-5 h-5 mr-2" />
-                  Nominations Closed
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Voting Section - Not Signed In */}
-          {isVotingOpen && !user && (
-            <div className="w-full p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-green-900">
-                    Voting is Open
-                  </h4>
-                  <p className="text-sm text-green-700">
-                    Sign in to cast your vote
-                  </p>
-                </div>
-                <Button
-                    size="lg"
-                    className="bg-green-600 hover:bg-green-700 text-white shadow-lg" asChild><Link
-                  href={`/signin?redirectTo=${encodeURIComponent(`/elections/${id}`)}`}
-                >
-                    <Vote className="w-5 h-5 mr-2" />
-                    Sign In to Vote
-                  </Link></Button>
-              </div>
-            </div>
-          )}
-
-          {/* Voting Section - Signed In */}
-          {isVotingOpen && user && (
-            <div className="w-full space-y-3">
-              <h4 className="font-semibold text-gray-900 mb-3">
-                Cast Your Vote
-              </h4>
-
-              {/* Candidate Voting */}
-              {candidates && candidates.length > 0 && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h5 className="font-medium text-green-900">
-                        Candidate Elections
-                      </h5>
-                      {candidatesElectedUnopposed ? (
-                        <p className="text-sm text-green-700">
-                          All candidates elected unopposed
-                        </p>
-                      ) : (
-                        <p className="text-sm text-green-700">
-                          Vote for leadership positions
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {candidatesElectedUnopposed ? (
-                        <Badge
-                          variant="secondary"
-                          className="px-3 py-2 bg-blue-100 text-blue-800 border-blue-300"
-                        >
-                          <Trophy className="w-4 h-4 mr-2" />
-                          Elected Unopposed
-                        </Badge>
-                      ) : !hasCandidateVotes && candidateVotingOpen ? (
-                        <Button
-                            size="lg"
-                            className="bg-green-600 hover:bg-green-700 text-white shadow-lg" asChild><Link
-                          href={`/elections/${election.id}/vote/candidates`}
-                        >
-                            <Vote className="w-5 h-5 mr-2" />
-                            Vote for Candidates
-                          </Link></Button>
-                      ) : !hasCandidateVotes ? (
-                        <Badge
-                          variant="secondary"
-                          className="px-3 py-2 bg-gray-100 text-gray-800 border-gray-300"
-                        >
-                          <Clock className="w-4 h-4 mr-2" />
-                          Candidate Voting Closed
-                        </Badge>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <Badge
-                            variant="secondary"
-                            className="px-3 py-2 bg-green-100 text-green-800 border-green-300"
-                          >
-                            <Vote className="w-4 h-4 mr-2" />
-                            Candidates Voted ✓
-                          </Badge>
-                          {candidateSession?.confirmation_code && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="border-green-300 text-green-700 hover:bg-green-50" asChild><Link
-                              href={`/elections/${election.id}/vote/candidates/confirmation?code=${candidateSession.confirmation_code}`}
-                            >
-                                View Confirmation
-                              </Link></Button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Initiative Voting */}
-              {initiatives && initiatives.length > 0 && (
-                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h5 className="font-medium text-purple-900">
-                        Ballot Initiatives
-                      </h5>
-                      <p className="text-sm text-purple-700">
-                        Vote on community proposals
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {!hasInitiativeVotes ? (
-                        <Button
-                            size="lg"
-                            className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg" asChild><Link
-                          href={`/elections/${election.id}/vote/initiatives`}
-                        >
-                            <Vote className="w-5 h-5 mr-2" />
-                            Vote on Initiatives
-                          </Link></Button>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <Badge
-                            variant="secondary"
-                            className="px-3 py-2 bg-purple-100 text-purple-800 border-purple-300"
-                          >
-                            <Vote className="w-4 h-4 mr-2" />
-                            Initiatives Voted ✓
-                          </Badge>
-                          {initiativeSession?.confirmation_code && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="border-purple-300 text-purple-700 hover:bg-purple-50" asChild><Link
-                              href={`/elections/${election.id}/vote/initiatives/confirmation?code=${initiativeSession.confirmation_code}`}
-                            >
-                                View Confirmation
-                              </Link></Button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Fallback to combined voting */}
-              {(!candidates || candidates.length === 0) &&
-                (!initiatives || initiatives.length === 0) && (
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="font-medium text-green-900">
-                          General Voting
-                        </h5>
-                        <p className="text-sm text-green-700">
-                          Cast your vote in this election
-                        </p>
-                      </div>
-                      <Button
-                          size="lg"
-                          className="bg-green-600 hover:bg-green-700 text-white shadow-lg" asChild><Link href={`/elections/${election.id}/vote`}>
-                          <Vote className="w-5 h-5 mr-2" />
-                          Vote Now
-                        </Link></Button>
-                    </div>
-                  </div>
-                )}
-            </div>
-          )}
-
-          {/* Results Section - Live Results for Active Elections */}
-          {isVotingOpen && (
-            <div className="w-full p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-blue-900">
-                    Live Results
-                  </h4>
-                  <p className="text-sm text-blue-700">
-                    View real-time election results while voting is open
-                  </p>
-                </div>
-                <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-blue-300 text-blue-700 hover:bg-blue-100" asChild><Link href={`/elections/${election.id}/results`}>
-                    <Trophy className="w-5 h-5 mr-2" />
-                    View Live Results
-                  </Link></Button>
-              </div>
-            </div>
-          )}
-
-          {/* Results Section - Final Results for Closed Elections */}
-          {isClosed && (
-            <div className="w-full p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-amber-900">
-                    Election Complete
-                  </h4>
-                  <p className="text-sm text-amber-700">
-                    View the final results
-                  </p>
-                </div>
-                <Button
-                    size="lg"
-                    className="bg-amber-600 hover:bg-amber-700 text-white shadow-lg" asChild><Link href={`/elections/${election.id}/results`}>
-                    <Trophy className="w-5 h-5 mr-2" />
-                    View Results
-                  </Link></Button>
-              </div>
-            </div>
-          )}
-        </CardFooter>
-      </Card>
-
-      {/* Candidates Section */}
-      {candidates && candidates.length > 0 && (
+      {!showBallot && candidates && candidates.length > 0 && (
         <Candidates
           candidates={candidates}
           election={election}
@@ -670,159 +455,59 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         />
       )}
 
-      {/* Initiatives Section */}
-      {initiatives && initiatives.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Vote className="w-5 h-5" />
-              Ballot Initiatives
-            </CardTitle>
-            <CardDescription>
-              Review the ballot measures for this election. You can vote Yes or
-              No on each initiative.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {initiatives.map((initiative, index) => (
-              <div
-                key={initiative.id}
-                className="border-l-4 border-blue-500 pl-4 py-2"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-lg mb-2">
-                      Initiative {index + 1}: {initiative.title}
-                    </h4>
-                    {initiative.description && (
-                      <p className="text-gray-600 mb-2">
-                        {initiative.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* User Voting Status */}
-      {(hasCandidateVotes || hasInitiativeVotes) && userVotes && (
-        <div className="space-y-4">
-          {/* Candidate Vote Summary */}
-          {hasCandidateVotes && candidateSession && (
-            <Card className="border-green-200 bg-green-50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-800">
-                  <Vote className="w-5 h-5" />
-                  Your Candidate Votes
-                </CardTitle>
-                <CardDescription className="text-green-700">
-                  You have successfully submitted your candidate votes.
-                  <span className="block mt-1 font-medium">
-                    Confirmation Code: {candidateSession.confirmation_code}
-                  </span>
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {/* Candidate Votes */}
-                {userVotes
-                  .filter(
-                    (vote) =>
-                      vote.candidate_id && vote.vote_type === 'candidates'
-                  )
-                  .map((vote) => (
-                    <div
-                      key={vote.id}
-                      className="flex justify-between items-center py-2 border-b border-green-200 last:border-b-0"
-                    >
-                      <span className="font-medium text-green-800">
-                        {vote.candidates?.position}
-                      </span>
-                      <span className="text-green-700">
-                        {vote.candidates?.full_name}
-                      </span>
-                    </div>
-                  ))}
-
-                <div className="mt-4 pt-3 border-t border-green-200">
-                  {candidateSession.completed_at && (
-                    <p className="text-sm text-green-600">
-                      Voted on:{' '}
-                      {new Date(candidateSession.completed_at).toLocaleString()}
-                    </p>
-                  )}
-                  <p className="text-sm text-green-600">
-                    Candidate votes cast: {candidateSession.votes_cast}
-                  </p>
-                </div>
-              </CardContent>
+      {!showBallot && initiatives && initiatives.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-section text-foreground">Community initiatives</h2>
+          {initiatives.map((initiative) => (
+            <Card key={initiative.id} className="p-4">
+              <h3 className="text-item text-foreground">{initiative.title}</h3>
+              {initiative.description && (
+                <p className="mt-1 text-sm text-muted-foreground">{initiative.description}</p>
+              )}
             </Card>
-          )}
-
-          {/* Initiative Vote Summary */}
-          {hasInitiativeVotes && initiativeSession && (
-            <Card className="border-blue-200 bg-blue-50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-blue-800">
-                  <Vote className="w-5 h-5" />
-                  Your Initiative Votes
-                </CardTitle>
-                <CardDescription className="text-blue-700">
-                  You have successfully submitted your initiative votes.
-                  <span className="block mt-1 font-medium">
-                    Confirmation Code: {initiativeSession.confirmation_code}
-                  </span>
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {/* Initiative Votes */}
-                {userVotes
-                  .filter(
-                    (vote) =>
-                      vote.initiative_id && vote.vote_type === 'initiatives'
-                  )
-                  .map((vote) => (
-                    <div
-                      key={vote.id}
-                      className="flex justify-between items-center py-2 border-b border-blue-200 last:border-b-0"
-                    >
-                      <span className="font-medium text-blue-800">
-                        {vote.initiatives?.title}
-                      </span>
-                      <Badge
-                        variant={
-                          vote.vote_value === 'yes' ? 'default' : 'secondary'
-                        }
-                      >
-                        {vote.vote_value === 'yes'
-                          ? 'Yes'
-                          : vote.vote_value === 'no'
-                            ? 'No'
-                            : 'Abstain'}
-                      </Badge>
-                    </div>
-                  ))}
-
-                <div className="mt-4 pt-3 border-t border-blue-200">
-                  {initiativeSession.completed_at && (
-                    <p className="text-sm text-blue-600">
-                      Voted on:{' '}
-                      {new Date(
-                        initiativeSession.completed_at
-                      ).toLocaleString()}
-                    </p>
-                  )}
-                  <p className="text-sm text-blue-600">
-                    Initiative votes cast: {initiativeSession.votes_cast}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+          ))}
+        </section>
       )}
     </div>
+  );
+}
+
+/** A part of the ballot this member has already submitted. */
+function VotedCard({
+  title,
+  code,
+  href,
+  when,
+  rows
+}: {
+  title: string;
+  code: string | null;
+  href: string;
+  when: string | null;
+  rows: (readonly [string, string])[];
+}) {
+  return (
+    <Card className="flex flex-col gap-3 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-section text-foreground">{title}</h2>
+        <Badge tone="green">Submitted</Badge>
+      </div>
+      {rows.length > 0 && (
+        <dl className="text-sm">
+          {rows.map(([question, answer]) => (
+            <div key={question} className="flex justify-between gap-3 border-b py-2 last:border-b-0">
+              <dt className="text-muted-foreground">{question}</dt>
+              <dd className="text-right font-medium text-foreground">{answer}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      <p className="mt-0 text-caption text-muted-foreground">
+        {when && `Submitted ${formatDeadline(when)}. `}Confirmation code: <span className="font-mono">{code}</span>
+      </p>
+      <Link href={href} className="self-start text-caption font-medium text-accent underline-offset-4 hover:underline">
+        View confirmation
+      </Link>
+    </Card>
   );
 }
