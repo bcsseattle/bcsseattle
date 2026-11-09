@@ -541,7 +541,8 @@ const syncMemberStatus = async (userId: string) => {
   const { error: updateError } = await supabaseAdmin
     .from('members')
     .update(current ? { status: 'active', subscription_id: current.id } : { status: 'inactive' })
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('isApproved', true); // applicants stay pending or rejected until an admin decides
   if (updateError) throw new Error(`Member status update failed: ${updateError.message}`);
 };
 

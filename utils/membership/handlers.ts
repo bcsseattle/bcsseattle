@@ -364,13 +364,12 @@ export async function rejectMember(memberId: string) {
 
   console.log('Found member:', existingMember);
 
-  // Update member status
+  // Deactivating an approved member keeps their approval (they show as Inactive
+  // and can be reactivated); rejecting an application marks it rejected, so it
+  // no longer looks like a new application (BUG-035).
   const { data, error } = await supabase
     .from('members')
-    .update({ 
-      status: 'inactive',
-      isApproved: false
-    })
+    .update(existingMember.isApproved ? { status: 'inactive' } : { status: 'rejected', isApproved: false })
     .eq('id', memberId)
     .select()
     .maybeSingle();

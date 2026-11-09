@@ -52,3 +52,9 @@ Feature: Membership status
     When Stripe reports my contribution plan as active
     And Stripe reports my recurring donation as cancelled
     Then my membership should be active
+
+  @P1 @BUG-035
+  Scenario: A rejected applicant is told their application wasn't approved
+    Given I am signed in as a rejected applicant
+    When I go to "/members"
+    Then I should see "Your membership application was not approved."

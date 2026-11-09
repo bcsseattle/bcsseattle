@@ -128,7 +128,7 @@ export async function createMember(
   overrides: Record<string, unknown> = {}
 ): Promise<string> {
   // What the app writes for each state today (utils/membership/handlers.ts).
-  const status = { approved: 'active', pending: 'pending', inactive: 'inactive', rejected: 'inactive' }[state];
+  const status = { approved: 'active', pending: 'pending', inactive: 'inactive', rejected: 'rejected' }[state];
   const row = must(
     await admin
       .from('members')

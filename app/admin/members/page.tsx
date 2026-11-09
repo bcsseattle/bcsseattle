@@ -70,34 +70,29 @@ export default async function AdminMembersPage() {
     })
   );
 
-  const pendingMembers = membersWithEmails?.filter(m => m.status === 'pending' || !m.isApproved) || [];
-  const activeMembers = membersWithEmails?.filter(m => m.status === 'active' || m.isApproved) || [];
-  const inactiveMembers = membersWithEmails?.filter(m => m.status === 'inactive') || [];
+  // pending: applied, not approved (older applications were saved as 'inactive');
+  // rejected: application refused; active / inactive: approved members (BUG-035).
+  const stateOf = (status: string | null, isApproved: boolean) =>
+    status === 'rejected' ? 'rejected' : !isApproved ? 'pending' : status === 'active' ? 'active' : 'inactive';
+
+  const pendingMembers = membersWithEmails?.filter(m => stateOf(m.status, m.isApproved) === 'pending') || [];
+  const activeMembers = membersWithEmails?.filter(m => stateOf(m.status, m.isApproved) === 'active') || [];
+  const inactiveMembers = membersWithEmails?.filter(m => stateOf(m.status, m.isApproved) === 'inactive') || [];
 
   const getStatusIcon = (status: string | null, isApproved: boolean) => {
-    if (!isApproved || status === 'pending') {
-      return <Clock className="h-4 w-4 text-yellow-500" />;
-    }
-    if (status === 'active' || isApproved) {
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
-    }
-    if (status === 'inactive') {
-      return <XCircle className="h-4 w-4 text-red-500" />;
-    }
+    const state = stateOf(status, isApproved);
+    if (state === 'pending') return <Clock className="h-4 w-4 text-yellow-500" />;
+    if (state === 'active') return <CheckCircle className="h-4 w-4 text-green-500" />;
+    if (state === 'inactive') return <XCircle className="h-4 w-4 text-red-500" />;
     return <User className="h-4 w-4 text-gray-500" />;
   };
 
   const getStatusBadge = (status: string | null, isApproved: boolean) => {
-    if (!isApproved || status === 'pending') {
-      return <Badge variant="outline" className="text-yellow-600 border-yellow-300">Pending</Badge>;
-    }
-    if (status === 'active' || isApproved) {
-      return <Badge variant="default" className="bg-green-600">Active</Badge>;
-    }
-    if (status === 'inactive') {
-      return <Badge variant="destructive">Inactive</Badge>;
-    }
-    return <Badge variant="secondary">Unknown</Badge>;
+    const state = stateOf(status, isApproved);
+    if (state === 'pending') return <Badge variant="outline" className="text-yellow-600 border-yellow-300">Pending</Badge>;
+    if (state === 'active') return <Badge variant="default" className="bg-green-600">Active</Badge>;
+    if (state === 'inactive') return <Badge variant="destructive">Inactive</Badge>;
+    return <Badge variant="secondary">Rejected</Badge>;
   };
 
   return (
