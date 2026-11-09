@@ -5,6 +5,7 @@
 - **Update 2026-11-08 (after `621d3f3`):** BUG-073 fixed. Its scenario now gates (86 gating / 46 known-bug) and the `last` profile is gone. Results below are as first measured.
 - **Update 2026-11-08 (RLS):** BUG-001, 002, 003 and 005 fixed by `supabase/migrations/20261108010000_close_rls_holes.sql`; BUG-010 resolved: approved members may view each other's details by design, non-members are blocked by RLS (both now gating). BUG-009 resolved the same way. Approved members can read all donations and donors except private donations and anonymous-only donors' identities. 101 gating / 38 known-bug.
 - **Update 2026-11-08 (fixes):** BUG-012, 026, 039/074 and 078 fixed. 107 gating / 34 known-bug.
+- **Update 2026-11-08 (critical bugs):** BUG-004, 006, 007, 008, 011, 014 and 017 fixed; BUG-079 and BUG-080 found and fixed. 116 gating / 27 known-bug.
 - **Run against:** production's schema (schema-only dump of `tljjvmdmahkrvklyrdqq`), develop's unreleased fundraiser tables, a production build of the app, and Stripe **test mode**.
 
 ## 1. Codebase analysis summary
