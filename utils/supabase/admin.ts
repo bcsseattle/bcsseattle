@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  Candidate,
   Donation,
   Donor,
   EmailLogs,
@@ -20,8 +21,8 @@ import type { Database, Tables, TablesInsert } from 'types_db';
 const TRIAL_PERIOD_DAYS = 0;
 
 // Note: supabaseAdmin uses the SERVICE_ROLE_KEY which you must only use in a secure server-side context
-// as it has admin privileges and overwrites RLS policies!
-const supabaseAdmin = createClient<Database>(
+// as it has admin privileges and overwrites RLS policies! Never call auth.signUp/signIn on it (BUG-073).
+export const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
@@ -538,6 +539,33 @@ const getStripeAvailableBalance = async () => {
   return balance;
 };
 
+// Balance of the linked bank account (refreshed weekly by /api/cron/refresh-bank-balance),
+// plus Stripe payouts that hadn't landed yet when the bank reported that balance.
+const getBankBalance = async () => {
+  const accountId = process.env.STRIPE_BANK_ACCOUNT_ID;
+  if (!accountId) return null;
+
+  const { balance } =
+    await stripe.financialConnections.accounts.retrieve(accountId);
+  if (!balance) return null;
+
+  // ponytail: last 100 payouts covers a week-old balance; page if payouts get that frequent
+  const { data: payouts } = await stripe.payouts.list({ limit: 100 });
+  const inTransit = payouts
+    .filter(
+      (p) =>
+        p.status === 'pending' ||
+        p.status === 'in_transit' ||
+        (p.status === 'paid' && p.arrival_date > balance.as_of)
+    )
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  return {
+    amount: (balance.current.usd ?? 0) + inTransit,
+    asOf: balance.as_of
+  };
+};
+
 const getStripeRecentTransactions = async () => {
   let allTransactions: any[] = [];
   let hasMore = true;
@@ -572,19 +600,24 @@ const getStripePayments = async (params?: {
   customerId?: string;
   dateRange?: Stripe.RangeQueryParam;
 }) => {
-  const { customerId, dateRange } = params || {};
+  try {
+    const { customerId, dateRange } = params || {};
 
-  const payments = await stripe.paymentIntents
-    .list({
-      customer: customerId,
-      limit: 100,
-      created: {
-        gte: dateRange?.gte ?? 1718491540, // 2024-06-15,
-        lte: dateRange?.lte ?? Math.floor(Date.now() / 1000)
-      }
-    })
-    .autoPagingToArray({ limit: 1000 });
-  return payments;
+    const payments = await stripe.paymentIntents
+      .list({
+        customer: customerId,
+        limit: 100,
+        created: {
+          gte: dateRange?.gte ?? 1718491540, // 2024-06-15,
+          lte: dateRange?.lte ?? Math.floor(Date.now() / 1000)
+        }
+      })
+      .autoPagingToArray({ limit: 1000 });
+    return { data: payments, error: null };
+  } catch (error) {
+    console.error('Error fetching stripe payments:', error);
+    return { data: null, error: 'Error fetching stripe payments' };
+  }
 };
 
 const getTotalCustomerSpent = async (params?: {
@@ -656,12 +689,17 @@ const updateFuneralSignup = async (
 };
 
 const getDonations = async () => {
-  const { data, error } = await supabaseAdmin.from('donations').select(`
+  const { data, error } = await supabaseAdmin
+    .from('donations')
+    .select(
+      `
      *,
       donors (
         *
       )
-    `);
+    `
+    )
+    .eq('is_private', false);
 
   if (error) {
     console.error('Error fetching donations:', error);
@@ -710,18 +748,21 @@ const getOrCreateUser = async ({
       return { data: userExists, error: null };
     }
 
-    // Step 2: Sign up the user
-    const { data, error: signUpError } = await supabaseAdmin.auth.signUp({
-      email,
-      password: process.env.SUPABASE_DEFAULT_PASSWORD || ''
-    });
+    // Step 2: Create the user. Not auth.signUp(): that stores the new user's
+    // session on this shared service-role client, which then runs under RLS
+    // as that user for every later call on this server instance (BUG-073).
+    const { data, error: signUpError } =
+      await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: process.env.SUPABASE_DEFAULT_PASSWORD || ''
+      });
 
     if (signUpError) {
-      console.error('Error signing up user:', signUpError.message);
+      console.error('Error creating user:', signUpError.message);
       return { data: null, error: signUpError.message };
     }
 
-    console.log('User signed up successfully:', data);
+    console.log('User created successfully:', data.user?.email);
     return { data: data.user, error: null };
   } catch (error) {
     console.error('Unexpected error:', error);
@@ -840,6 +881,42 @@ const upsertEmailLogs = async (emailLog: Partial<EmailLogs>) => {
   }
 };
 
+const createCandidate = async (
+  candidateDetails: any
+): Promise<{
+  data: any | null;
+  error: PostgrestError | null | string;
+}> => {
+  try {
+    const { data, error: insertError } = await supabaseAdmin
+      .from('candidates')
+      .insert({
+        full_name: candidateDetails.full_name,
+        position: candidateDetails.position,
+        bio: candidateDetails.bio,
+        photo_url: candidateDetails.photo_url,
+        election_id: candidateDetails.election_id,
+        user_id: candidateDetails.user_id,
+        manifesto: candidateDetails.manifesto
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Candidate insert error:', insertError);
+      throw new Error(`Candidate insert failed: ${insertError.message}`);
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error nominating candidate:', error);
+    return {
+      data: null,
+      error: (error as Error).message || 'Error nominating candidate'
+    };
+  }
+};
+
 export {
   upsertProductRecord,
   upsertPriceRecord,
@@ -853,6 +930,7 @@ export {
   retrieveMember,
   manageSubscriptionStatusChange,
   getStripeAvailableBalance,
+  getBankBalance,
   getStripeRecentTransactions,
   getStripePayments,
   getTotalCustomerSpent,
@@ -865,5 +943,6 @@ export {
   createInvoice,
   upsertEmailLogs,
   retrieveSmsNotification,
-  updateSmsNotification
+  updateSmsNotification,
+  createCandidate
 };

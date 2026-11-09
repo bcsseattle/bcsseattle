@@ -11,15 +11,26 @@ export default async function Navbar() {
   } = await supabase.auth.getUser();
 
   let member: any;
+  let isAdmin = false;
 
   if (user) {
-    const { data } = await supabase
+    // Fetch member data
+    const { data: memberData } = await supabase
       .from('members')
       .select('*')
       .eq('user_id', user.id)
       .maybeSingle();
 
-    member = data;
+    member = memberData;
+
+    // Check if user is admin
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    isAdmin = userData?.is_admin || false;
   }
 
   return (
@@ -35,7 +46,7 @@ export default async function Navbar() {
         </div>
 
         <div className="self-center">
-          <TopNavigation user={user} member={member} />
+          <TopNavigation user={user} member={member} isAdmin={isAdmin} />
         </div>
       </div>
     </nav>

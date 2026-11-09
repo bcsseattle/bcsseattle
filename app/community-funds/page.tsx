@@ -10,7 +10,9 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
+import { getPriceString } from '@/utils/helpers';
 import {
+  getBankBalance,
   getDonations,
   getStripeAvailableBalance,
   // getStripeCustomers,
@@ -19,8 +21,18 @@ import {
 } from '@/utils/supabase/admin';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import Loading from '../loading';
 
-export default async function CommunityFunds() {
+type SearchParams = Promise<{ [key: string]: string | undefined }>;
+
+export default async function CommunityFunds(props: {
+  searchParams: SearchParams;
+}) {
+  const searchParams = await props.searchParams;
+  const month = searchParams?.month ?? (new Date().getMonth() + 1).toString();
+  const year = searchParams?.year ?? new Date().getFullYear().toString();
+
   const supabase = await createClient();
 
   const {
@@ -45,9 +57,14 @@ export default async function CommunityFunds() {
     return redirect('/register');
   }
 
+  if (!member?.isApproved) {
+    return redirect(`/members/${member?.id}/pending`);
+  }
+
   const { data: expenses } = await supabase
     .from('expenses')
     .select('*')
+    .eq('is_private', false)
     .order('created_at', { ascending: false });
 
   const { data: funds } = await supabase
@@ -55,27 +72,33 @@ export default async function CommunityFunds() {
     .select('*')
     .neq('status', 'cancelled')
     .neq('status', 'failed')
+    .neq('is_private', true)
     .order('created_at', { ascending: false });
 
   const { data: donations } = await getDonations();
 
-  const totalDonations = donations?.reduce(
+  const donationsOutsideStripe = donations?.filter(
+    (donation) => !Boolean(donation.stripe_payment_id)
+  );
+
+  const totalDonations = donationsOutsideStripe?.reduce(
     (acc: number, donation: any) => acc + donation.amount,
     0
   );
-
-  console.log('totalDonations', totalDonations);
 
   const fundsInBank = funds?.reduce(
     (acc: number, fund: any) => acc + fund.amount,
     0
   );
 
-  const { available, pending } = await getStripeAvailableBalance();
-  const transactions = await getStripeRecentTransactions();
+  const [{ available, pending }, transactions, bank] = await Promise.all([
+    getStripeAvailableBalance(),
+    getStripeRecentTransactions(),
+    getBankBalance()
+  ]);
 
-  const availableAmount = available?.[0]?.amount;
-  const pendingAmount = pending?.[0]?.amount;
+  const stripeAmount =
+    (available?.[0]?.amount ?? 0) + (pending?.[0]?.amount ?? 0);
   const totalExpenses =
     expenses?.reduce((acc: number, expense: any) => acc + expense.amount, 0) ??
     0;
@@ -86,46 +109,28 @@ export default async function CommunityFunds() {
       0
     ) ?? 0;
 
-  const collectedAmount =
-    availableAmount +
-    pendingAmount +
-    (fundsInBank || 0) +
-    totalDonations +
-    totalStripeFees;
-  // availableAmount > pendingAmount ? availableAmount : pendingAmount;
+  // Real bank balance once linked (scripts/link-bank-account.mjs); until then, estimate from records.
+  const bankAmount =
+    bank?.amount ?? (fundsInBank || 0) + (totalDonations || 0) - totalExpenses;
+  const bankAsOf = bank
+    ? `As of ${new Date(bank.asOf * 1000).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      })}`
+    : 'Estimated from records';
 
-  const collectedFunds = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: available?.[0].currency!,
-    minimumFractionDigits: 0
-  }).format(collectedAmount / 100);
-
-  const expensesString = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0
-  }).format(totalExpenses / 100);
-
-  const availableFunds = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: available?.[0].currency!,
-    minimumFractionDigits: 0
-  }).format((collectedAmount - totalStripeFees - totalExpenses) / 100);
-
-  const stripeFeesString = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0
-  }).format(totalStripeFees / 100);
+  const bankBalance = getPriceString(bankAmount);
+  const expensesString = getPriceString(totalExpenses);
+  const availableFunds = getPriceString(bankAmount + stripeAmount);
+  const stripeBalance = getPriceString(stripeAmount);
+  const stripeFeesString = getPriceString(totalStripeFees);
 
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Collected Funds
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Bank Balance</CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -140,7 +145,8 @@ export default async function CommunityFunds() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{collectedFunds}</div>
+            <div className="text-2xl font-bold">{bankBalance}</div>
+            <p className="text-xs text-muted-foreground">{bankAsOf}</p>
           </CardContent>
         </Card>
 
@@ -208,14 +214,26 @@ export default async function CommunityFunds() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{availableFunds}</div>
+            <p className="text-xs text-muted-foreground">
+              Bank + {stripeBalance} in Stripe
+            </p>
           </CardContent>
         </Card>
       </div>
       <div className="col-span-4">
-        <RecentDonations donations={donations || []} />
+        <Suspense fallback={<Loading />}>
+          <RecentDonations donations={donations || []} />
+        </Suspense>
       </div>
       <div className="col-span-4">
-        <RecentFunds members={members as any} columns={columns} />
+        <Suspense fallback={<Loading />}>
+          <RecentFunds
+            members={members as any}
+            columns={columns}
+            month={month}
+            year={year}
+          />
+        </Suspense>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
         <Card className="col-span-4">

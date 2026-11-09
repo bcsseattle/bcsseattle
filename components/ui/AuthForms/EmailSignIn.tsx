@@ -14,12 +14,14 @@ interface EmailSignInProps {
   allowPassword: boolean;
   redirectMethod: string;
   disableButton?: boolean;
+  redirectTo?: string;
 }
 
 export default function EmailSignIn({
   allowPassword,
   redirectMethod,
-  disableButton
+  disableButton,
+  redirectTo
 }: EmailSignInProps) {
   const router = redirectMethod === 'client' ? useRouter() : null;
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,25 +52,34 @@ export default function EmailSignIn({
               autoCorrect="off"
             />
           </div>
+          {redirectTo && (
+            <input type="hidden" name="redirectTo" value={redirectTo} />
+          )}
           <Button
             variant="default"
             type="submit"
             className="mt-1"
             disabled={disableButton || isSubmitting}
           >
-            Sign in
+            Send OTP Code
           </Button>
         </div>
       </form>
       {allowPassword && (
         <>
           <p>
-            <Link href="/signin/password_signin" className="font-light text-sm">
+            <Link 
+              href={`/signin/password_signin${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`} 
+              className="font-light text-sm"
+            >
               Sign in with email and password
             </Link>
           </p>
           <p>
-            <Link href="/signin/signup" className="text-orange-900 font-light text-sm">
+            <Link 
+              href={`/signin/signup${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`} 
+              className="text-orange-900 font-light text-sm"
+            >
               Don't have an account? Sign up
             </Link>
           </p>

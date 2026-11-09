@@ -1,4 +1,5 @@
 import Plans from '@/components/plans';
+import { Subscription, SubscriptionWithProduct } from '@/types';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
@@ -13,17 +14,23 @@ export default async function Page() {
     return redirect('/signin');
   }
 
-  const { data: subscription, error } = await supabase
+  const { data: subscriptions, error } = await supabase
     .from('subscriptions')
     .select('*, prices(*, products(*))')
     .eq('status', 'active')
-    .maybeSingle();
+    .eq('prices.products.metadata->>type', 'contribution')
+    .eq('user_id', user.id);
 
   if (error) {
-    console.log(error);
+    console.log('error fetching subscriptions:', error);
+    return redirect('/account');
   }
 
-  if (subscription?.status === 'active') {
+  // Get the first active contribution subscription or null if none exist
+  const subscription =
+    subscriptions && subscriptions.length > 0 ? subscriptions[0] : null;
+
+  if (subscription && subscription?.status === 'active') {
     return redirect('/account');
   }
 
@@ -47,7 +54,7 @@ export default async function Page() {
       <Plans
         user={user}
         products={products ?? []}
-        subscription={subscription}
+        subscription={subscription as SubscriptionWithProduct}
       />
     </section>
   );

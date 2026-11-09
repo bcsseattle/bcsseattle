@@ -145,6 +145,22 @@ Running this command will create a new `.env.local` file in your project folder.
 
 ### Local development with Supabase
 
+**Quick start** (Docker running, `.env.local` pointing at `http://127.0.0.1:54321` with Stripe **test** keys):
+
+```bash
+pnpm supabase:start   # API 54321, Studio http://127.0.0.1:54323, Mailpit (auth emails) http://127.0.0.1:54324
+pnpm supabase:reset   # rebuild from supabase/migrations + seed.sql (wipes local data)
+pnpm stripe:listen    # forwards test-mode webhooks to localhost:3000/api/webhooks
+pnpm dev              # http://localhost:3000
+```
+
+- `pnpm stripe:listen` uses the Stripe CLI's default profile; it must be the BCS Seattle account (`stripe login`). Its signing secret (`stripe listen --print-secret`) is the `STRIPE_WEBHOOK_SECRET` in `.env.local`.
+- The seed loads the real test-mode products and prices, the organization, programs and election positions. With `stripe:listen` running, product and price changes made in the Stripe test dashboard sync in automatically.
+- To get an admin: sign up at `/signin/signup`, then in Studio set `public.users.is_admin = true` for that user (and approve their `members` row for member-only pages).
+- `supabase/migrations` starts from a baseline dump of production (2026-11-08); the older migrations are in `supabase/migrations_archive/` for reference.
+- `pnpm dev` and the E2E build (`pnpm e2e:build`) both write `.next/`, so don't run the E2E server at the same time.
+
+
 It's highly recommended to use a local Supabase instance for development and testing. We have provided a set of custom commands for this in `package.json`.
 
 First, you will need to install [Docker](https://www.docker.com/get-started/). You should also copy or rename:

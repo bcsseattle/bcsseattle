@@ -16,19 +16,17 @@ import ForgotPassword from '@/components/ui/AuthForms/ForgotPassword';
 import UpdatePassword from '@/components/ui/AuthForms/UpdatePassword';
 import SignUp from '@/components/ui/AuthForms/Signup';
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import OTPVerify from '@/components/ui/AuthForms/OTPVerify';
 
-export default async function SignIn(
-  props: {
-    params: Promise<{ id: string }>;
-    searchParams: Promise<{ disable_button: boolean, redirectTo?: string }>;
-  }
-) {
+export default async function SignIn(props: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{
+    disable_button: boolean;
+    redirectTo?: string;
+    email?: string;
+  }>;
+}) {
   const searchParams = await props.searchParams;
   const params = await props.params;
   const { allowOauth, allowEmail, allowPassword } = getAuthTypes();
@@ -45,7 +43,10 @@ export default async function SignIn(
     const preferredSignInView =
       (await cookies()).get('preferredSignInView')?.value || null;
     viewProp = getDefaultSignInView(preferredSignInView);
-    return redirect(`/signin/${viewProp}`);
+    const redirectQuery = searchParams?.redirectTo 
+      ? `?redirectTo=${encodeURIComponent(searchParams.redirectTo)}`
+      : '';
+    return redirect(`/signin/${viewProp}${redirectQuery}`);
   }
 
   // Check if the user is already logged in and redirect to the account page if so
@@ -56,7 +57,9 @@ export default async function SignIn(
   } = await supabase.auth.getUser();
 
   if (user && viewProp !== 'update_password') {
-    return redirect('/');
+    // If user is already logged in, redirect to the intended destination or home
+    const redirectTo = searchParams?.redirectTo || '/';
+    return redirect(redirectTo);
   } else if (!user && viewProp === 'update_password') {
     return redirect('/signin');
   }
@@ -89,6 +92,15 @@ export default async function SignIn(
                 allowPassword={allowPassword}
                 redirectMethod={redirectMethod}
                 disableButton={searchParams.disable_button}
+                redirectTo={searchParams?.redirectTo}
+              />
+            )}
+            {viewProp === 'verify_otp' && (
+              <OTPVerify
+                email={searchParams.email}
+                redirectMethod={redirectMethod}
+                disableButton={searchParams.disable_button}
+                redirectTo={searchParams?.redirectTo}
               />
             )}
             {viewProp === 'forgot_password' && (

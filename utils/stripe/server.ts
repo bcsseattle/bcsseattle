@@ -22,6 +22,7 @@ import {
   formatInvoiceMessage
 } from '@/utils/helpers';
 import { Donation, Donor, Price } from '@/types';
+import { FundraiserDonation } from '@/types/fundraisers';
 import { sendSMS } from '../membership/handlers';
 
 type CheckoutResponse = {
@@ -274,6 +275,73 @@ export async function checkoutWithStripeForDonation(
         console.error(err);
         throw new Error('Unable to update donation record.');
       }
+      return { sessionId: session.id };
+    } else {
+      throw new Error('Unable to create checkout session.');
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      return {
+        errorRedirect: getErrorRedirect(
+          cancelUrl,
+          error.message,
+          'Please try again later or contact a system administrator.'
+        )
+      };
+    } else {
+      return {
+        errorRedirect: getErrorRedirect(
+          cancelUrl,
+          'An unknown error occurred.',
+          'Please try again later or contact a system administrator.'
+        )
+      };
+    }
+  }
+}
+
+export async function checkoutWithStripeForFundraiser(
+  price: Price,
+  redirectPath: string = '/donation-confirmation',
+  cancelUrl: string,
+  donor: Donor | null,
+  donation: FundraiserDonation | null
+): Promise<CheckoutResponse> {
+  try {
+    const params: Stripe.Checkout.SessionCreateParams = {
+      mode: 'payment',
+      allow_promotion_codes: false,
+      billing_address_collection: 'required',
+      customer_email: donor?.email || undefined,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            unit_amount: Number(price.unit_amount),
+            product_data: {
+              name: 'BCS Fundraiser',
+              description: donation?.message || undefined
+            }
+          },
+          quantity: 1
+        }
+      ],
+      cancel_url: getURL(cancelUrl),
+      success_url: getURL(redirectPath),
+      metadata: {
+        type: 'fundraiser_donation',
+        fundraiser_id: donation?.fundraiser_id || '',
+        donation_id: donation?.id || '',
+        donor_name: donor?.full_name || 'Anonymous',
+        is_anonymous: donation?.is_anonymous?.toString() || 'false'
+      }
+    };
+
+    // Create a checkout session in Stripe
+    const session = await stripe.checkout.sessions.create(params);
+    
+    if (session) {
       return { sessionId: session.id };
     } else {
       throw new Error('Unable to create checkout session.');

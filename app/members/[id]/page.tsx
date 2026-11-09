@@ -6,8 +6,16 @@ import { getTotalCustomerSpent } from '@/utils/supabase/admin';
 import RecentFunds from '@/components/recent-funds';
 import { individualColumns } from '@/components/payments/columns';
 
-export default async function Page(props: { params: Promise<{ id: string }> }) {
+type SearchParams = Promise<{ [key: string]: string | undefined }>;
+
+export default async function Page(props: { 
+  params: Promise<{ id: string }>;
+  searchParams: SearchParams;
+}) {
   const params = await props.params;
+  const searchParams = await props.searchParams;
+  const month = searchParams?.month ?? (new Date().getMonth() + 1).toString();
+  const year = searchParams?.year ?? new Date().getFullYear().toString();
   const supabase = await createClient();
 
   const {
@@ -83,6 +91,9 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       <RecentFunds
         members={member ? [member] : []}
         columns={individualColumns}
+        stripeCustomerId={stripeCustomerId}
+        month={month}
+        year={year}
       />
     </div>
   );

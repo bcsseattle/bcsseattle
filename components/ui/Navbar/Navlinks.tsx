@@ -19,6 +19,7 @@ import {
 import { Button } from '../button';
 import { User } from '@supabase/supabase-js';
 import { Member } from '@/types';
+import { Shield, Users, Vote, Settings } from 'lucide-react';
 
 const components: { title: string; href: string; description: string }[] = [
   { title: 'What we do', href: '/what-we-do', description: '' },
@@ -29,10 +30,11 @@ const components: { title: string; href: string; description: string }[] = [
 
 interface NavlinksProps {
   user: User | null | undefined;
-  member: Member;
+  member: Member | null | undefined;
+  isAdmin?: boolean;
 }
 
-export default function Navlinks({ user, member }: NavlinksProps) {
+export default function Navlinks({ user, member, isAdmin }: NavlinksProps) {
   const router = getRedirectMethod() === 'client' ? useRouter() : null;
   const currentPath = usePathname();
 
@@ -40,7 +42,7 @@ export default function Navlinks({ user, member }: NavlinksProps) {
     <NavigationMenu>
       <NavigationMenuList>
         <NavigationMenuItem
-          className={member?.status === 'active' ? 'hidden sm:block' : ''}
+          className={member?.status === 'active' && member?.isApproved ? 'hidden sm:block' : ''}
         >
           <NavigationMenuTrigger>About us</NavigationMenuTrigger>
           <NavigationMenuContent>
@@ -108,12 +110,59 @@ export default function Navlinks({ user, member }: NavlinksProps) {
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
-        {member && member?.status === 'active' && (
+
+        <NavigationMenuItem>
+          <NavigationMenuLink asChild>
+            <NextLink 
+              href="/fundraisers" 
+              className={cn(
+                navigationMenuTriggerStyle(),
+                "bg-transparent hover:bg-accent"
+              )}
+            >
+              Fundraisers
+            </NextLink>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+        
+        {/* Show admin menu only for admin users */}
+        {user && isAdmin && (
+          <NavigationMenuItem>
+            <NavigationMenuTrigger>
+              <Shield className="h-4 w-4 mr-2" />
+              Admin
+            </NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
+                <ListItem href="/admin/members" title="Member Management">
+                  <Users className="h-4 w-4 mr-2 inline" />
+                  Review and approve member applications
+                </ListItem>
+                <ListItem href="/admin/elections" title="Election Management">
+                  <Vote className="h-4 w-4 mr-2 inline" />
+                  Manage elections and voting
+                </ListItem>
+                <ListItem href="/fundraisers/admin/new" title="Fundraiser Management">
+                  <Shield className="h-4 w-4 mr-2 inline" />
+                  Create and manage fundraisers
+                </ListItem>
+                <ListItem href="/admin/settings" title="Settings">
+                  <Settings className="h-4 w-4 mr-2 inline" />
+                  System configuration and settings
+                </ListItem>
+              </ul>
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+        )}
+        
+        {/* Show membership menu only for users with active approved membership */}
+        {user && member && (member?.status === 'active' || member?.isApproved) && (
           <>
             <NavigationMenuItem>
               <NavigationMenuTrigger>Membership</NavigationMenuTrigger>
               <NavigationMenuContent>
                 <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
+                  <ListItem href="/elections" title="Elections"></ListItem>
                   <ListItem href="/account" title="Account"></ListItem>
                   <ListItem
                     href="/contribute"
@@ -142,9 +191,10 @@ export default function Navlinks({ user, member }: NavlinksProps) {
           </>
         )}
 
-        {!user && (
+        {/* Show "For members" if user is not logged in OR if they don't have an active approved membership */}
+        {(!user || !member || (member?.status !== 'active' && !member?.isApproved)) && (
           <NavigationMenuItem>
-            <ListItem href="/signin" title="For members"></ListItem>
+            <ListItem href="/signin?redirectTo=%2Faccount" title="For members"></ListItem>
           </NavigationMenuItem>
         )}
         <NavigationMenuItem>

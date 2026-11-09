@@ -77,7 +77,7 @@ export default function SignUp({ allowEmail, redirectMethod }: SignUpProps) {
       {allowEmail && (
         <p>
           <Link href="/signin/email_signin" className="font-light text-sm">
-            Sign in via magic link
+            Sign in via OTP
           </Link>
         </p>
       )}

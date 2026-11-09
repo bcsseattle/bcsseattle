@@ -1,0 +1,189 @@
+import { Given, Then, When } from '@cucumber/cucumber';
+import { admin, createFundraiser, createUser } from '../support/db';
+import { expect } from '../support/expect';
+import { checkoutCompleted, postWebhook, sessionFromCheckoutUrl } from '../support/stripe';
+import type { E2EWorld } from '../support/world';
+
+/** Fundraisers need a creator; scenarios don't care who, so one is made behind the scenes. */
+async function organiser(world: E2EWorld) {
+  world.users.organiser ??= await createUser(world.cleanup, { fullName: 'Fundraiser Organiser', isAdmin: true });
+  return world.users.organiser;
+}
+
+Given(/^there is an active fundraiser "([^"]+)" with a goal of \$([\d,]+)$/, async function (this: E2EWorld, title: string, goal: string) {
+  // Titles are shown on a shared list page: suffix them so parallel scenarios never collide.
+  this.fundraiser = await createFundraiser(this.cleanup, await organiser(this), {
+    title: `${title} ${Math.random().toString(36).slice(2, 6)}`,
+    goal_amount: Number(goal.replace(/,/g, '')),
+  });
+  this.data[title] = this.fundraiser.id;
+});
+
+Given('there is an active fundraiser {string} with no end date', async function (this: E2EWorld, title: string) {
+  this.fundraiser = await createFundraiser(this.cleanup, await organiser(this), { title, ends_at: null });
+  this.data[title] = this.fundraiser.id;
+});
+
+Then(
+  /^I should see the fundraiser "([^"]+)" with "([^"]+)" towards a "([^"]+)"$/,
+  async function (this: E2EWorld, _title: string, raised: string, goal: string) {
+    const card = this.page.getByRole('link').filter({ hasText: this.fundraiser!.title });
+    await expect(card).toBeVisible();
+    await expect(card).toContainText(raised);
+    await expect(card).toContainText(goal.replace(/ goal$/, ''));
+  }
+);
+
+async function fillDonation(world: E2EWorld, amount: string) {
+  await world.page.goto(`/fundraisers/${world.fundraiser!.id}/donate`);
+  await world.page.getByLabel('Donation Amount ($)').fill(amount);
+  await world.page.getByLabel('Email').fill(world.me!.email);
+  await world.page.getByLabel('Full Name').fill(world.me!.fullName);
+  await world.page.getByRole('button', { name: 'Continue to Payment' }).click();
+}
+
+async function donate(world: E2EWorld, amount: string) {
+  await fillDonation(world, amount);
+  await world.page.waitForURL(/checkout\.stripe\.com/, { waitUntil: 'commit', timeout: 30_000 });
+  const session = await sessionFromCheckoutUrl(world.page.url());
+  world.checkoutSessionId = session.id;
+  world.data.fundraiserDonationId = session.metadata!.donation_id;
+}
+
+When(/^I donate \$(\d+) to the fundraiser$/, async function (this: E2EWorld, amount: string) {
+  await donate(this, String(amount));
+});
+
+Given(/^I have started a \$(\d+) donation to the fundraiser$/, async function (this: E2EWorld, amount: string) {
+  await donate(this, String(amount));
+  await this.page.goto('/');
+});
+
+When(/^I try to donate \$(\d+) to the fundraiser$/, async function (this: E2EWorld, amount: string) {
+  await fillDonation(this, String(amount));
+});
+
+Then('I should not be taken to Stripe Checkout', async function (this: E2EWorld) {
+  await this.page.waitForLoadState('networkidle');
+  expect(this.page.url()).not.toContain('checkout.stripe.com');
+});
+
+Then(/^I should be taken to Stripe Checkout for \$([\d.]+) for the fundraiser$/, async function (this: E2EWorld, dollars: string) {
+  const session = await sessionFromCheckoutUrl(this.page.url());
+  expect(session.livemode).toBe(false);
+  expect(session.amount_total).toBe(Math.round(Number(dollars) * 100));
+  expect(session.metadata).toMatchObject({ type: 'fundraiser_donation', fundraiser_id: this.fundraiser!.id });
+});
+
+Then(/^a pending \$(\d+) fundraiser donation should be recorded$/, async function (this: E2EWorld, amount: string) {
+  const { data } = await admin
+    .from('fundraiser_donations')
+    .select('amount, payment_status, fundraiser_id')
+    .eq('id', this.data.fundraiserDonationId)
+    .single();
+  expect(data).toEqual({ amount: Number(amount), payment_status: 'pending', fundraiser_id: this.fundraiser!.id });
+});
+
+function confirmationEvent(world: E2EWorld) {
+  // Built once per scenario so "the same confirmation again" really is identical.
+  world.data.event ??= JSON.stringify(
+    checkoutCompleted({ type: 'fundraiser_donation', fundraiser_id: world.fundraiser!.id, donation_id: world.data.fundraiserDonationId }, 2500)
+  );
+  return JSON.parse(world.data.event);
+}
+
+When('Stripe confirms the payment for my fundraiser donation', async function (this: E2EWorld) {
+  const res = await postWebhook(confirmationEvent(this));
+  expect(res.status, res.body).toBe(200);
+});
+
+When('Stripe sends the same confirmation again', async function (this: E2EWorld) {
+  await postWebhook(confirmationEvent(this));
+});
+
+When('I open the fundraiser', async function (this: E2EWorld) {
+  await this.page.goto(`/fundraisers/${this.fundraiser!.id}`);
+});
+
+When('I open the donation page of {string}', async function (this: E2EWorld, title: string) {
+  await this.page.goto(`/fundraisers/${this.data[title]}/donate`);
+});
+
+Then('the fundraiser should show {string} raised', async function (this: E2EWorld, amount: string) {
+  await expect(this.page.getByText(amount, { exact: true }).first()).toBeVisible();
+  await expect(this.page.getByText(/raised of/)).toBeVisible();
+});
+
+Then(/^the fundraiser's total should be \$(\d+)$/, async function (this: E2EWorld, amount: string) {
+  const { data } = await admin.from('fundraisers').select('current_amount').eq('id', this.fundraiser!.id).single();
+  expect(data?.current_amount).toBe(Number(amount));
+});
+
+Then('the donor wall should list my donation', async function (this: E2EWorld) {
+  // The member's name appears on this page only on the donor wall.
+  await expect(this.page.getByText('People who have supported this fundraiser')).toBeVisible();
+  await expect(this.page.getByText(this.me!.fullName).first()).toBeVisible();
+});
+
+// ---------------------------------------------------------------- admin
+
+async function fillFundraiserForm(world: E2EWorld, fields: { title?: string; description?: string; goal?: string }) {
+  await world.page.goto('/fundraisers/admin/new');
+  await world.page.getByLabel('Title').fill(fields.title ?? `E2E Fundraiser ${Date.now()}`);
+  await world.page.getByLabel('Description').fill(fields.description ?? 'Raising money to cover costs for a family in need.');
+  await world.page.getByLabel('Goal Amount ($)').fill(fields.goal ?? '1000');
+  const inAMonth = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
+  await world.page.getByLabel('End Date').fill(inAMonth);
+  await world.page.getByRole('combobox').click();
+  await world.page.getByRole('option', { name: 'Community' }).click();
+  await world.page.getByRole('button', { name: 'Create Fundraiser' }).click();
+}
+
+When(/^I create a fundraiser titled "([^"]+)" with a goal of \$([\d,]+)$/, async function (this: E2EWorld, title: string, goal: string) {
+  await fillFundraiserForm(this, { title, goal: goal.replace(/,/g, '') });
+  await expect(this.page).toHaveURL(/\/fundraisers\/[0-9a-f-]{36}$/);
+  const id = this.page.url().split('/').pop()!;
+  this.cleanup.push(async () => admin.from('fundraisers').delete().eq('id', id));
+  this.data.createdFundraiserId = id;
+});
+
+Then(/^the fundraiser "([^"]+)" should be active with a goal of \$([\d,]+)$/, async function (this: E2EWorld, title: string, goal: string) {
+  const { data } = await admin.from('fundraisers').select('title, status, goal_amount, created_by').eq('id', this.data.createdFundraiserId).single();
+  expect(data).toEqual({ title, status: 'active', goal_amount: Number(goal.replace(/,/g, '')), created_by: this.me!.id });
+});
+
+When(/^I submit a new fundraiser with (title|description|goal) "([^"]*)"$/, async function (this: E2EWorld, field: string, value: string) {
+  await fillFundraiserForm(this, { [field]: value });
+});
+
+When('I rename the fundraiser to {string}', async function (this: E2EWorld, title: string) {
+  await this.page.goto(`/fundraisers/admin/${this.fundraiser!.id}/edit`);
+  await this.page.getByLabel('Title').fill(title);
+  await this.page.getByRole('button', { name: 'Update Fundraiser' }).click();
+  await this.page.waitForLoadState('networkidle');
+});
+
+Then('the fundraiser should be saved as {string}', async function (this: E2EWorld, title: string) {
+  await expect
+    .poll(async () => (await admin.from('fundraisers').select('title').eq('id', this.fundraiser!.id).single()).data?.title)
+    .toBe(title);
+});
+
+When('I open the fundraiser from the list', async function (this: E2EWorld) {
+  await this.page.getByRole('link').filter({ hasText: this.fundraiser!.title }).click();
+  await expect(this.page).toHaveURL(new RegExp(`/fundraisers/${this.fundraiser!.id}$`));
+});
+
+Then("I should see the fundraiser's title as the page heading", async function (this: E2EWorld) {
+  await expect(this.page.getByRole('heading', { name: this.fundraiser!.title, level: 1 })).toBeVisible();
+});
+
+Then('the donation amount should be refused', async function (this: E2EWorld) {
+  // Refused either by the browser's own range check (the input has min/max) or by
+  // the form's validation message: both stop the donor before payment.
+  const field = this.page.getByLabel('Donation Amount ($)');
+  const nativelyInvalid = await field.evaluate((el) => !(el as HTMLInputElement).checkValidity());
+  if (!nativelyInvalid) {
+    await expect(this.page.getByText(/Amount must be greater than 0|Maximum amount is|Minimum donation amount/)).toBeVisible();
+  }
+});

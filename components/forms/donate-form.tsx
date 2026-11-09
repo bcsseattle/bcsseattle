@@ -27,7 +27,13 @@ import {
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { User } from '@supabase/supabase-js';
-import { DonationFormSchema, Donor, ProductWithPrices } from '@/types';
+import {
+  DonationFormSchema,
+  Donor,
+  ProductWithPrices,
+  Program,
+  DonationPurpose
+} from '@/types';
 import { Card } from '../ui/card';
 import { US_STATES } from '@/utils/constants';
 import { submitDonation } from '@/utils/donation/handlers';
@@ -42,9 +48,11 @@ interface DonateFormProps {
   user: User | null | undefined;
   product: ProductWithPrices;
   donor?: Donor | null;
+  programs?: Program[];
+  defaultPurpose?: DonationPurpose;
 }
 
-export default function DonateForm({ user, product, donor }: DonateFormProps) {
+export default function DonateForm({ user, product, donor, programs, defaultPurpose }: DonateFormProps) {
   const router = useRouter();
   const [donationLoading, setDonationLoading] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
@@ -56,7 +64,7 @@ export default function DonateForm({ user, product, donor }: DonateFormProps) {
     resolver: zodResolver(DonationFormSchema),
     defaultValues: {
       frequency: 'one_time',
-      purpose: 'general-purpose',
+      purpose: defaultPurpose ?? 'general-purpose',
       donorType: donor?.donor_type || 'individual',
       donorName: donor?.full_name || '',
       organizationName: donor?.organization_name || '',
@@ -292,14 +300,16 @@ export default function DonateForm({ user, product, donor }: DonateFormProps) {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="general-purpose">General Purpose</SelectItem>
-                <SelectItem value="funeral-and-burial">
-                  Funeral & Burial
-                </SelectItem>
-                <SelectItem value="new-member-support">
-                  New Member Support
-                </SelectItem>
-                <SelectItem value="youth-programs">Youth Programs</SelectItem>
+                {
+                  programs?.map((program) => (
+                    <SelectItem key={program.id} value={program.key}>
+                      {program.value}
+                    </SelectItem>
+                  ))
+                }
+
+                
+                
               </SelectContent>
             </Select>
             <FormMessage />

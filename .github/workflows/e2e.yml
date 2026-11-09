@@ -1,0 +1,81 @@
+name: E2E (Playwright + Cucumber)
+
+# Pull requests: @smoke on Chromium (gating).
+# Nightly / manual: full regression on Chromium, Firefox and WebKit (gating), plus the
+# known-bug ledger (non-gating: those scenarios assert intended behaviour and fail
+# until each bug is fixed).
+on:
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 10 * * *' # 02:00 Pacific
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: ${{ matrix.profile }} · ${{ matrix.browser }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    continue-on-error: ${{ matrix.profile == 'bugs' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"browser":"chromium","profile":"smoke"}]' || '[{"browser":"chromium","profile":"default"},{"browser":"firefox","profile":"default"},{"browser":"webkit","profile":"default"},{"browser":"chromium","profile":"bugs"}]') }}
+    env:
+      # Test-mode keys only; e2e/scripts/write-env.mjs refuses anything else.
+      STRIPE_TEST_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
+      STRIPE_TEST_PUBLISHABLE_KEY: ${{ secrets.STRIPE_TEST_PUBLISHABLE_KEY }}
+      BROWSER: ${{ matrix.browser }}
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Start the e2e Supabase stack (production schema + develop overlay)
+        run: pnpm e2e:db:start
+
+      - name: Write the e2e environment
+        run: pnpm e2e:env
+
+      - name: Install ${{ matrix.browser }}
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Build the app against the e2e stack
+        run: pnpm e2e:build
+
+      - name: Serve the app
+        run: |
+          pnpm e2e:serve > e2e-server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3100/ && exit 0; sleep 2; done
+          echo "App did not start"; cat e2e-server.log; exit 1
+
+      - name: Run the ${{ matrix.profile }} profile
+        run: pnpm e2e --profile ${{ matrix.profile }}
+
+      - name: Upload reports, traces and server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.profile }}-${{ matrix.browser }}
+          path: |
+            e2e/reports/
+            e2e-server.log
+          retention-days: 14
+
+      - name: Stop Supabase
+        if: always()
+        run: pnpm e2e:db:stop

@@ -133,12 +133,38 @@ export const getErrorRedirect = (
     arbitraryParams
   );
 
-export const getPriceString = (amountPerPerHead: number) => {
+export const getPriceString = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0
-  }).format(amountPerPerHead / 100);
+  }).format(amount / 100);
+};
+
+// For amounts that are already in dollars (not cents)
+// export const formatCurrency = (amount: number) => {
+//   return new Intl.NumberFormat('en-US', {
+//     style: 'currency',
+//     currency: 'USD',
+//     minimumFractionDigits: 2,
+//     maximumFractionDigits: 2
+//   }).format(amount);
+// };
+
+// For amounts stored in your specific format where 62.95 becomes 6200.95
+export const formatCurrency = (amount: number | null | undefined) => {
+  // Handle null/undefined case
+  if (amount === null || amount === undefined) {
+    return '$0.00';
+  }
+  
+  // Format the decimal amount directly
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
 };
 
 export const paymentMethodMap: { [key: string]: string } = {
@@ -155,7 +181,8 @@ export const purposeTitleMap: { [key: string]: string } = {
   'general-purpose': 'General Purpose',
   'funeral-and-burial': 'Funeral and Burial',
   'new-member-support': 'New Member Support',
-  'youth-programs': 'Youth Programs'
+  'youth-programs': 'Youth Programs',
+  'social-events': 'Social Events',
 };
 
 export function formatPhoneNumber(phoneNumber: string) {

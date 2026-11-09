@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { renderToStream } from '@react-pdf/renderer';
 import InvoicePDF from '@/components/donations/invoice-pdf';
-import { updateDonation } from '@/utils/supabase/admin';
+// Receipts are opened by guests too: donations/donors are read by id with the service role.
+import { supabaseAdmin, updateDonation } from '@/utils/supabase/admin';
 import { getErrorRedirect } from '@/utils/helpers';
 
 export async function GET(
@@ -22,7 +23,7 @@ export async function GET(
     }
 
     const supabase = await createClient();
-    const { data: donation } = await supabase
+    const { data: donation } = await supabaseAdmin
       .from('donations')
       .select('*')
       .eq('id', donationId)
@@ -38,7 +39,7 @@ export async function GET(
       );
     }
 
-    const { data: donor, error } = await supabase
+    const { data: donor, error } = await supabaseAdmin
       .from('donors')
       .select('*')
       .eq('id', donation.donor_id)

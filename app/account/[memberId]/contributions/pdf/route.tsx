@@ -61,7 +61,7 @@ export async function GET(
       gte: startOfYear,
       lte: startOfNextYear
     };
-    const payments = await getStripePayments({
+    const { data: payments } = await getStripePayments({
       customerId: stripeCustomerId,
       dateRange
     });
@@ -119,7 +119,7 @@ export async function GET(
         organization={organization}
         member={member}
         customer={customer}
-        payments={payments}
+        payments={payments ?? []}
         totalSpent={totalSpent}
         taxYear={taxYear}
       />

@@ -50,7 +50,7 @@ export default function Bylaws() {
             all activities align with IRS regulations governing 501(c)(3)
             organizations. No part of the net earnings will benefit any private
             shareholder or individual. Furthermore, no substantial part of the
-            organization's activities shall be the carrying on of propaganda, or
+            organization&apos;s activities shall be the carrying on of propaganda, or
             otherwise attempting to influence legislation, and the organization
             shall not participate in, or intervene in (including the publishing
             or distribution of statements) any political campaign on behalf of
@@ -115,7 +115,7 @@ export default function Bylaws() {
           <p>Members are expected to:</p>
           <ul className="my-6 ml-6 list-disc [&>li]:mt-2">
             <li>
-              Uphold the organization's bylaws and abide by its policies and
+              Uphold the organization&apos;s bylaws and abide by its policies and
               procedures.
             </li>
 
@@ -169,7 +169,7 @@ export default function Bylaws() {
           </p>
           <p>
             Notice of any meeting shall be given at least 10 days in advance via
-            email and posted on the organization's official communication
+            email and posted on the organization&apos;s official communication
             channels.
           </p>
           <p>
@@ -432,7 +432,7 @@ export default function Bylaws() {
           </p>
           <p>
             The Board of Directors or its designated committee may accept
-            contributions, gifts, bequests, or devises for the organization's
+            contributions, gifts, bequests, or devises for the organization&apos;s
             general or specific purposes. However, significant gifts that might
             entail financial or ethical obligations require Board review and
             approval.
