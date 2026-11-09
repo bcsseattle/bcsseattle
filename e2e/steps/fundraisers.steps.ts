@@ -3,6 +3,7 @@ import { admin, anonClient, createFundraiser, createUser, uniqueEmail } from '..
 import { expect } from '../support/expect';
 import { checkoutCompleted, postWebhook, sessionFromCheckoutUrl } from '../support/stripe';
 import type { E2EWorld } from '../support/world';
+import { tamperWithCheckoutAmount } from './donations.steps';
 
 /** Fundraisers need a creator; scenarios don't care who, so one is made behind the scenes. */
 async function organiser(world: E2EWorld) {
@@ -220,4 +221,9 @@ Then('the fundraiser should have the update {string}', async function (this: E2E
   await expect
     .poll(async () => (await admin.from('fundraiser_updates').select('content').eq('fundraiser_id', this.fundraiser!.id)).data)
     .toEqual([{ content: text }]);
+});
+
+When(/^I donate \$(\d+) to the fundraiser but my browser asks checkout to charge \$(\d+)$/, async function (this: E2EWorld, amount: string, charged: string) {
+  await tamperWithCheckoutAmount(this, Number(amount) * 100, Number(charged) * 100);
+  await donate(this, String(amount));
 });

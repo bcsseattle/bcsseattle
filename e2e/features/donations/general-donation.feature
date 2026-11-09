@@ -14,6 +14,13 @@ Feature: General donations
     Then I should be taken to Stripe Checkout for $100.00 as a one-time payment
     And a pending $100.00 donation should be recorded for my email
 
+  @P0 @critical @BUG-013
+  Scenario: Changing the amount in the browser doesn't change what is charged
+    Given I am signed in as an approved member
+    When I donate $100 once by card but my browser asks checkout to charge $1
+    Then I should be taken to Stripe Checkout for $100.00 as a one-time payment
+    And a pending $100.00 donation should be recorded for my email
+
   @P0 @critical
   Scenario: Once Stripe confirms the payment, the donor gets a receipt
     Given I am signed in as an approved member

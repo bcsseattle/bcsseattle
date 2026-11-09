@@ -137,3 +137,20 @@ Then('the receipt PDF should download', async function (this: E2EWorld) {
 Then('the donation form should be finished', async function (this: E2EWorld) {
   await expect(this.page.getByRole('button', { name: 'Done', exact: true })).toBeHidden();
 });
+
+/** Plays an attacker: rewrites the amount the browser sends to the checkout server action (BUG-013). */
+export async function tamperWithCheckoutAmount(world: E2EWorld, fromCents: number, toCents: number) {
+  await world.page.route('**/*', async (route) => {
+    const req = route.request();
+    const body = req.postData();
+    if (req.method() === 'POST' && req.headers()['next-action'] && body?.includes(`"unit_amount":${fromCents}`)) {
+      return route.continue({ postData: body.replaceAll(`"unit_amount":${fromCents}`, `"unit_amount":${toCents}`) });
+    }
+    return route.continue();
+  });
+}
+
+When(/^I donate \$(\d+) once by card but my browser asks checkout to charge \$(\d+)$/, async function (this: E2EWorld, amount: string, charged: string) {
+  await tamperWithCheckoutAmount(this, Number(amount) * 100, Number(charged) * 100);
+  await donateByCard(this, amount, 'once');
+});

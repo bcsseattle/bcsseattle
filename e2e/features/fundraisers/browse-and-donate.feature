@@ -23,6 +23,12 @@ Feature: Supporting a fundraiser
     Then I should be taken to Stripe Checkout for $25.00 for the fundraiser
     And a pending $25 fundraiser donation should be recorded
 
+  @P0 @critical @BUG-013
+  Scenario: Changing the amount in the browser doesn't change what the fundraiser charges
+    Given I am signed in as an approved member
+    When I donate $25 to the fundraiser but my browser asks checkout to charge $1
+    Then I should be taken to Stripe Checkout for $25.00 for the fundraiser
+
   @P0 @critical
   Scenario: Once Stripe confirms the payment, the fundraiser's total goes up
     Given I am signed in as an approved member
