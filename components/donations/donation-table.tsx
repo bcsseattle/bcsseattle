@@ -1,4 +1,5 @@
 import React from 'react';
+import { TablePagination } from '@/components/ui/table-pagination';
 import {
   useReactTable,
   getCoreRowModel,
@@ -15,7 +16,6 @@ import {
 } from '@/components/ui/table';
 import { donationColumns } from './donation-columns'; // Import column definitions
 import { Donation } from '@/types';
-import { Button } from '../ui/button';
 
 type DonationTableProps = {
   data: Donation[];
@@ -86,24 +86,7 @@ const DonationTable: React.FC<DonationTableProps> = ({ data }) => {
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
-      </div>
+      <TablePagination table={table} />
     </div>
   );
 };
