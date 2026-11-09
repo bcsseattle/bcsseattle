@@ -5,6 +5,7 @@ import bookmarkPlugin from '@notion-render/bookmark-plugin';
 import { NotionRenderer } from '@notion-render/client';
 import hljsPlugin from '@notion-render/hljs-plugin';
 import { notFound } from 'next/navigation';
+import { currentUserIsActiveMember } from '@/utils/election-config';
 
 export default async function Page(props: { params: Promise<{ slug: string }> }) {
   const params = await props.params;
@@ -17,22 +18,10 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
     return redirect('/signin');
   }
 
-  const { data: subscriptions }: { data: any } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', user?.id);
-
-  const isSubscriptionActive = subscriptions?.filter(
-    (subscription: any) => subscription.status === 'active'
-  );
-
-  const { data: member } = await supabase
-  .from('members')
-  .select('*')
-  .eq('user_id', user?.id)
-  .maybeSingle();
-
-  if (subscriptions && !isSubscriptionActive || member?.status !== 'active') {
+  // Approved members whose membership is active. The old subscription check
+  // tested an array, which is always truthy, so it never applied (BUG-055);
+  // member status now follows the contribution subscription (BUG-023).
+  if (!(await currentUserIsActiveMember())) {
     return redirect('/register');
   }
 
