@@ -221,6 +221,19 @@ When('I open the {string} tab', async function (this: E2EWorld, name: string) {
   await this.page.getByRole('tab', { name }).click();
 });
 
+Given('the election is still a draft', async function (this: E2EWorld) {
+  const { error } = await admin.from('elections').update({ status: 'draft' }).eq('id', this.election!.id);
+  expect(error).toBeNull();
+});
+
+Then('the results should not be found', async function (this: E2EWorld) {
+  expect(this.response!.status, this.response!.body).toBe(404);
+});
+
+Then('the results should need sign-in', async function (this: E2EWorld) {
+  expect(this.response!.status, this.response!.body).toBe(401);
+});
+
 When('I fetch the published results of the election', async function (this: E2EWorld) {
   const res = await this.page.request.get(`/api/elections/${this.election!.id}/results`);
   this.response = { status: res.status(), body: await res.text() };

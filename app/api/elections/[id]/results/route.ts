@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { isCandidateVotingOpen, shouldShowUnopposedStatus } from '@/utils/election-config';
 import dayjs from '@/libs/dayjs';
@@ -68,7 +69,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
+
+    // Results are for signed-in members, like the /elections pages (BUG-037).
+    const {
+      data: { user }
+    } = await (await createClient()).auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     // Use service client to bypass RLS for public election results
     const supabase = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -82,7 +91,10 @@ export async function GET(
       .eq('id', id)
       .single();
 
-    if (electionError || !election) {
+    // Draft, cancelled or inactive elections aren't published; admins can still preview them (BUG-037).
+    const unpublished =
+      !election || !election.is_active || election.status === 'draft' || election.status === 'cancelled';
+    if (electionError || !election || (unpublished && !(await isCurrentUserAdmin()))) {
       return NextResponse.json(
         { error: 'Election not found' },
         { status: 404 }
@@ -177,6 +189,13 @@ export async function GET(
     const candidateResults: CandidateResult[] = [];
     const positionsSet = new Set<string>();
 
+    // Each candidate's share is of the votes cast in their own position (BUG-037).
+    const votesByPosition = new Map<string, number>();
+    allCandidates?.forEach((c) => {
+      const n = candidateVoteMap.get(c.id)?.voteCount || 0;
+      votesByPosition.set(c.position, (votesByPosition.get(c.position) || 0) + n);
+    });
+
     allCandidates?.forEach((candidate) => {
       const voteData = candidateVoteMap.get(candidate.id);
       const voteCount = voteData?.voteCount || 0;
@@ -186,8 +205,8 @@ export async function GET(
         fullName: candidate.full_name,
         position: candidate.position,
         voteCount,
-        percentage: stats.candidate_votes > 0 
-          ? Math.round((voteCount / stats.candidate_votes) * 100 * 100) / 100 
+        percentage: (votesByPosition.get(candidate.position) || 0) > 0
+          ? Math.round((voteCount / votesByPosition.get(candidate.position)!) * 100 * 100) / 100
           : 0,
         photoUrl: candidate.photo_url,
         bio: candidate.bio
