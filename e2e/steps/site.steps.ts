@@ -113,11 +113,19 @@ Then('the donation should still be pending', async function (this: E2EWorld) {
 
 Then('the page should fit the screen width', async function (this: E2EWorld) {
   await this.page.waitForLoadState('networkidle');
-  const { scrollWidth, innerWidth } = await this.page.evaluate(() => ({
-    scrollWidth: document.documentElement.scrollWidth,
-    innerWidth: window.innerWidth,
-  }));
-  expect(scrollWidth, `page is ${scrollWidth}px wide on a ${innerWidth}px screen`).toBeLessThanOrEqual(innerWidth);
+  const { scrollWidth, innerWidth, culprit } = await this.page.evaluate(() => {
+    // The innermost element that runs past the right edge, to say what to fix.
+    const over = [...document.body.querySelectorAll('*')].filter(
+      (el) => el.getBoundingClientRect().right > window.innerWidth + 0.5
+    );
+    const el = over.find((e) => !over.some((o) => o !== e && e.contains(o))) ?? over[0];
+    return {
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+      culprit: el ? `<${el.tagName.toLowerCase()} class="${el.getAttribute('class') ?? ''}">${(el.textContent ?? '').trim().slice(0, 40)}` : '',
+    };
+  });
+  expect(scrollWidth, `${this.page.url()} is ${scrollWidth}px wide on a ${innerWidth}px screen; ${culprit}`).toBeLessThanOrEqual(innerWidth);
 });
 
 async function axe(world: E2EWorld) {

@@ -199,7 +199,7 @@ export default function TestElectionTypesPage() {
           <CardTitle>Sample Configuration Code</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="bg-muted p-4 rounded text-sm font-mono">
+          <div className="overflow-x-auto rounded bg-muted p-4 font-mono text-sm">
             <div className="space-y-1">
               <div>// Configure {selectedType} election</div>
               <div>await configureElectionByType(electionId, '{selectedType}');</div>

@@ -21,12 +21,12 @@ export default async function AdminElectionsPage() {
 
   return (
     <Card>
-      <CardHeader className="flex-row items-start justify-between space-y-0">
+      <CardHeader className="flex-row flex-wrap items-start justify-between gap-3 space-y-0">
         <div>
           <CardTitle>Election Management</CardTitle>
           <CardDescription>All elections, newest first.</CardDescription>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
             <Link href="/admin/voting-config">Voting configuration</Link>
           </Button>
