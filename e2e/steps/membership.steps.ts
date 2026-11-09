@@ -106,3 +106,20 @@ When(/^Stripe reports my (contribution plan|recurring donation) as (cancelled|ac
 Then(/^my membership should be (active|inactive)$/, async function (this: E2EWorld, status: string) {
   await expect.poll(async () => (await getMember(this.me!.id))?.status).toBe(status);
 });
+
+When('I register but my browser sends the form without a name', async function (this: E2EWorld) {
+  await this.page.route('**/*', async (route) => {
+    const body = route.request().postData();
+    if (route.request().headers()['next-action'] && body?.includes(`"fullName":"${VALID.Name}"`)) {
+      this.data.rewrote = 'yes';
+      return route.continue({ postData: body.replace(`"fullName":"${VALID.Name}"`, '"fullName":""') });
+    }
+    return route.continue();
+  });
+  await fillRegistration(this.page);
+  await expect.poll(() => this.data.rewrote, { message: 'the registerMember request was not rewritten' }).toBe('yes');
+});
+
+Then('no membership should have been created for me', async function (this: E2EWorld) {
+  expect(await getMember(await currentUserId(this))).toBeNull();
+});
