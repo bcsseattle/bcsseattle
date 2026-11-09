@@ -41,7 +41,7 @@ export default async function Navbar() {
           <Link href={'/'} className="flex items-center">
             <Logo className="object-cover h-20 sm:h-36 shrink-0" />
             {/* Not a heading: it's on every page, which then had two h1s (BUG-051). */}
-            <span className="hidden sm:inline text-xl ml-4 text-secondary">
+            <span className="hidden sm:inline text-xl ml-4 text-foreground">
               Baloch Community Services of Seattle
             </span>
           </Link>

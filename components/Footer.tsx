@@ -3,7 +3,7 @@ import Logo from '@/components/icons/Logo';
 
 export default function Footer() {
   return (
-    <footer className="mx-auto max-w-[1920px] bg-accent">
+    <footer className="mx-auto max-w-[1920px] bg-card">
       <div className="grid grid-cols-1 gap-8 py-12 transition-colors duration-150 lg:grid-cols-12 border-gray-400 bg-primary-100 p-12">
         <div className="col-span-2 lg:col-span-3">
           <Link

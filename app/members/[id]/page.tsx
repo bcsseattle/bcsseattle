@@ -70,7 +70,7 @@ export default async function Page(props: {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold p-2 my-5 text-secondary">
+      <h1 className="text-3xl font-bold p-2 my-5 text-foreground">
         {member?.fullName}
       </h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

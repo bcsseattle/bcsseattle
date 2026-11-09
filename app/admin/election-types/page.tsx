@@ -166,7 +166,7 @@ export default function TestElectionTypesPage() {
                 <div 
                   key={type}
                   className={`p-4 border rounded-lg transition-colors ${
-                    isSelected ? 'border-primary bg-primary/5' : 'border-border'
+                    isSelected ? 'border-accent bg-accent-100' : 'border-border'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-3">
