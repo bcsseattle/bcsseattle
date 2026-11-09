@@ -88,7 +88,7 @@ When(
     this.cleanup.push(async () => admin.from('expenses').delete().eq('description', description));
 
     await this.page.goto('/admin/expenses');
-    await this.page.getByLabel('Amount ($)').fill(amount);
+    await this.page.getByLabel('Amount (USD)').fill(amount);
     await this.page.getByLabel('Category').fill(category);
     await this.page.getByLabel('Payee').fill(payee);
     await this.page.getByLabel('Description').fill(description);
