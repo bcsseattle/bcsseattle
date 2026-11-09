@@ -9,6 +9,7 @@ import {
 } from 'utils/helpers';
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
+import { internalAuthHeader } from '@/utils/internal-api';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import {
@@ -92,6 +93,7 @@ export async function sendWelecomEmail(User: User) {
   try {
     const response = await fetch(api_url, {
       method: 'POST',
+      headers: internalAuthHeader(),
       body: JSON.stringify({
         fullName: User.user_metadata.full_name,
         email: User.email
@@ -118,6 +120,7 @@ export async function sendNewMemberJoinedEmail(User: User, memberData?: any) {
     const response = await fetch(api_url, {
       method: 'POST',
       headers: {
+        ...internalAuthHeader(),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -152,6 +155,7 @@ export async function sendPaymentFailedEmail(charnge: Stripe.Charge) {
 
     const response = await fetch(api_url, {
       method: 'POST',
+      headers: internalAuthHeader(),
       body: JSON.stringify({
         email: charnge.billing_details.email,
         name: charnge.billing_details.name,

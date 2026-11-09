@@ -89,7 +89,7 @@ Feature: Personal data is protected at the database and API level
     When "Bilal" inserts a vote for "Hani" directly through the public API
     Then the vote should be rejected
 
-  @P0 @known-bug @BUG-008
+  @P0 @BUG-008
   Scenario: An anonymous caller cannot make the site send a "payment failed" email
     When an anonymous caller asks the site to send a payment-failed email to "victim@example.test"
     Then the request should be refused before any email is attempted

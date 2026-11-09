@@ -1,3 +1,4 @@
+import { isInternalRequest } from '@/utils/internal-api';
 import { WelcomeEmailTemplate } from '@/components/email-templates/membership-template';
 import { NextRequest } from 'next/server';
 import { Resend } from 'resend';
@@ -5,6 +6,9 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
+  if (!isInternalRequest(request)) {
+    return new Response('Unauthorized', { status: 401 });
+  }
   const { email } = await request.json();
   try {
     const { data, error } = await resend.emails.send({

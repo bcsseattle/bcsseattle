@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { createClient } from '@/utils/supabase/server';
+import { internalAuthHeader } from '@/utils/internal-api';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getURL, getErrorRedirect, getStatusRedirect } from 'utils/helpers';
@@ -18,7 +19,6 @@ export async function redirectToPath(path: string) {
   return redirect(path);
 }
 
-export async function getSession() {
 /** Whether the signed-in user is an admin (users.is_admin). Never trust
  *  user_metadata for this: users can edit it themselves (BUG-004). */
 export async function isCurrentUserAdmin() {
@@ -31,6 +31,7 @@ export async function isCurrentUserAdmin() {
   return data?.is_admin ?? false;
 }
 
+export async function getSession() {
   const supabase = await createClient();
   try {
     const { data: { session }, error } = await supabase.auth.getSession();
@@ -468,6 +469,7 @@ export async function sendEmail(values: z.infer<typeof ContactFormSchema>) {
   try {
     const response = fetch(api_url, {
       method: 'POST',
+      headers: internalAuthHeader(),
       body: JSON.stringify({ name, email, message })
     });
     return getStatusRedirect('/', 'Success!', 'Your message has been sent.');
@@ -497,6 +499,7 @@ export async function signUpFuneralBurial(
   try {
     const response = fetch(api_url, {
       method: 'POST',
+      headers: internalAuthHeader(),
       body: JSON.stringify({
         fullName,
         email,

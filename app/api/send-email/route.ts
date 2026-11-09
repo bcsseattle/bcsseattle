@@ -1,8 +1,12 @@
+import { isInternalRequest } from '@/utils/internal-api';
 import { type NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import Mail from 'nodemailer/lib/mailer';
 
 export async function POST(request: NextRequest) {
+  if (!isInternalRequest(request)) {
+    return new Response('Unauthorized', { status: 401 });
+  }
   const { email, name, message } = await request.json();
   const transport = nodemailer.createTransport({
     service: 'gmail',
