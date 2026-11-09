@@ -14,7 +14,7 @@ Feature: Admins manage fundraisers
 
   # After creating, the app navigates to the new fundraiser client-side and the
   # page never leaves its loading skeleton; a full reload shows it.
-  @P1 @known-bug @BUG-074
+  @P1 @BUG-074
   Scenario: After creating a fundraiser the admin lands on its page
     Given I am signed in as an admin
     When I create a fundraiser titled "Funeral costs for a community elder" with a goal of $5,000

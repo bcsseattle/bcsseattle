@@ -48,7 +48,7 @@ Feature: Supporting a fundraiser
     And I open the fundraiser
     Then the donor wall should list my donation
 
-  @P0 @critical @known-bug @BUG-074
+  @P0 @critical @BUG-074
   Scenario: A member opens a fundraiser from the list
     Given I am signed in as an approved member
     When I go to the fundraisers page
