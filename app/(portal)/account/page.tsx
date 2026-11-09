@@ -6,6 +6,10 @@ import ReceiptForm from '@/components/ui/AccountForms/ReceiptForm';
 import { Donation } from '@/types';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { MemberStatusBadge } from '@/components/portal/member-row';
+import { PageHeader } from '@/components/portal/page-header';
+import { SignOutButton } from '@/components/portal/sign-out-button';
+import { PersonRow } from '@/components/ui/person-row';
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
@@ -81,36 +85,39 @@ export default async function Account(props: { searchParams: SearchParams }) {
     }
   }
 
+  const name = userDetails?.full_name || member.fullName || user.email || 'Member';
+  const group = (title: string, children: React.ReactNode) => (
+    <section className="flex flex-col gap-3">
+      <h2 className="px-1 text-overline uppercase text-muted-foreground">{title}</h2>
+      <div className="flex flex-col gap-4">{children}</div>
+    </section>
+  );
+
+  // Account, after the mobile Account screen (Figma 19:2559): who you are, then
+  // the Membership and Profile groups, then Sign out. The forms are unchanged.
   return (
-    <section className="my-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-2xl font-bold mb-6">Account Settings</h1>
-        <div className="space-y-6">
-          {donations.length > 0 && (
-            <DonationReceiptForm donations={donations} />
-          )}
+    <div className="flex max-w-[720px] flex-col gap-6">
+      <PageHeader title="My account" />
+      <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3">
+        <PersonRow className="flex-1" name={name} secondary={user.email} />
+        <MemberStatusBadge status={member.status} />
+      </div>
+      {group(
+        'Membership',
+        <>
+          {subscriptions?.map((sub) => <CustomerPortalForm key={sub.id} subscription={sub} />)}
           <ReceiptForm member={member} />
-          {subscriptions && subscriptions.length > 0 && (
-            <div className="space-y-4">
-              {subscriptions.length > 1 && (
-                <h2 className="text-lg font-semibold">Active Subscriptions</h2>
-              )}
-              {subscriptions.map((sub, index) => (
-                <div key={sub.id} className="space-y-2">
-                  {subscriptions.length > 1 && (
-                    <h3 className="text-base font-medium text-muted-foreground">
-                      Subscription {index + 1}
-                    </h3>
-                  )}
-                  <CustomerPortalForm subscription={sub} />
-                </div>
-              ))}
-            </div>
-          )}
+          {donations.length > 0 && <DonationReceiptForm donations={donations} />}
+        </>
+      )}
+      {group(
+        'Profile',
+        <>
           <NameForm userName={userDetails?.full_name ?? ''} />
           <EmailForm userEmail={user.email ?? ''} />
-        </div>
-      </div>
-    </section>
+        </>
+      )}
+      <SignOutButton />
+    </div>
   );
 }

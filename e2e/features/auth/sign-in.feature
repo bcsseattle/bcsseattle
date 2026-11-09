@@ -27,7 +27,7 @@ Feature: Signing in and out
     Then I should be asked to sign in before reaching "/account"
     When "Amina" signs in with the correct password
     Then I should be on the "/account" page
-    And I should see the heading "Account Settings"
+    And I should see the heading "My account"
 
   @P1
   Scenario: A signed-in member signs out
