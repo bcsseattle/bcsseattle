@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/Toasts/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
 import { PropsWithChildren, Suspense } from 'react';
 import { getURL } from '@/utils/helpers';
-import { Inter as FontSans } from 'next/font/google';
+import { Inter as FontSans, Source_Serif_4 as FontSerif } from 'next/font/google';
 import { cn } from '@/utils/cn';
 import '@/styles/main.css';
 import Footer from '@/components/Footer';
@@ -12,9 +12,15 @@ import GoogleAnalytics from '@/components/GoogleAnalytics';
 import { Analytics } from '@vercel/analytics/react';
 import Breadcrumbs from '@/components/ui/breadcrumbs';
 
+// Inter for UI; Source Serif 4 for editorial and display headings only.
+// tailwind.config.js maps font-sans and font-serif to these variables.
 const fontSans = FontSans({
   subsets: ['latin'],
   variable: '--font-sans'
+});
+const fontSerif = FontSerif({
+  subsets: ['latin'],
+  variable: '--font-serif'
 });
 
 const meta = {
@@ -64,7 +70,8 @@ export default async function RootLayout({ children }: PropsWithChildren) {
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased',
-          fontSans.variable
+          fontSans.variable,
+          fontSerif.variable
         )}
       >
         {/* Inside <body>: a <script> directly under <html> is invalid (BUG-063). */}
