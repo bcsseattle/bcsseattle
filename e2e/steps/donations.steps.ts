@@ -174,3 +174,17 @@ Then(/^the donation should be (pending|completed|failed)$/, async function (this
   const { data } = await admin.from('donations').select('donation_status').eq('id', this.donation!.id).single();
   expect(data?.donation_status).toBe(status);
 });
+
+When('I download the receipt PDF for that donation', async function (this: E2EWorld) {
+  const res = await this.page.request.get(`/donate/confirmation/${this.donation!.id}/pdf`);
+  this.response = { status: res.status(), body: res.headers()['content-type'] ?? '' };
+});
+
+Then('no PDF should be returned', async function (this: E2EWorld) {
+  expect(this.response!.body).not.toContain('application/pdf');
+});
+
+Then('the donation should not be marked as receipted', async function (this: E2EWorld) {
+  const { data } = await admin.from('donations').select('tax_receipt_generated').eq('id', this.donation!.id).single();
+  expect(data?.tax_receipt_generated).toBe(false);
+});

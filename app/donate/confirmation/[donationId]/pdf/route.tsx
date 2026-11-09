@@ -3,7 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import { renderToStream } from '@react-pdf/renderer';
 import InvoicePDF from '@/components/donations/invoice-pdf';
 // Receipts are opened by guests too: donations/donors are read by id with the service role.
-import { supabaseAdmin, updateDonation } from '@/utils/supabase/admin';
+import { supabaseAdmin } from '@/utils/supabase/admin';
 import { getErrorRedirect } from '@/utils/helpers';
 
 export async function GET(
@@ -37,6 +37,11 @@ export async function GET(
           "Sorry, we weren't able to find your donation information. Please try again."
         )
       );
+    }
+
+    // No receipt until the money has arrived (BUG-042).
+    if (donation.donation_status !== 'completed') {
+      return NextResponse.redirect(`${requestUrl.origin}/donate/confirmation/${donation.id}`);
     }
 
     const { data: donor, error } = await supabaseAdmin
@@ -77,11 +82,6 @@ export async function GET(
         donor={donor}
       />
     );
-
-    await updateDonation({
-      donation_id: donation.id,
-      tax_receipt_generated: true
-    });
 
     return new NextResponse(stream as unknown as ReadableStream, {
       headers: {

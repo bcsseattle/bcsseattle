@@ -74,12 +74,20 @@ Feature: General donations
     When I open the receipt for that donation
     Then I should see "Donation Amount: $50"
 
-  @P1 @known-bug @BUG-042
+  @P1 @BUG-042
   Scenario: No receipt is issued for a donation that was never paid
     Given a pending $50 donation by a guest donor
     And I am signed in as an approved member
     When I open the receipt for that donation
     Then I should not see "Donation Receipt"
+    And I should see "We are confirming your payment"
+
+  @P1 @BUG-042
+  Scenario: The receipt PDF isn't available for an unpaid donation
+    Given a pending $50 donation by a guest donor
+    When I download the receipt PDF for that donation
+    Then no PDF should be returned
+    And the donation should not be marked as receipted
 
   @P0 @critical @BUG-073
   Scenario: A first-time guest can start a card donation

@@ -115,7 +115,8 @@ export async function POST(req: Request) {
             await updateDonation({
               stripe_payment_id: checkoutSession.payment_intent as string,
               donation_id: metadata.donation_id,
-              donation_status: 'completed'
+              donation_status: 'completed',
+              tax_receipt_generated: true // the receipt is available from now on
             });
           }
           if (event.type === 'checkout.session.completed' && checkoutSession.mode === 'subscription') {
