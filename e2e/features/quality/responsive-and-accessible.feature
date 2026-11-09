@@ -4,17 +4,26 @@ Feature: The site works on phones and with assistive technology
   I want every page to be usable
   So that nobody in the community is shut out
 
-  @P2 @mobile @known-bug @BUG-050
+  @P2 @mobile @BUG-050
   Scenario Outline: <path> fits a phone screen without sideways scrolling
     Given I am a visitor who is not signed in
     When I go to "<path>"
     Then the page should fit the screen width
 
     Examples:
-      | path      |
-      | /         |
-      | /donate   |
-      | /about-us |
+      | path         |
+      | /            |
+      | /donate      |
+      | /about-us    |
+      | /fundraisers |
+      | /contact-us  |
+
+  @P2 @mobile @BUG-050
+  Scenario: The site can be navigated on a phone
+    Given I am a visitor who is not signed in
+    When I go to "/"
+    And I open the phone menu and choose "Fundraisers"
+    Then I should be on the fundraisers page
 
   @P2 @a11y
   Scenario Outline: <path> has no critical accessibility problems

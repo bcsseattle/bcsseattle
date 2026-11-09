@@ -215,3 +215,8 @@ Then('the breadcrumbs should not show any raw IDs', async function (this: E2EWor
   expect(await crumbs.innerText()).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/i);
   await expect(crumbs).toContainText('Details');
 });
+
+When('I open the phone menu and choose {string}', async function (this: E2EWorld, link: string) {
+  await this.page.getByText('Menu', { exact: true }).click();
+  await this.page.getByRole('navigation', { name: 'Mobile' }).getByRole('link', { name: link, exact: true }).click();
+});
