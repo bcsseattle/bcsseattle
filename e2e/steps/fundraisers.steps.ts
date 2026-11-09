@@ -1,5 +1,5 @@
 import { Given, Then, When } from '@cucumber/cucumber';
-import { admin, createFundraiser, createUser } from '../support/db';
+import { admin, anonClient, createFundraiser, createUser, uniqueEmail } from '../support/db';
 import { expect } from '../support/expect';
 import { checkoutCompleted, postWebhook, sessionFromCheckoutUrl } from '../support/stripe';
 import type { E2EWorld } from '../support/world';
@@ -186,4 +186,27 @@ Then('the donation amount should be refused', async function (this: E2EWorld) {
   if (!nativelyInvalid) {
     await expect(this.page.getByText(/Amount must be greater than 0|Maximum amount is|Minimum donation amount/)).toBeVisible();
   }
+});
+
+// ---------------------------------------------------------------- public API (BUG-079, BUG-080)
+
+When('an anonymous visitor records a paid ${int} donation to the fundraiser through the public API', async function (this: E2EWorld, dollars: number) {
+  const { error } = await anonClient()
+    .from('fundraiser_donations')
+    .insert({ fundraiser_id: this.fundraiser!.id, amount: dollars, donor_name: 'Mallory', payment_status: 'completed' });
+  this.apiError = error?.message ?? '';
+  this.cleanup.push(async () => {
+    await admin.from('fundraiser_donations').delete().eq('fundraiser_id', this.fundraiser!.id).eq('donor_name', 'Mallory');
+  });
+});
+
+Given('a guest has left their contact details with a fundraiser donation', async function (this: E2EWorld) {
+  const { data } = await admin
+    .from('fundraiser_donors')
+    .insert({ email: uniqueEmail('fdonor'), full_name: 'Guest Donor', phone: '206-555-0177' })
+    .select('id')
+    .single();
+  this.cleanup.push(async () => {
+    await admin.from('fundraiser_donors').delete().eq('id', data!.id);
+  });
 });

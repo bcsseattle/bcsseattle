@@ -45,14 +45,14 @@ Feature: Admins manage fundraisers
     Then I should be on the fundraisers page
     And I should not see "Create New Fundraiser"
 
-  @P1 @known-bug @BUG-004
+  @P1 @BUG-004
   Scenario: An admin is offered the "New Fundraiser" button
     Given there is an active fundraiser "Help the Rahimi family" with a goal of $1,000
     And I am signed in as an admin
     When I go to the fundraisers page
     Then I should see a "New Fundraiser" button
 
-  @P1 @known-bug @BUG-004 @BUG-017
+  @P1 @BUG-004 @BUG-017
   Scenario: An admin renames a fundraiser
     Given there is an active fundraiser "Help the Rahimi family" with a goal of $1,000
     And I am signed in as an admin

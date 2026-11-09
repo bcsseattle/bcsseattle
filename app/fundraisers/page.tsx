@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { FundraiserList } from '@/components/fundraisers/fundraiser-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { getSession } from '@/utils/auth-helpers/server';
+import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,12 +23,10 @@ async function getFundraisers() {
 }
 
 export default async function FundraisersPage() {
-  const [fundraisers, session] = await Promise.all([
+  const [fundraisers, isAdmin] = await Promise.all([
     getFundraisers(),
-    getSession()
+    isCurrentUserAdmin()
   ]);
-
-  const isAdmin = session?.user?.user_metadata?.role === 'admin';
 
   return (
     <div className="container py-10 space-y-8">

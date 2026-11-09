@@ -3,6 +3,8 @@
 import { z } from 'zod';
 import { getErrorRedirect, getStatusRedirect } from 'utils/helpers';
 import { createClient } from '@/utils/supabase/server';
+// fundraiser_donors holds guest donors' contact details and has no public access (BUG-080).
+import { supabaseAdmin } from '@/utils/supabase/admin';
 import { FundraiserFormSchema } from '@/types/forms';
 import { Fundraiser } from '@/types';
 import crypto from 'crypto';
@@ -137,7 +139,7 @@ export async function submitDonation(
     let fundraiserDonorId: string | undefined;
     if (donorEmail) {
       // Check if donor exists
-      const { data: existingDonor } = await supabase
+      const { data: existingDonor } = await supabaseAdmin
         .from('fundraiser_donors')
         .select('id')
         .eq('email', donorEmail)
@@ -146,7 +148,7 @@ export async function submitDonation(
       if (existingDonor) {
         fundraiserDonorId = existingDonor.id;
         // Update donor information
-        await supabase
+        await supabaseAdmin
           .from('fundraiser_donors')
           .update({
             full_name: donorName,
@@ -156,7 +158,7 @@ export async function submitDonation(
           .eq('id', fundraiserDonorId);
       } else {
         // Create new donor
-        const { data: newDonor, error: donorError } = await supabase
+        const { data: newDonor, error: donorError } = await supabaseAdmin
           .from('fundraiser_donors')
           .insert({
             email: donorEmail,

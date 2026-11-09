@@ -87,7 +87,7 @@ export function FundraiserUpdateForm({ fundraiser }: FundraiserUpdateFormProps) 
   async function onSubmit(data: FundraiserFormValues) {
     try {
       const response = await fetch(`/api/fundraisers/${fundraiser.id}`, {
-        method: 'PUT',
+        method: 'PATCH', // the API has no PUT (BUG-017)
         headers: {
           'Content-Type': 'application/json'
         },

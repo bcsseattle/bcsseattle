@@ -19,6 +19,18 @@ export async function redirectToPath(path: string) {
 }
 
 export async function getSession() {
+/** Whether the signed-in user is an admin (users.is_admin). Never trust
+ *  user_metadata for this: users can edit it themselves (BUG-004). */
+export async function isCurrentUserAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { data } = await supabase.from('users').select('is_admin').eq('id', user.id).maybeSingle();
+  return data?.is_admin ?? false;
+}
+
   const supabase = await createClient();
   try {
     const { data: { session }, error } = await supabase.auth.getSession();

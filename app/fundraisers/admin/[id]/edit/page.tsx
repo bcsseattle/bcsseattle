@@ -1,4 +1,4 @@
-import { getSession } from '@/utils/auth-helpers/server';
+import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
 import { createClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { FundraiserUpdateForm } from '@/components/fundraisers/admin/fundraiser-update-form';
@@ -25,10 +25,7 @@ async function getFundraiser(id: string) {
 }
 
 export default async function EditFundraiserPage({ params }: PageProps) {
-  const session = await getSession();
-  const isAdmin = session?.user?.user_metadata?.role === 'admin';
-
-  if (!isAdmin) {
+  if (!(await isCurrentUserAdmin())) {
     redirect('/fundraisers');
   }
 
