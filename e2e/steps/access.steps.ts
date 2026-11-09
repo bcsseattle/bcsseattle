@@ -48,9 +48,10 @@ Then('they should not see that donation', async function (this: E2EWorld) {
   expect(this.rows?.data ?? []).toHaveLength(0);
 });
 
-When('I request the contribution statement of {string} for this year', async function (this: E2EWorld, name: string) {
+When(/^I request the contribution statement of "([^"]+)" (for this year|without choosing a year)$/, async function (this: E2EWorld, name: string, which: string) {
   const memberId = this.user(name).memberId;
-  const res = await this.page.request.get(`/account/${memberId}/contributions/pdf?taxYear=${thisYear}`, { maxRedirects: 0 });
+  const query = which === 'for this year' ? `?taxYear=${thisYear}` : '';
+  const res = await this.page.request.get(`/account/${memberId}/contributions/pdf${query}`, { maxRedirects: 0 });
   this.response = { status: res.status(), body: `${res.headers()['content-type']}\n${res.headers()['location'] ?? ''}` };
 });
 

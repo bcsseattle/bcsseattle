@@ -46,6 +46,14 @@ Feature: Members-only and admin-only pages are protected
     When I request the contribution statement of "Amina" for this year
     Then I should receive a PDF document
 
+  @P1 @BUG-058
+  Scenario: The contribution statement defaults to this year
+    Given there is an approved member named "Amina"
+    And "Amina" has paid a contribution this year
+    And I am signed in as "Amina"
+    When I request the contribution statement of "Amina" without choosing a year
+    Then I should receive a PDF document
+
   # Statements are open to approved members (community transparency, confirmed
   # 2026-11-08); since the BUG-003 fix, RLS keeps everyone else out.
   @P0 @security @BUG-009
