@@ -97,7 +97,7 @@ Feature: Supporting a fundraiser
     When I go to the fundraisers page
     Then I should see the fundraiser "Help the Rahimi family" with "$0.00 raised" towards a "$1,000.00 goal"
 
-  @P2 @known-bug @BUG-038
+  @P2 @BUG-038
   Scenario: A fundraiser with no end date keeps accepting donations
     Given there is an active fundraiser "Ongoing zakat fund" with no end date
     And I am signed in as an approved member
