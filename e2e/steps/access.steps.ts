@@ -149,3 +149,18 @@ When('I request the voting security report', async function (this: E2EWorld) {
 Then('the request should be refused', async function (this: E2EWorld) {
   expect([401, 403], this.response!.body).toContain(this.response!.status);
 });
+
+When('an anonymous visitor calls the {string} database function', async function (this: E2EWorld, fn: string) {
+  const { data, error } = await anonClient().rpc(fn);
+  this.apiError = error?.message ?? '';
+  this.rows = { data: (data as unknown[]) ?? null, error };
+});
+
+Then('the call should be refused', async function (this: E2EWorld) {
+  expect(this.apiError, `returned ${JSON.stringify(this.rows?.data)}`).toMatch(/permission denied/);
+});
+
+Then('I should get the voting security report', async function (this: E2EWorld) {
+  expect(this.response!.status, this.response!.body).toBe(200);
+  expect(this.response!.body).toContain('securityStatus');
+});

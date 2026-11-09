@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { supabaseAdmin } from '@/utils/supabase/admin';
 
 /**
  * Security validation utilities for the voting system
@@ -299,8 +299,8 @@ export class VotingSecurityValidator {
  * Utility function to run security validation
  */
 export async function validateVotingSystemSecurity(): Promise<SecurityTestResult[]> {
-  const supabase = await createClient();
-  const validator = new VotingSecurityValidator(supabase);
+  // The checks read every voter's records; callers must be admins (BUG-033).
+  const validator = new VotingSecurityValidator(supabaseAdmin);
   return await validator.runAllTests();
 }
 

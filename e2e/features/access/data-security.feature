@@ -102,8 +102,26 @@ Feature: Personal data is protected at the database and API level
     When an anonymous caller asks the site to send a payment-failed email to "victim@example.test"
     Then the request should be refused before any email is attempted
 
-  @P1 @known-bug @BUG-033
+  @P1 @BUG-033
   Scenario: Only admins can run the voting security report
     Given I am signed in as an approved member
     When I request the voting security report
     Then the request should be refused
+
+  @P1 @BUG-033
+  Scenario: An admin can run the voting security report
+    Given I am signed in as an admin
+    When I request the voting security report
+    Then I should get the voting security report
+
+  @P0 @api @BUG-033
+  Scenario Outline: Voter-level database functions can't be called with the public key
+    When an anonymous visitor calls the "<function>" database function
+    Then the call should be refused
+
+    Examples:
+      | function                 |
+      | find_duplicate_votes     |
+      | find_invalid_votes       |
+      | find_orphaned_votes      |
+      | check_unique_constraints |
