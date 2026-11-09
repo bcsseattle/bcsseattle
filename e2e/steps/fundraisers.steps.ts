@@ -205,8 +205,10 @@ Given('a guest has left their contact details with a fundraiser donation', async
   const { data } = await admin
     .from('fundraiser_donors')
     .insert({ email: uniqueEmail('fdonor'), full_name: 'Guest Donor', phone: '206-555-0177' })
-    .select('id')
+    .select('id, email')
     .single();
+  this.data.guestDonorId = data!.id;
+  this.data.guestDonorEmail = data!.email;
   this.cleanup.push(async () => {
     await admin.from('fundraiser_donors').delete().eq('id', data!.id);
   });
@@ -226,4 +228,21 @@ Then('the fundraiser should have the update {string}', async function (this: E2E
 When(/^I donate \$(\d+) to the fundraiser but my browser asks checkout to charge \$(\d+)$/, async function (this: E2EWorld, amount: string, charged: string) {
   await tamperWithCheckoutAmount(this, Number(amount) * 100, Number(charged) * 100);
   await donate(this, String(amount));
+});
+
+When('someone donates to the fundraiser with that guest\'s email as {string} with phone {string}', async function (this: E2EWorld, name: string, phone: string) {
+  await this.page.goto(`/fundraisers/${this.fundraiser!.id}/donate`);
+  await this.page.getByLabel('Donation Amount ($)').fill('25');
+  await this.page.getByLabel('Email').fill(this.data.guestDonorEmail);
+  await this.page.getByLabel('Full Name').fill(name);
+  const phoneField = this.page.getByLabel('Phone');
+  if (await phoneField.count()) await phoneField.fill(phone);
+  await this.page.getByRole('button', { name: 'Continue to Payment' }).click();
+  await this.page.waitForURL(/checkout\.stripe\.com/, { waitUntil: 'commit', timeout: 30_000 });
+  this.cleanup.push(async () => admin.from('fundraiser_donations').delete().eq('fundraiser_id', this.fundraiser!.id));
+});
+
+Then('the guest\'s saved name and phone should be unchanged', async function (this: E2EWorld) {
+  const { data } = await admin.from('fundraiser_donors').select('full_name, phone').eq('id', this.data.guestDonorId).single();
+  expect(data).toEqual({ full_name: 'Guest Donor', phone: '206-555-0177' });
 });

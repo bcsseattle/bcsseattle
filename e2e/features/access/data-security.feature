@@ -82,6 +82,14 @@ Feature: Personal data is protected at the database and API level
     When an anonymous visitor reads the "fundraiser_donors" table through the public API
     Then no record should be returned
 
+  @P1 @BUG-030
+  Scenario: Donating with someone else's email doesn't change their saved details
+    Given there is an active fundraiser "Roof repair" with a goal of $2,000
+    And a guest has left their contact details with a fundraiser donation
+    And I am signed in as an approved member
+    When someone donates to the fundraiser with that guest's email as "Mallory" with phone "+12065550000"
+    Then the guest's saved name and phone should be unchanged
+
   @P0 @BUG-005
   Scenario: A member cannot record a vote directly, bypassing the ballot
     Given there is an open election with candidates "Hani" and "Nazir" for "President"

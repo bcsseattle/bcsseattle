@@ -146,16 +146,10 @@ export async function submitDonation(
         .single();
 
       if (existingDonor) {
+        // Anyone can type any email here, so an existing donor's saved name and
+        // phone are never overwritten from this form (BUG-030). The donation
+        // itself keeps the name entered.
         fundraiserDonorId = existingDonor.id;
-        // Update donor information
-        await supabaseAdmin
-          .from('fundraiser_donors')
-          .update({
-            full_name: donorName,
-            phone: donorPhone,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', fundraiserDonorId);
       } else {
         // Create new donor
         const { data: newDonor, error: donorError } = await supabaseAdmin
