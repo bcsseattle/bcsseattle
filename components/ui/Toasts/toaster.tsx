@@ -11,6 +11,7 @@ import {
 import { useToast } from '@/components/ui/Toasts/use-toast';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export function Toaster() {
   const { toast, toasts } = useToast();
@@ -52,7 +53,13 @@ export function Toaster() {
       {toasts.map(function ({ id, title, description, action, ...props }) {
         return (
           <Toast key={id} {...props}>
-            <div className="grid gap-1">
+            {/* Success and error differ by icon and words, not colour (Toast 36:208). */}
+            {props.variant === 'destructive' ? (
+              <AlertCircle aria-hidden className="size-4 shrink-0" />
+            ) : (
+              <CheckCircle2 aria-hidden className="size-4 shrink-0" />
+            )}
+            <div className="grid min-w-0 flex-1 gap-0.5">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
                 <ToastDescription>{description}</ToastDescription>

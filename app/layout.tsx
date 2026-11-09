@@ -87,7 +87,17 @@ export default async function RootLayout({ children }: PropsWithChildren) {
           <Toaster />
         </Suspense>
         {/* Seven components report success and errors with sonner's toast() (BUG-022). */}
-        <SonnerToaster richColors closeButton />
+        <SonnerToaster
+          closeButton
+          style={
+            {
+              '--normal-bg': 'hsl(var(--primary))',
+              '--normal-text': 'hsl(var(--primary-foreground))',
+              '--normal-border': 'hsl(var(--primary))',
+              '--width': '420px'
+            } as React.CSSProperties
+          }
+        />
       </body>
     </html>
   );
