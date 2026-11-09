@@ -44,7 +44,7 @@ Feature: Signing in and out
     When "Amina" signs in from a link that asks to return to "//evil.example"
     Then I should still be on the BCS Seattle site
 
-  @P1 @security @known-bug @BUG-032
+  @P1 @security @BUG-032
   Scenario: A signed-in member following a crafted sign-in link stays on the site
     Given I am signed in as an approved member
     When I open a sign-in link that asks to return to "//evil.example"

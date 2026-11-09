@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 import { internalAuthHeader } from '@/utils/internal-api';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getURL, getErrorRedirect, getStatusRedirect } from 'utils/helpers';
+import { getURL, getErrorRedirect, getStatusRedirect, safeRedirectPath } from 'utils/helpers';
 import { getAuthTypes } from 'utils/auth-helpers/settings';
 import { createOrRetrieveCustomer } from '../supabase/admin';
 import { ContactFormSchema, FuneralFundFormSchema } from '@/types';
@@ -221,10 +221,8 @@ export async function signInWithPassword(formData: FormData) {
       path: '/'
     });
     try {
-      // Remove leading slash from redirectTo if it exists to avoid double slashes
-      const cleanRedirectTo = redirectTo?.startsWith('/') ? redirectTo : `/${redirectTo}`;
       redirectPath = getStatusRedirect(
-        cleanRedirectTo || '/community-funds',
+        safeRedirectPath(redirectTo),
         'Success!',
         'You are now signed in.'
       );

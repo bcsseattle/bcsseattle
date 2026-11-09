@@ -3,6 +3,18 @@ import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
 type Price = Tables<'prices'>;
 
+/**
+ * A path on this site to send the user to after signing in, or `fallback`.
+ * "//evil.example" and "/\\evil.example" are protocol-relative URLs that browsers
+ * treat as another site, so they are refused (open redirect, BUG-032).
+ */
+export const safeRedirectPath = (value: string | null | undefined, fallback = '/') => {
+  const v = (value ?? '').trim();
+  if (!v) return fallback;
+  const path = v.startsWith('/') ? v : `/${v}`;
+  return /^\/[/\\]/.test(path) ? fallback : path;
+};
+
 export const getURL = (path: string = '') => {
   // Check if NEXT_PUBLIC_SITE_URL is set and non-empty. Set this to your site URL in production env.
   let url =

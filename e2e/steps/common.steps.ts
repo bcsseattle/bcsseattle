@@ -95,6 +95,12 @@ Then('I should be asked to sign in before reaching {string}', async function (th
 });
 
 Then('I should still be on the BCS Seattle site', async function (this: E2EWorld) {
+  // The open redirect happens client-side after /signin loads; checking right
+  // after load could pass before it fires. Wait until the page leaves /signin
+  // (to wherever it goes), then check where it ended up.
+  await this.page
+    .waitForURL((u) => !u.pathname.startsWith('/signin'), { timeout: 10_000, waitUntil: 'commit' })
+    .catch(() => {});
   await this.page.waitForLoadState();
   expect(new URL(this.page.url()).origin, `ended up on ${this.page.url()}`).toBe(new URL(env.baseUrl).origin);
 });

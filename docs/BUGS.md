@@ -55,7 +55,7 @@ IDs are stable; reference them in commits and PRs. "Verified" means confirmed by
 | ID | Area | Location | Problem |
 |---|---|---|---|
 | BUG-031 | Contact | `utils/auth-helpers/server.ts:457-461, 486` | Contact and funeral forms call `fetch` without `await`. They always report success; failures are lost. |
-| BUG-032 | Auth | `app/signin/[id]/page.tsx:59-62`; `utils/auth-helpers/server.ts:189,210` | Open redirect through `redirectTo` (`//evil.com` passes the check). |
+| BUG-032 | Auth | `app/signin/[id]/page.tsx:59-62`; `utils/auth-helpers/server.ts:189,210` | Open redirect through `redirectTo` (`//evil.com` passes the check). — **Fixed on `develop`**: `safeRedirectPath()` refuses protocol-relative targets in both the sign-in action and the signed-in redirect. The same hole existed when *signing in* from a crafted link; that gating scenario had been passing falsely (it checked the URL before the client-side redirect fired) and was fixed along with it. |
 | BUG-033 | Elections | `app/api/elections/security/route.ts:16-25` and the security RPCs | Admin check commented out. The RPCs return voter IDs and other users' confirmation codes, which breaks ballot secrecy. |
 | BUG-034 | Membership | `utils/membership/handlers.ts:50-66` | Resubmitting `/register` resets an approved member to unapproved and re-sends both emails. No server-side validation. |
 | BUG-035 | Membership | `utils/membership/handlers.ts:349-351` | Reject is the same as "new application", so rejected people reappear as pending. |
