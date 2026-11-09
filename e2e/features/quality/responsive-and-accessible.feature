@@ -66,7 +66,7 @@ Feature: The site works on phones and with assistive technology
     Given there is an approved member named "Amina"
     When "Amina" signs in using only the keyboard
     Then I should be on the home page
-    And the navigation should offer the "Membership" menu
+    And the navigation should offer the "My account" link
 
   @P2 @serial
   Scenario: The elections page says so when there are no elections

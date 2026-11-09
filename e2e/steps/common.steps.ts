@@ -171,6 +171,10 @@ Then('the {string} field should be marked invalid', async function (this: E2EWor
     .toBe(true);
 });
 
+When('I follow the {string} link', async function (this: E2EWorld, name: string) {
+  await this.page.getByRole('link', { name, exact: true }).first().click();
+});
+
 When('I choose {string} from the menu', async function (this: E2EWorld, title: string) {
   // Menu items' accessible names are the title followed by a short description.
   await this.page.getByRole('link', { name: new RegExp(`^${title}`) }).first().click();

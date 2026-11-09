@@ -67,7 +67,12 @@ function title(segment: string) {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-export default function Breadcrumbs() {
+/**
+ * Breadcrumbs from the URL. On the public site they show from two levels deep
+ * (a top-level page is already in the nav, as in the mocks); the portal
+ * top bar starts at the section, without "Home" (Figma 7:640).
+ */
+export default function Breadcrumbs({ portal = false }: { portal?: boolean }) {
   const paths = usePathname();
   const pathNames = paths.split('/').filter((path) => path);
   // IDs read as "Details" (BUG-048) and route segments as page titles.
@@ -80,17 +85,21 @@ export default function Breadcrumbs() {
     };
   });
 
-  if (pathNames.length === 0) {
+  if (pathNames.length < (portal ? 1 : 2)) {
     return null;
   }
 
   return (
-    <Breadcrumb className="py-4">
+    <Breadcrumb className={portal ? 'min-w-0' : 'pt-6'}>
       <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/">Home</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
+        {!portal && (
+          <>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Home</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+          </>
+        )}
         {breadcrumbss.map((breadcrumb, index) => {
           return (
             <React.Fragment key={index}>

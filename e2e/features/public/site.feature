@@ -22,11 +22,10 @@ Feature: The public website
       | donate   | /donate           | Donation                                           |
 
   @P1
-  Scenario: The About menu leads to the mission page
+  Scenario: The footer leads to the mission page
     Given I am a visitor who is not signed in
     When I go to "/"
-    And I open the "About us" menu
-    And I choose "Mission" from the menu
+    And I follow the "Mission & vision" link
     Then I should be on the "/about-us/mission" page
 
   @P1 @BUG-031
