@@ -8,7 +8,8 @@
 
 import { Donation } from '@/types';
 import { ColumnDef } from '@tanstack/react-table';
-import { getPriceString, paymentMethodMap, purposeTitleMap } from '@/utils/helpers';
+import { paymentMethodMap, purposeTitleMap } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 import { Badge } from '../ui/badge';
 
 export const donationColumns: ColumnDef<Donation>[] = [
@@ -30,7 +31,7 @@ export const donationColumns: ColumnDef<Donation>[] = [
     header: 'Amount',
     cell: (info) => {
       const value = info.getValue<number>(); // Explicitly type the value
-      const formatted = getPriceString(value); // Format the number as a currency string
+      const formatted = formatMoney(value); // Format the number as a currency string
       return <div className="text-center font-medium">{formatted}</div>;
     }
   },

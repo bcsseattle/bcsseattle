@@ -4,7 +4,8 @@ import { Donation } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import DonationTable from './donations/donation-table';
 import { DollarSign } from 'lucide-react';
-import { getPriceString, purposeTitleMap } from '@/utils/helpers';
+import { purposeTitleMap } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 
 export default function RecentDonations({
   donations = []
@@ -55,7 +56,7 @@ export default function RecentDonations({
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {getPriceString(total)}
+                    {formatMoney(total)}
                   </div>
                 </CardContent>
               </Card>

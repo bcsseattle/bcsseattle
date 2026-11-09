@@ -1,5 +1,6 @@
 'use client';
 
+import { formatMoney } from '@/utils/format';
 import { getStripe } from '@/utils/stripe/client';
 import { checkoutWithStripe } from '@/utils/stripe/server';
 import { getErrorRedirect, getSubscriptionInterval } from '@/utils/helpers';
@@ -105,11 +106,7 @@ export default function Plans({ user, products, subscription }: Props) {
               (price: any) => price.metadata?.type === 'contribution'
             );
             return prices?.map((price) => {
-              const priceString = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: price.currency!,
-                minimumFractionDigits: 0
-              }).format((price?.unit_amount || 10000) / 100);
+              const priceString = formatMoney(price?.unit_amount || 10000);
 
               const priceType =
                 product.name === 'BCS Donation'

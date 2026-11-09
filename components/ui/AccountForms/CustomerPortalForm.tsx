@@ -1,5 +1,6 @@
 'use client';
 
+import { formatMoney } from '@/utils/format';
 import { Button } from '@/components/ui/button';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -38,11 +39,7 @@ export default function CustomerPortalForm({ subscription }: Props) {
 
   const subscriptionPrice =
     subscription &&
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: subscription?.prices?.currency!,
-      minimumFractionDigits: 0
-    }).format((subscription?.prices?.unit_amount || 0) / 100);
+    formatMoney(subscription?.prices?.unit_amount || 0);
 
   const handleStripePortalRequest = async () => {
     setIsSubmitting(true);

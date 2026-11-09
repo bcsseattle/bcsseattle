@@ -28,7 +28,7 @@ Feature: General donations
     When Stripe confirms the payment for my donation
     Then my donation should be marked as completed
     When I open the receipt for my donation
-    Then I should see "Donation Amount: $100"
+    Then I should see "Donation Amount: USD 100.00"
     And I should see "Thank you for your support!"
     And the receipt PDF should download
 
@@ -72,7 +72,7 @@ Feature: General donations
     Given a completed $50 donation by a guest donor
     And I am a visitor who is not signed in
     When I open the receipt for that donation
-    Then I should see "Donation Amount: $50"
+    Then I should see "Donation Amount: USD 50.00"
 
   @P1 @BUG-042
   Scenario: No receipt is issued for a donation that was never paid

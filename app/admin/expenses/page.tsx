@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import dayjs from '@/libs/dayjs';
-import { getPriceString } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 import { createClient } from '@/utils/supabase/server';
 import { addExpense } from './actions';
 
@@ -103,7 +103,7 @@ export default async function AdminExpensesPage() {
                     </TableCell>
                     <TableCell>{e.payee}</TableCell>
                     <TableCell>{e.description}</TableCell>
-                    <TableCell className="text-right">{getPriceString(e.amount)}</TableCell>
+                    <TableCell className="text-right">{formatMoney(e.amount)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

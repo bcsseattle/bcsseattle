@@ -10,7 +10,7 @@ import {
 } from '../ui/table';
 import { InfoBlock } from '../ui/info-block';
 import { Donor, Organization, Donation } from '@/types';
-import { getPriceString } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 import Logo from '../icons/LogoSvg';
 import { Button } from '../ui/button';
 import Link from 'next/link';
@@ -81,7 +81,7 @@ export default function Invoice({ organization, donor, donation }: Props) {
               <p>Invoice Number: {donation.id}</p>
               <p>Date of Donation: {donation.donation_date}</p>
               <p>Description of Donation: {donation.donation_description}</p>
-              <p>Donation Amount: {getPriceString(donation.donation_amount)}</p>
+              <p>Donation Amount: {formatMoney(donation.donation_amount)}</p>
             </div>
           </section>
 
@@ -100,14 +100,14 @@ export default function Invoice({ organization, donor, donation }: Props) {
                 <TableRow className="">
                   <TableCell>{donation.donation_description}</TableCell>
                   <TableCell>
-                    {getPriceString(donation.donation_amount)}
+                    {formatMoney(donation.donation_amount)}
                   </TableCell>
                   <TableCell>
-                    {getPriceString(donation.donation_amount)}
+                    {formatMoney(donation.donation_amount)}
                   </TableCell>
                   <TableCell>1</TableCell>
                   <TableCell className="text-right">
-                    {getPriceString(donation.donation_amount)}
+                    {formatMoney(donation.donation_amount)}
                   </TableCell>
                 </TableRow>
               </TableBody>
@@ -121,19 +121,19 @@ export default function Invoice({ organization, donor, donation }: Props) {
                 <h3 className="font-bold text-lg">Summary</h3>
                 <div className="flex justify-between">
                   <p className="border-1 border-cyan-300">Subtotal</p>
-                  <p>{getPriceString(donation.donation_amount)}</p>
+                  <p>{formatMoney(donation.donation_amount)}</p>
                 </div>
                 <div className="flex justify-between">
                   <p>Deductible</p>
-                  <p>{getPriceString(donation.donation_amount)}</p>
+                  <p>{formatMoney(donation.donation_amount)}</p>
                 </div>
                 <div className="flex justify-between">
                   <p>Total</p>
-                  <p>{getPriceString(donation.donation_amount)}</p>
+                  <p>{formatMoney(donation.donation_amount)}</p>
                 </div>
                 <div className="flex justify-between font-bold">
                   <p>Total Charges</p>
-                  <p>{getPriceString(donation.donation_amount)}</p>
+                  <p>{formatMoney(donation.donation_amount)}</p>
                 </div>
               </div>
             </div>

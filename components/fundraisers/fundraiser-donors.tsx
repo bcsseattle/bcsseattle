@@ -6,7 +6,7 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
-import { formatCurrency } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 import { createClient } from '@/utils/supabase/server';
 
 interface FundraiserDonorsProps {
@@ -50,7 +50,7 @@ export async function FundraiserDonors({ fundraiserId }: FundraiserDonorsProps) 
                 <p className="font-medium">
                   {donor.is_anonymous ? 'Anonymous Donor' : donor.donor_name}
                 </p>
-                <p className="font-medium">{formatCurrency(donor.amount)}</p>
+                <p className="font-medium">{formatMoney((donor.amount ?? 0) * 100)}</p>
               </div>
               {donor.message && (
                 <p className="text-muted-foreground">{donor.message}</p>

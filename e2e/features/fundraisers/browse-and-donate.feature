@@ -14,7 +14,7 @@ Feature: Supporting a fundraiser
   Scenario: A member sees an active fundraiser and its progress
     Given I am signed in as an approved member
     When I go to the fundraisers page
-    Then I should see the fundraiser "Help the Rahimi family" with "$0.00 raised" towards a "$1,000.00 goal"
+    Then I should see the fundraiser "Help the Rahimi family" with "USD 0 raised" towards a "USD 1,000 goal"
 
   @P0 @critical
   Scenario: A member starts a $25 donation to a fundraiser
@@ -35,7 +35,7 @@ Feature: Supporting a fundraiser
     And I have started a $25 donation to the fundraiser
     When Stripe confirms the payment for my fundraiser donation
     And I open the fundraiser
-    Then the fundraiser should show "$25.00" raised
+    Then the fundraiser should show "USD 25" raised
 
   @P1 @payments @BUG-081
   Scenario: A donation with cents is accepted and counted in full
@@ -96,7 +96,7 @@ Feature: Supporting a fundraiser
   Scenario: A visitor who isn't signed in can browse fundraisers
     Given I am a visitor who is not signed in
     When I go to the fundraisers page
-    Then I should see the fundraiser "Help the Rahimi family" with "$0.00 raised" towards a "$1,000.00 goal"
+    Then I should see the fundraiser "Help the Rahimi family" with "USD 0 raised" towards a "USD 1,000 goal"
 
   @P2 @BUG-038
   Scenario: A fundraiser with no end date keeps accepting donations

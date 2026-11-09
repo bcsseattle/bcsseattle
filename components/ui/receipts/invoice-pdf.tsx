@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Image
 } from '@react-pdf/renderer';
-import { getPriceString } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 import Stripe from 'stripe';
 
 const styles = StyleSheet.create({
@@ -188,7 +188,7 @@ export default function InvoicePDF({
               <Text>Invoice Number: {invoice?.id}</Text>
               <Text>Donation Year: {taxYear}</Text>
               <Text>Description of Donation: General Support</Text>
-              <Text>Total Donation Amount: {getPriceString(totalSpent)}</Text>
+              <Text>Total Donation Amount: {formatMoney(totalSpent)}</Text>
             </View>
           </View>
 
@@ -217,14 +217,14 @@ export default function InvoicePDF({
                       : ''}
                   </Text>
                   <Text style={styles.tableCel}>
-                    {getPriceString(payment.amount)}
+                    {formatMoney(payment.amount)}
                   </Text>
                   <Text style={styles.tableCel}>
-                    {getPriceString(payment.amount)}
+                    {formatMoney(payment.amount)}
                   </Text>
                   <Text style={styles.tableCel}>{1}</Text>
                   <Text style={{ ...styles.tableCel, textAlign: 'right' }}>
-                    {getPriceString(payment.amount)}
+                    {formatMoney(payment.amount)}
                   </Text>
                 </View>
               ))}
@@ -257,7 +257,7 @@ export default function InvoicePDF({
                 <Text>Subtotal</Text>
               </View>
               <View>
-                <Text>{getPriceString(totalSpent)}</Text>
+                <Text>{formatMoney(totalSpent)}</Text>
               </View>
             </View>
             <View
@@ -273,7 +273,7 @@ export default function InvoicePDF({
                 <Text>Deductible</Text>
               </View>
               <View>
-                <Text>{getPriceString(totalSpent)}</Text>
+                <Text>{formatMoney(totalSpent)}</Text>
               </View>
             </View>
             <View
@@ -289,7 +289,7 @@ export default function InvoicePDF({
                 <Text>Total</Text>
               </View>
               <View>
-                <Text>{getPriceString(totalSpent)}</Text>
+                <Text>{formatMoney(totalSpent)}</Text>
               </View>
             </View>
             <View
@@ -320,7 +320,7 @@ export default function InvoicePDF({
                     marginTop: 5
                   }}
                 >
-                  {getPriceString(totalSpent)}
+                  {formatMoney(totalSpent)}
                 </Text>
               </View>
             </View>

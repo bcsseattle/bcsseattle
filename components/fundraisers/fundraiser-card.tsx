@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { formatCurrency } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -44,8 +44,8 @@ export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
         <CardContent>
           <Progress value={progress} className="mb-2" />
           <div className="flex justify-between text-sm">
-            <span>{formatCurrency(fundraiser.current_amount)} raised</span>
-            <span>{formatCurrency(fundraiser.goal_amount)} goal</span>
+            <span>{formatMoney((fundraiser.current_amount ?? 0) * 100, { whole: true })} raised</span>
+            <span>{formatMoney(fundraiser.goal_amount * 100, { whole: true })} goal</span>
           </div>
         </CardContent>
         <CardFooter className="text-sm text-muted-foreground">

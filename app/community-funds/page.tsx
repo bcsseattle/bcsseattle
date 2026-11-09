@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-import { getPriceString } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 import {
   getBankBalance,
   getDonations,
@@ -129,11 +129,11 @@ export default async function CommunityFunds(props: {
       })}`
     : 'Estimated from records';
 
-  const bankBalance = getPriceString(bankAmount);
-  const expensesString = getPriceString(totalExpenses);
-  const availableFunds = getPriceString(bankAmount + stripeAmount);
-  const stripeBalance = getPriceString(stripeAmount);
-  const stripeFeesString = getPriceString(totalStripeFees);
+  const bankBalance = formatMoney(bankAmount);
+  const expensesString = formatMoney(totalExpenses);
+  const availableFunds = formatMoney(bankAmount + stripeAmount);
+  const stripeBalance = formatMoney(stripeAmount);
+  const stripeFeesString = formatMoney(totalStripeFees);
 
   return (
     <>

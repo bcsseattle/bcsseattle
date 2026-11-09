@@ -38,7 +38,8 @@ import { Card } from '../ui/card';
 import { US_STATES } from '@/utils/constants';
 import { submitDonation } from '@/utils/donation/handlers';
 import { checkoutWithStripeForDonation } from '@/utils/stripe/server';
-import { getErrorRedirect, getPriceString, getStatusRedirect } from '@/utils/helpers';
+import { getErrorRedirect, getStatusRedirect } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 import { getStripe } from '@/utils/stripe/client';
 import { Wizard } from '../ui/wizard';
 import Image from 'next/image';
@@ -667,7 +668,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
                 <Button className="" variant="secondary" type="submit">
                   {form.watch('paymentMethod') === 'card' ||
                   form.watch('paymentMethod') === 'us_bank_account'
-                    ? `Donate ${getPriceString(Math.round(Number(form.watch('amount')) * 100))} Now`
+                    ? `Donate ${formatMoney(Math.round(Number(form.watch('amount')) * 100))} Now`
                     : 'Done'}
                 </Button>
               </div>
