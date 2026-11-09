@@ -41,6 +41,14 @@ Feature: Member account and community funds
     And I should see "Processing Fees"
     And I should see "Available Funds"
 
+  @P1 @payments @BUG-040
+  Scenario: The estimated bank balance counts only money that arrived outside Stripe
+    Given a completed $500 external donation
+    And a pending $300 card donation
+    And I am signed in as an approved member
+    When I go to "/community-funds"
+    Then the estimated bank balance should count only money received outside Stripe
+
   @P1
   Scenario: An applicant can't see the community's finances yet
     Given I am signed in as a pending applicant

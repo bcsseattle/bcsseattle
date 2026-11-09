@@ -217,3 +217,31 @@ Then('no election should have been created', async function (this: E2EWorld) {
   const { count } = await admin.from('elections').select('id', { count: 'exact', head: true }).eq('title', this.data.rogueElection);
   expect(count, this.apiError).toBe(0);
 });
+
+// ---------------------------------------------------------------- community funds estimate (BUG-040)
+
+Given(/^a (completed|pending) \$(\d+) (external|card) donation$/, async function (this: E2EWorld, status: 'completed' | 'pending', dollars: string, method: string) {
+  await createDonation(this.cleanup, { amountCents: Number(dollars) * 100, status, paymentMethod: method });
+});
+
+/** The estimate the page should show with no bank account linked: funds + money received outside Stripe - expenses. */
+async function expectedBankEstimateCents() {
+  const sum = (rows: { amount?: unknown; donation_amount?: unknown }[] | null, k: 'amount' | 'donation_amount') =>
+    (rows ?? []).reduce((acc, r) => acc + Number(r[k] ?? 0), 0);
+  const funds = (await admin.from('funds').select('amount').not('status', 'in', '(cancelled,failed)').neq('is_private', true)).data;
+  const offline = (await admin.from('donations').select('donation_amount').eq('is_private', false).eq('donation_status', 'completed').not('payment_method', 'in', '(card,us_bank_account)')).data;
+  const expenses = (await admin.from('expenses').select('amount').eq('is_private', false)).data;
+  return sum(funds, 'amount') + sum(offline, 'donation_amount') - sum(expenses, 'amount');
+}
+
+Then('the estimated bank balance should count only money received outside Stripe', async function (this: E2EWorld) {
+  // Other scenarios change these tables in parallel: compare until page and database agree.
+  await expect
+    .poll(async () => {
+      await this.page.reload();
+      const shown = await this.page.locator('div.rounded-lg, div.rounded-xl').filter({ hasText: /^Bank Balance/ }).locator('.text-2xl').first().innerText();
+      const cents = Math.round(Number(shown.replace(/[^0-9.-]/g, '')) * 100);
+      return cents === (await expectedBankEstimateCents());
+    }, { timeout: 30_000 })
+    .toBe(true);
+});

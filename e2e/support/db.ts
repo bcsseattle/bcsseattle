@@ -286,7 +286,7 @@ export async function createFundraiser(
 
 export async function createDonation(
   cleanup: Cleanup,
-  opts: { email?: string; fullName?: string; amountCents: number; status?: 'pending' | 'completed'; userId?: string; anonymous?: boolean; private?: boolean }
+  opts: { email?: string; fullName?: string; amountCents: number; status?: 'pending' | 'completed'; userId?: string; anonymous?: boolean; private?: boolean; paymentMethod?: string }
 ) {
   const email = opts.email ?? uniqueEmail('donor');
   const donor = must(
@@ -317,7 +317,7 @@ export async function createDonation(
         donation_amount: opts.amountCents,
         donation_type: 'one_time',
         donation_status: opts.status ?? 'completed',
-        payment_method: 'card',
+        payment_method: opts.paymentMethod ?? 'card',
         purpose: 'general-purpose',
         donation_description: 'Donation',
       })
