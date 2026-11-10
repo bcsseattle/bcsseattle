@@ -9,7 +9,7 @@
 import { Donation } from '@/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { paymentMethodMap, purposeTitleMap } from '@/utils/helpers';
-import { formatMoney } from '@/utils/format';
+import { formatDate, formatMoney } from '@/utils/format';
 import { Badge } from '../ui/badge';
 
 export const donationColumns: ColumnDef<Donation>[] = [
@@ -44,7 +44,7 @@ export const donationColumns: ColumnDef<Donation>[] = [
         return 'N/A'; // Fallback for null or undefined values
       }
       const date = new Date(value);
-      return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString(); // Fallback for invalid dates
+      return isNaN(date.getTime()) ? 'Invalid Date' : formatDate(value); // Fallback for invalid dates
     }
   },
   {
@@ -68,11 +68,9 @@ export const donationColumns: ColumnDef<Donation>[] = [
     header: 'Status',
     cell: (info) => {
       const value = info.getValue<string>();
-      return (
-        <Badge variant={value === 'completed' ? 'secondary' : 'destructive'}>
-          {value}
-        </Badge>
-      );
+      // A badge with its word; pending is orange (waiting), not red.
+      const tone = value === 'completed' ? 'green' : value === 'failed' ? 'red' : value === 'pending' ? 'orange' : 'neutral';
+      return <Badge tone={tone}>{value ? value.charAt(0).toUpperCase() + value.slice(1) : 'Unknown'}</Badge>;
     }
   }
 ];

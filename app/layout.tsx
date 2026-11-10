@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import Navbar from '@/components/ui/Navbar';
 import { Toaster } from '@/components/ui/Toasts/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
 import { PropsWithChildren, Suspense } from 'react';
@@ -7,10 +6,8 @@ import { getURL } from '@/utils/helpers';
 import { Inter as FontSans, Source_Serif_4 as FontSerif } from 'next/font/google';
 import { cn } from '@/utils/cn';
 import '@/styles/main.css';
-import Footer from '@/components/Footer';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
 import { Analytics } from '@vercel/analytics/react';
-import Breadcrumbs from '@/components/ui/breadcrumbs';
 
 // Inter for UI; Source Serif 4 for editorial and display headings only.
 // tailwind.config.js maps font-sans and font-serif to these variables.
@@ -20,7 +17,9 @@ const fontSans = FontSans({
 });
 const fontSerif = FontSerif({
   subsets: ['latin'],
-  variable: '--font-serif'
+  variable: '--font-serif',
+  // Optical sizes, so 56px display text uses the display cut, as in the mock.
+  axes: ['opsz']
 });
 
 const meta = {
@@ -76,18 +75,24 @@ export default async function RootLayout({ children }: PropsWithChildren) {
       >
         {/* Inside <body>: a <script> directly under <html> is invalid (BUG-063). */}
         <GoogleAnalytics />
-        <Navbar />
-        <main id="skip" className="mx-auto p-2 sm:p-12">
-          <Breadcrumbs />
-          {children}
-          <Analytics />
-        </main>
-        <Footer />
+        {/* The site and portal shells live in app/(site) and app/(portal). */}
+        {children}
+        <Analytics />
         <Suspense>
           <Toaster />
         </Suspense>
         {/* Seven components report success and errors with sonner's toast() (BUG-022). */}
-        <SonnerToaster richColors closeButton />
+        <SonnerToaster
+          closeButton
+          style={
+            {
+              '--normal-bg': 'hsl(var(--primary))',
+              '--normal-text': 'hsl(var(--primary-foreground))',
+              '--normal-border': 'hsl(var(--primary))',
+              '--width': '420px'
+            } as React.CSSProperties
+          }
+        />
       </body>
     </html>
   );

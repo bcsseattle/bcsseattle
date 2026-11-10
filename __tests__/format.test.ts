@@ -8,6 +8,10 @@ describe('formatMoney', () => {
     expect(formatMoney(1999)).toBe(nb('USD 19.99'));
   });
 
+  it('never signs zero', () => {
+    expect(formatMoney(-0)).toBe(nb('USD 0.00'));
+  });
+
   it('drops cents for whole amounts', () => {
     expect(formatMoney(645000, { whole: true })).toBe(nb('USD 6,450'));
   });

@@ -64,30 +64,30 @@ export function ElectionDashboard({ results, lastUpdated }: ElectionDashboardPro
   return (
     <div className="space-y-6">
       {/* Status Banner */}
-      <Card className={`border-l-4 ${
+      <Card className={`${
         statusColor === 'green'
-          ? 'border-l-green-500 bg-green-50 dark:bg-green-950' 
+          ? 'bg-badge-green-bg' 
           : statusColor === 'yellow'
-          ? 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-950'
-          : 'border-l-gray-500 bg-gray-50 dark:bg-gray-950'
+          ? 'bg-badge-orange-bg'
+          : 'bg-muted'
       }`}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className={`p-2 rounded-full ${
                 statusColor === 'green' 
-                  ? 'bg-green-100 dark:bg-green-900' 
+                  ? 'bg-badge-green-bg' 
                   : statusColor === 'yellow'
-                  ? 'bg-yellow-100 dark:bg-yellow-900'
-                  : 'bg-gray-100 dark:bg-gray-900'
+                  ? 'bg-badge-orange-bg'
+                  : 'bg-muted'
               }`}>
                 {statusColor === 'gray' ? (
-                  <Clock className={`h-5 w-5 text-gray-600 dark:text-gray-400`} />
+                  <Clock className={`h-5 w-5 text-muted-foreground`} />
                 ) : (
                   <Activity className={`h-5 w-5 ${
                     statusColor === 'green' 
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-yellow-600 dark:text-yellow-400'
+                      ? 'text-badge-green-text'
+                      : 'text-badge-orange-text'
                   }`} />
                 )}
               </div>
@@ -101,7 +101,7 @@ export function ElectionDashboard({ results, lastUpdated }: ElectionDashboardPro
             <div className="text-right">
               {isVotingActive && timeUntilEnd > 0 && (
                 <div>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  <p className="text-2xl font-bold text-badge-green-text">
                     {hoursUntilEnd}h {minutesUntilEnd}m
                   </p>
                   <p className="text-sm text-muted-foreground">remaining</p>
@@ -164,8 +164,8 @@ export function ElectionDashboard({ results, lastUpdated }: ElectionDashboardPro
             <div className="text-lg font-bold">{lastUpdated.toLocaleTimeString()}</div>
             <p className="text-xs text-muted-foreground">
               {isVotingActive && (
-                <span className="inline-flex items-center text-green-600">
-                  <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
+                <span className="inline-flex items-center text-badge-green-text">
+                  <span className="inline-block w-2 h-2 bg-primary rounded-full mr-1 animate-pulse"></span>
                   Live updates
                 </span>
               )}
@@ -200,8 +200,8 @@ export function ElectionDashboard({ results, lastUpdated }: ElectionDashboardPro
                   <div className="text-right">
                     <Badge variant="outline" className={
                       results.votingStatus?.candidatesElectedUnopposed
-                        ? "bg-blue-50 border-blue-200 text-blue-800"
-                        : "bg-yellow-50 border-yellow-200 text-yellow-800"
+                        ? "bg-accent-100 border-accent-200 text-foreground"
+                        : "bg-badge-orange-bg border-badge-orange-border text-badge-orange-text"
                     }>
                       {results.votingStatus?.candidatesElectedUnopposed ? (
                         <>

@@ -35,7 +35,7 @@ Then('my interest in the funeral and burial fund should be recorded', async func
 });
 
 Then('every link in the programs section should open a page that exists', async function (this: E2EWorld) {
-  const section = this.page.locator('section, div').filter({ has: this.page.getByRole('heading', { name: 'Our Programs & Services' }) }).last();
+  const section = this.page.getByRole('region', { name: 'How we support the community' });
   const hrefs = await section.getByRole('link').evaluateAll((links) => links.map((a) => a.getAttribute('href')!));
   expect(hrefs.length).toBeGreaterThan(0);
   for (const href of hrefs) {
@@ -113,11 +113,19 @@ Then('the donation should still be pending', async function (this: E2EWorld) {
 
 Then('the page should fit the screen width', async function (this: E2EWorld) {
   await this.page.waitForLoadState('networkidle');
-  const { scrollWidth, innerWidth } = await this.page.evaluate(() => ({
-    scrollWidth: document.documentElement.scrollWidth,
-    innerWidth: window.innerWidth,
-  }));
-  expect(scrollWidth, `page is ${scrollWidth}px wide on a ${innerWidth}px screen`).toBeLessThanOrEqual(innerWidth);
+  const { scrollWidth, innerWidth, culprit } = await this.page.evaluate(() => {
+    // The innermost element that runs past the right edge, to say what to fix.
+    const over = [...document.body.querySelectorAll('*')].filter(
+      (el) => el.getBoundingClientRect().right > window.innerWidth + 0.5
+    );
+    const el = over.find((e) => !over.some((o) => o !== e && e.contains(o))) ?? over[0];
+    return {
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+      culprit: el ? `<${el.tagName.toLowerCase()} class="${el.getAttribute('class') ?? ''}">${(el.textContent ?? '').trim().slice(0, 40)}` : '',
+    };
+  });
+  expect(scrollWidth, `${this.page.url()} is ${scrollWidth}px wide on a ${innerWidth}px screen; ${culprit}`).toBeLessThanOrEqual(innerWidth);
 });
 
 async function axe(world: E2EWorld) {
@@ -209,11 +217,10 @@ Then('every page in the sitemap should open', async function (this: E2EWorld) {
   expect(dead).toEqual([]);
 });
 
-Then('the breadcrumbs should not show any raw IDs', async function (this: E2EWorld) {
+Then('the breadcrumbs should name it {string}, not show its raw ID', async function (this: E2EWorld, name: string) {
   const crumbs = this.page.getByRole('navigation', { name: 'breadcrumb' });
-  await expect(crumbs).toBeVisible();
+  await expect(crumbs).toContainText(name);
   expect(await crumbs.innerText()).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/i);
-  await expect(crumbs).toContainText('Details');
 });
 
 When('I open the phone menu and choose {string}', async function (this: E2EWorld, link: string) {

@@ -10,7 +10,7 @@ function rowFor(world: E2EWorld, name: string) {
 
 async function openMemberManagement(world: E2EWorld) {
   if (!world.page.url().endsWith('/admin/members')) await world.page.goto('/admin/members');
-  await expect(world.page.getByRole('heading', { name: 'Member Management' })).toBeVisible();
+  await expect(world.page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible();
 }
 
 /** Confirms an AlertDialog and waits for the page to show the new state. */
@@ -88,7 +88,7 @@ When(
     this.cleanup.push(async () => admin.from('expenses').delete().eq('description', description));
 
     await this.page.goto('/admin/expenses');
-    await this.page.getByLabel('Amount ($)').fill(amount);
+    await this.page.getByLabel('Amount (USD)').fill(amount);
     await this.page.getByLabel('Category').fill(category);
     await this.page.getByLabel('Payee').fill(payee);
     await this.page.getByLabel('Description').fill(description);

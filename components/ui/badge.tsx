@@ -3,33 +3,56 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/utils/cn"
 
+// Art Gallery Badge (Figma 7:157): a tonal label, 20px, Micro/Semibold.
+// Status is never colour alone: the badge always carries its word.
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap border px-2 text-micro font-semibold [&_svg]:size-3.5",
   {
     variants: {
-      variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
+      tone: {
+        green: "border-badge-green-border bg-badge-green-bg text-badge-green-text",
+        orange: "border-badge-orange-border bg-badge-orange-bg text-badge-orange-text",
+        blue: "border-badge-blue-border bg-badge-blue-bg text-badge-blue-text",
+        purple: "border-badge-purple-border bg-badge-purple-bg text-badge-purple-text",
+        red: "border-badge-red-border bg-badge-red-bg text-badge-red-text",
+        neutral: "border-badge-neutral-border bg-badge-neutral-bg text-badge-neutral-text",
+        money: "border-money-negative-border bg-money-negative-bg text-money-negative-text",
+      },
+      shape: {
+        round: "rounded-full",
+        square: "rounded-sm",
       },
     },
     defaultVariants: {
-      variant: "default",
+      tone: "neutral",
+      shape: "round",
     },
   }
 )
 
+// The old shadcn variants, for call sites not yet given a tone.
+const legacyTone = {
+  default: "neutral",
+  secondary: "neutral",
+  outline: "neutral",
+  destructive: "red",
+} as const
+
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+    VariantProps<typeof badgeVariants> {
+  variant?: keyof typeof legacyTone
+}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
+function Badge({ className, tone, shape, variant, ...props }: BadgeProps) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div
+      className={cn(
+        badgeVariants({ tone: tone ?? (variant ? legacyTone[variant] : undefined), shape }),
+        className
+      )}
+      {...props}
+    />
   )
 }
 

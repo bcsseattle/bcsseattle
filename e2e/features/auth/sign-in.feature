@@ -10,7 +10,7 @@ Feature: Signing in and out
     When "Amina" signs in with the correct password
     Then I should be on the home page
     And I should see the message "Success!"
-    And the navigation should offer the "Membership" menu
+    And the navigation should offer the "My account" link
 
   @P0 @smoke
   Scenario: Signing in with the wrong password is rejected
@@ -27,14 +27,14 @@ Feature: Signing in and out
     Then I should be asked to sign in before reaching "/account"
     When "Amina" signs in with the correct password
     Then I should be on the "/account" page
-    And I should see the heading "Account Settings"
+    And I should see the heading "My account"
 
   @P1
   Scenario: A signed-in member signs out
     Given I am signed in as an approved member
     When I sign out
     Then I should be on the sign-in page
-    And the navigation should offer the "For members" link
+    And the navigation should offer the "Member sign in" link
 
   # The form path is safe today (client-side router.push stays on-site); the
   # server-side redirect in the next scenario is where BUG-032 bites.

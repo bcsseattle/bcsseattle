@@ -37,13 +37,13 @@ export function ElectionResultsSummary({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'voting_open':
-        return 'bg-green-500';
+        return 'bg-primary';
       case 'voting_closed':
-        return 'bg-red-500';
+        return 'bg-primary';
       case 'completed':
-        return 'bg-blue-500';
+        return 'bg-primary';
       default:
-        return 'bg-gray-500';
+        return 'bg-primary';
     }
   };
 

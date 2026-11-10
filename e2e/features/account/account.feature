@@ -8,7 +8,7 @@ Feature: Member account and community funds
   Scenario: A member sees their account settings
     Given I am signed in as an approved member
     When I go to "/account"
-    Then I should see the heading "Account Settings"
+    Then I should see the heading "My account"
     And I should see "Contributions Receipt"
 
   @P1

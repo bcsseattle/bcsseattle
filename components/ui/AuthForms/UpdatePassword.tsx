@@ -40,7 +40,7 @@ export default function UpdatePassword({
               type="password"
               name="password"
               autoComplete="current-password"
-              className="w-full p-3 rounded-md bg-gray-50"
+              className="w-full p-3 rounded-md bg-muted"
             />
             <Label htmlFor="passwordConfirm">Confirm New Password</Label>
             <Input
@@ -49,7 +49,7 @@ export default function UpdatePassword({
               type="password"
               name="passwordConfirm"
               autoComplete="current-password"
-              className="w-full p-3 rounded-md bg-gray-50"
+              className="w-full p-3 rounded-md bg-muted"
             />
           </div>
 

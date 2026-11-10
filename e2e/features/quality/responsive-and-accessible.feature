@@ -17,6 +17,57 @@ Feature: The site works on phones and with assistive technology
       | /about-us    |
       | /fundraisers |
       | /contact-us  |
+      | /about-us/bylaws        |
+      | /about-us/mission       |
+      | /about-us/vision        |
+      | /resources              |
+      | /resources/immigration  |
+      | /funeral-burials        |
+      | /youth-programs         |
+      | /privacy                |
+      | /terms                  |
+      | /signin/password_signin |
+      | /register               |
+
+  @P2 @mobile
+  Scenario Outline: The portal page <path> fits a phone screen without sideways scrolling
+    Given I am signed in as an admin
+    When I go to "<path>"
+    Then the page should fit the screen width
+
+    Examples:
+      | path                    |
+      | /elections              |
+      | /community-funds        |
+      | /account                |
+      | /members                |
+      | /contribute             |
+      | /admin/members          |
+      | /admin/expenses         |
+      | /admin/elections        |
+      | /admin/voting-config    |
+      | /admin/election-types   |
+      | /fundraisers/admin/new  |
+
+  @P2 @mobile
+  Scenario: An election, its candidates and its results fit a phone screen
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an admin
+    When I open the election
+    Then the page should fit the screen width
+    When I open the nomination page
+    Then the page should fit the screen width
+    When I open the election results
+    Then the page should fit the screen width
+
+  @P2 @mobile
+  Scenario: A fundraiser and its donation page fit a phone screen
+    Given there is an active fundraiser "Roof repair" with a goal of $2,000
+    And I am a visitor who is not signed in
+    When I open the fundraiser
+    Then the page should fit the screen width
+    When I open the donation page of "Roof repair"
+    Then the page should fit the screen width
 
   @P2 @mobile @BUG-050
   Scenario: The site can be navigated on a phone
@@ -66,21 +117,21 @@ Feature: The site works on phones and with assistive technology
     Given there is an approved member named "Amina"
     When "Amina" signs in using only the keyboard
     Then I should be on the home page
-    And the navigation should offer the "Membership" menu
+    And the navigation should offer the "My account" link
 
   @P2 @serial
   Scenario: The elections page says so when there are no elections
     Given there are no current elections
     And I am signed in as an approved member
     When I go to "/elections"
-    Then I should see "No active elections at the moment."
+    Then I should see "No active elections at the moment"
 
   @P2 @serial
   Scenario: The fundraisers page says so when there are no fundraisers
     Given there are no active fundraisers
     And I am signed in as an approved member
     When I go to the fundraisers page
-    Then I should see "No fundraisers found."
+    Then I should see "No active fundraisers right now"
 
   @P2 @a11y @BUG-066
   Scenario Outline: <path> has no controls nested in each other and no broken lists

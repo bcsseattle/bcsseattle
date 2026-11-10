@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { MemberStatusBadge } from '@/components/portal/member-row';
 
 import { Member, Price, Subscription } from '@/types';
 import Link from 'next/link';
@@ -71,20 +71,14 @@ export default function MemberList({
                   <TableCell className="font-medium">
                     <Link
                       href={`/members/${member.id}`}
-                      className="text-blue-500 hover:text-blue-700 focus:text-blue-700 active:text-blue-800"
+                      className="text-accent hover:text-foreground focus:text-foreground active:text-foreground"
                     >
                       {member.fullName}
                     </Link>
                   </TableCell>
                   <TableCell>{member.city}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={
-                        member?.status === 'active' ? 'default' : 'destructive'
-                      }
-                    >
-                      {member.status}
-                    </Badge>
+                    <MemberStatusBadge status={member.status} />
                   </TableCell>
                   <TableCell>{member.membershipType}</TableCell>
                   <TableCell>{member.totalMembersInFamily}</TableCell>
@@ -92,7 +86,7 @@ export default function MemberList({
                     {subscription?.status === 'active' ? (
                       `${priceString} / ${price?.interval}`
                     ) : (
-                      <span className="text-red-700">
+                      <span className="text-badge-red-text">
                         Yet to choose contribution plan
                       </span>
                     )}

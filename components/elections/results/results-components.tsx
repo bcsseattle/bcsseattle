@@ -9,6 +9,7 @@ import { Trophy, TrendingUp, Users, Vote, BarChart3, Crown, Building } from 'luc
 import { ElectionResults } from '@/hooks/useElectionResults';
 import { getElectionTypeDescription, supportsUnopposedCandidates } from '@/utils/election-types';
 import { ElectionType } from '@/types';
+import { formatDeadline } from '@/utils/format';
 
 interface ResultsOverviewProps {
   results: ElectionResults;
@@ -21,13 +22,13 @@ export function ResultsOverview({ results }: ResultsOverviewProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'voting_open':
-        return 'bg-green-500';
+        return 'bg-primary';
       case 'voting_closed':
-        return 'bg-red-500';
+        return 'bg-primary';
       case 'completed':
-        return 'bg-blue-500';
+        return 'bg-primary';
       default:
-        return 'bg-gray-500';
+        return 'bg-primary';
     }
   };
 
@@ -183,7 +184,7 @@ export function ResultsOverview({ results }: ResultsOverviewProps) {
 
       {/* Voting Status Section - Show when separate voting periods are enabled */}
       {results.election.enableSeparateVotingPeriods && (
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card className="border-accent-200 bg-accent-100">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Vote className="h-5 w-5" />
@@ -195,7 +196,7 @@ export function ResultsOverview({ results }: ResultsOverviewProps) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+              <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
                 <div>
                   <p className="font-medium">Candidate Voting</p>
                   <p className="text-sm text-muted-foreground">
@@ -207,7 +208,7 @@ export function ResultsOverview({ results }: ResultsOverviewProps) {
                 </Badge>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+              <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
                 <div>
                   <p className="font-medium">Initiative Voting</p>
                   <p className="text-sm text-muted-foreground">
@@ -220,12 +221,12 @@ export function ResultsOverview({ results }: ResultsOverviewProps) {
               </div>
 
               {results.votingStatus.candidatesElectedUnopposed && (
-                <div className="flex items-center justify-between p-3 bg-blue-100 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between p-3 bg-accent-100 rounded-lg border border-accent-200">
                   <div>
-                    <p className="font-medium text-blue-900">Leadership Positions</p>
-                    <p className="text-sm text-blue-700">Candidate voting closed early</p>
+                    <p className="font-medium text-foreground">Leadership Positions</p>
+                    <p className="text-sm text-foreground">Candidate voting closed early</p>
                   </div>
-                  <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                  <Badge variant="outline" className="bg-accent-100 text-foreground border-accent-200">
                     <Trophy className="w-3 h-3 mr-1" />
                     Elected Unopposed
                   </Badge>
@@ -235,19 +236,19 @@ export function ResultsOverview({ results }: ResultsOverviewProps) {
 
             {/* Show candidate voting period details if available */}
             {results.election.candidateVotingEnd && (
-              <div className="mt-4 pt-4 border-t bg-blue-50 rounded-lg p-3">
+              <div className="mt-4 pt-4 border-t bg-accent-100 rounded-lg p-3">
                 <div className="flex items-start gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-blue-900">Candidate Voting Period</p>
-                    <p className="text-sm text-blue-700">
+                    <p className="text-sm font-medium text-foreground">Candidate Voting Period</p>
+                    <p className="text-sm text-foreground">
                       {results.election.candidateVotingStart ? 
-                        new Date(results.election.candidateVotingStart).toLocaleString() : 
-                        new Date(results.election.startDate).toLocaleString()
-                      } → {new Date(results.election.candidateVotingEnd).toLocaleString()}
+                        formatDeadline(results.election.candidateVotingStart) : 
+                        formatDeadline(results.election.startDate)
+                      } → {formatDeadline(results.election.candidateVotingEnd)}
                     </p>
                     {!results.votingStatus.candidateVotingOpen && (
-                      <p className="text-xs text-blue-600 mt-1 font-medium">
+                      <p className="text-xs text-accent mt-1 font-medium">
                         💡 Candidate voting was closed before the general election end time to allow candidates to be elected unopposed
                       </p>
                     )}
@@ -279,13 +280,13 @@ export function CandidateResults({ results }: CandidateResultsProps) {
     <div className="space-y-6">
       {/* Show unopposed status banner if applicable */}
       {results.votingStatus.candidatesElectedUnopposed && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-accent-200 bg-accent-100">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <Trophy className="h-6 w-6 text-blue-600" />
+              <Trophy className="h-6 w-6 text-accent" />
               <div className="flex-1">
-                <h3 className="font-semibold text-blue-900">All Candidates Elected Unopposed</h3>
-                <p className="text-sm text-blue-700">
+                <h3 className="font-semibold text-foreground">All Candidates Elected Unopposed</h3>
+                <p className="text-sm text-foreground">
                   Candidate voting was closed early to allow unopposed candidates to be elected to their positions. 
                   All leadership positions have been filled without requiring a competitive vote.
                 </p>
@@ -321,7 +322,7 @@ export function CandidateResults({ results }: CandidateResultsProps) {
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{candidate.fullName}</p>
                         {index === 0 && candidate.voteCount > 0 && (
-                          <Badge variant="default" className="bg-yellow-500 text-white">
+                          <Badge variant="default" className="bg-primary text-primary-foreground">
                             <Trophy className="h-3 w-3 mr-1" />
                             Leading
                           </Badge>
@@ -375,7 +376,7 @@ export function InitiativeResults({ results }: InitiativeResultsProps) {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 rounded"></div>
+                  <div className="w-4 h-4 bg-primary rounded"></div>
                   <span className="font-medium">Yes</span>
                 </div>
                 <div className="text-right">
@@ -389,7 +390,7 @@ export function InitiativeResults({ results }: InitiativeResultsProps) {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-500 rounded"></div>
+                  <div className="w-4 h-4 bg-primary rounded"></div>
                   <span className="font-medium">No</span>
                 </div>
                 <div className="text-right">
@@ -403,7 +404,7 @@ export function InitiativeResults({ results }: InitiativeResultsProps) {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-gray-400 rounded"></div>
+                  <div className="w-4 h-4 bg-border-strong rounded"></div>
                   <span className="font-medium">Abstain</span>
                 </div>
                 <div className="text-right">
@@ -420,7 +421,7 @@ export function InitiativeResults({ results }: InitiativeResultsProps) {
             <div className="pt-4 border-t">
               <div className="flex items-center justify-center">
                 {initiative.votes.yes > initiative.votes.no ? (
-                  <Badge variant="default" className="bg-green-500">
+                  <Badge variant="default" className="bg-primary">
                     <TrendingUp className="h-3 w-3 mr-1" />
                     Currently Passing
                   </Badge>

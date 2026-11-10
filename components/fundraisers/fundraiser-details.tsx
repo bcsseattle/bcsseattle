@@ -40,9 +40,9 @@ export function FundraiserDetails({
   return (
     <div className="space-y-8">
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold">{fundraiser.title}</h1>
+            <h1 className="text-display text-foreground">{fundraiser.title}</h1>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{fundraiser.category}</Badge>
               <span className="text-sm text-muted-foreground">
@@ -75,8 +75,8 @@ export function FundraiserDetails({
           goalAmount={fundraiser.goal_amount}
         />
 
-        <div className="prose max-w-none">
-          <p>{fundraiser.description}</p>
+        <div className="max-w-3xl">
+          <p className="font-serif text-doc-lead text-foreground">{fundraiser.description}</p>
         </div>
 
         <div className="flex justify-center">
