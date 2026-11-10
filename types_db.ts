@@ -92,6 +92,27 @@ export type Database = {
         }
         Relationships: []
       }
+      device_tokens: {
+        Row: {
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          platform: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       donations: {
         Row: {
           currency: string | null
@@ -526,7 +547,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
-          created_by: string
+          created_by: string | null
           fundraiser_id: string
           id: string
           updated_at: string
@@ -534,7 +555,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
-          created_by: string
+          created_by?: string | null
           fundraiser_id: string
           id?: string
           updated_at?: string
@@ -542,7 +563,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           fundraiser_id?: string
           id?: string
           updated_at?: string
@@ -562,7 +583,7 @@ export type Database = {
           beneficiary: string | null
           category: Database["public"]["Enums"]["fundraiser_category"] | null
           created_at: string
-          created_by: string
+          created_by: string | null
           current_amount: number | null
           description: string | null
           ends_at: string | null
@@ -578,7 +599,7 @@ export type Database = {
           beneficiary?: string | null
           category?: Database["public"]["Enums"]["fundraiser_category"] | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           current_amount?: number | null
           description?: string | null
           ends_at?: string | null
@@ -594,7 +615,7 @@ export type Database = {
           beneficiary?: string | null
           category?: Database["public"]["Enums"]["fundraiser_category"] | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           current_amount?: number | null
           description?: string | null
           ends_at?: string | null
@@ -1146,7 +1167,7 @@ export type Database = {
           election_id: string
           id: string
           session_type: Database["public"]["Enums"]["vote_session_type"] | null
-          user_id: string
+          user_id: string | null
           votes_cast: number
         }
         Insert: {
@@ -1155,7 +1176,7 @@ export type Database = {
           election_id: string
           id?: string
           session_type?: Database["public"]["Enums"]["vote_session_type"] | null
-          user_id: string
+          user_id?: string | null
           votes_cast: number
         }
         Update: {
@@ -1164,7 +1185,7 @@ export type Database = {
           election_id?: string
           id?: string
           session_type?: Database["public"]["Enums"]["vote_session_type"] | null
-          user_id?: string
+          user_id?: string | null
           votes_cast?: number
         }
         Relationships: [
@@ -1185,7 +1206,7 @@ export type Database = {
           election_id: string
           id: string
           session_type: Database["public"]["Enums"]["vote_session_type"]
-          user_id: string
+          user_id: string | null
           votes_cast: number
         }
         Insert: {
@@ -1195,7 +1216,7 @@ export type Database = {
           election_id: string
           id?: string
           session_type: Database["public"]["Enums"]["vote_session_type"]
-          user_id: string
+          user_id?: string | null
           votes_cast?: number
         }
         Update: {
@@ -1205,7 +1226,7 @@ export type Database = {
           election_id?: string
           id?: string
           session_type?: Database["public"]["Enums"]["vote_session_type"]
-          user_id?: string
+          user_id?: string | null
           votes_cast?: number
         }
         Relationships: [
@@ -1228,7 +1249,7 @@ export type Database = {
           ip_address: unknown | null
           session_id: string | null
           user_agent: string | null
-          user_id: string
+          user_id: string | null
           vote_type: Database["public"]["Enums"]["vote_session_type"]
           vote_value: Database["public"]["Enums"]["vote_option"] | null
           voted_at: string | null
@@ -1242,7 +1263,7 @@ export type Database = {
           ip_address?: unknown | null
           session_id?: string | null
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
           vote_type: Database["public"]["Enums"]["vote_session_type"]
           vote_value?: Database["public"]["Enums"]["vote_option"] | null
           voted_at?: string | null
@@ -1256,7 +1277,7 @@ export type Database = {
           ip_address?: unknown | null
           session_id?: string | null
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
           vote_type?: Database["public"]["Enums"]["vote_session_type"]
           vote_value?: Database["public"]["Enums"]["vote_option"] | null
           voted_at?: string | null
@@ -1384,6 +1405,10 @@ export type Database = {
           votes_per_user_avg: number
           suspicious_activity_count: number
         }[]
+      }
+      register_device: {
+        Args: { p_token: string; p_platform: string }
+        Returns: undefined
       }
       user_can_vote_in_session: {
         Args: {

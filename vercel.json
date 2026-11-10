@@ -1,5 +1,6 @@
 {
   "crons": [
-    { "path": "/api/cron/refresh-bank-balance", "schedule": "0 16 * * 1" }
+    { "path": "/api/cron/refresh-bank-balance", "schedule": "0 16 * * 1" },
+    { "path": "/api/cron/election-reminders", "schedule": "0 17 * * *" }
   ]
 }

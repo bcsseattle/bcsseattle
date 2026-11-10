@@ -454,8 +454,13 @@ const manageSubscriptionStatusChange = async (
     .eq('stripe_customer_id', customerId)
     .single();
 
-  if (noCustomerError)
+  if (noCustomerError) {
+    // The member deleted their account (/api/app/account/delete tags the Stripe
+    // customer first): there is no row left to mirror this subscription into.
+    const stripeCustomer = await stripe.customers.retrieve(customerId);
+    if (!stripeCustomer.deleted && stripeCustomer.metadata?.bcs_account_deleted) return;
     throw new Error(`Customer lookup failed: ${noCustomerError.message}`);
+  }
 
   const { id: uuid } = customerData!;
 
