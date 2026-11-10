@@ -39,7 +39,7 @@ export function TabBar() {
             )}
           >
             <Icon aria-hidden className="size-6" strokeWidth={current ? 2.25 : 1.75} />
-            {label}
+            <span className="tab-label">{label}</span>
           </Link>
         );
       })}

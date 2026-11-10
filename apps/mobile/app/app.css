@@ -1,0 +1,33 @@
+/*
+ * Large text (Dynamic Type or Android font size at accessibility sizes;
+ * NativeChrome sets data-large-text). Rows grow and wrap instead of cutting
+ * words off, and the tab bar keeps its icons with the names for screen
+ * readers only, as iOS's own tab bars do at these sizes. App only: the shared
+ * components render as before on the website.
+ */
+[data-large-text] .truncate {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+/* Text keeps at least its longest word, so a row's value moves to the next line instead of squeezing the label letter by letter. */
+[data-large-text] .min-w-0 {
+  min-width: auto;
+}
+[data-large-text] :has(> .min-w-0) {
+  flex-wrap: wrap;
+}
+[data-large-text] .h-13 {
+  height: auto;
+  min-height: 3.25rem;
+  padding-block: 0.5rem;
+}
+[data-large-text] .tab-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

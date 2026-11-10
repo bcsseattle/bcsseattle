@@ -10,7 +10,9 @@ const config: CapacitorConfig = {
   ...(local && { server: { cleartext: true } }),
   plugins: {
     // Dark status-bar text and icons: every screen has a light background.
-    SystemBars: { style: 'LIGHT' }
+    SystemBars: { style: 'LIGHT' },
+    // Show a notification that arrives while the app is open, as when it's closed.
+    PushNotifications: { presentationOptions: ['badge', 'sound', 'alert'] }
   }
 };
 

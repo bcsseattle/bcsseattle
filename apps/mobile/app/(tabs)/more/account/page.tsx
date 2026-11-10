@@ -11,6 +11,7 @@ import { Loaded, RowButton, Section } from '~/components/screen';
 import { priceLabel } from '~/components/account/labels';
 import { loadMembership, openBillingPortal } from '~/components/account/membership';
 import { MemberBadge } from '~/components/home/membership';
+import { NotificationsRow } from '~/components/account/notifications-row';
 import { useMember } from '~/lib/member';
 import { useSession } from '~/lib/session';
 import { signOut } from '~/lib/supabase';
@@ -103,6 +104,7 @@ export default function Account() {
                     <ListRow label="Name" value={fullName ?? 'Add your name'} href="/more/account/name/" />
                     <ListRow label="Email" value={email} href="/more/account/email/" />
                     <ListRow label="Password & sign-in" href="/signin/new-password/?from=account" />
+                    <NotificationsRow />
                   </ListGroup>
                 </Section>
               </>

@@ -11,6 +11,7 @@ import {
 } from '@/utils/supabase/admin';
 import { updateFundraiserDonation } from '@/utils/supabase/fundraiser';
 import { sendPaymentFailedEmail } from '@/utils/membership/handlers';
+import { notifyPaymentFailed } from '@/utils/push';
 import { handleUpcomingInvoice } from '@/utils/stripe/server';
 
 const relevantEvents = new Set([
@@ -131,6 +132,7 @@ export async function POST(req: Request) {
         case 'charge.failed':
           const charge = event.data.object as Stripe.Charge;
           await sendPaymentFailedEmail(charge);
+          await notifyPaymentFailed(typeof charge.customer === 'string' ? charge.customer : charge.customer?.id);
           break;
         case 'payout.paid':
         case 'payout.failed':

@@ -4,7 +4,9 @@ import { Inter } from 'next/font/google';
 import { Toaster } from 'sonner';
 import { cn } from '@/utils/cn';
 import { SessionProvider } from '~/lib/session';
+import { NativeChrome } from '~/components/native-chrome';
 import '@/styles/main.css';
+import './app.css';
 
 const fontSans = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -18,7 +20,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className={cn('min-h-dvh bg-background font-sans text-foreground antialiased', fontSans.variable)}>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          {children}
+          <NativeChrome />
+        </SessionProvider>
         <Toaster position="top-center" mobileOffset={{ top: 'calc(env(safe-area-inset-top) + 0.5rem)' }} />
       </body>
     </html>

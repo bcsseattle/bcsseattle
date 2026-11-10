@@ -14,7 +14,10 @@ dependencies {
     implementation project(':capacitor-app-launcher')
     implementation project(':capacitor-browser')
     implementation project(':capacitor-filesystem')
+    implementation project(':capacitor-network')
+    implementation project(':capacitor-push-notifications')
     implementation project(':capacitor-share')
+    implementation project(':capacitor-text-zoom')
 
 }
 
