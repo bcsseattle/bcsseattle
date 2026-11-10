@@ -39,3 +39,13 @@ export async function isActiveMember(supabase: Awaited<ReturnType<typeof createC
     .maybeSingle();
   return !!data?.isApproved && data.status === 'active';
 }
+
+/** The latest sign-in time in the token's `amr` claim, in seconds; 0 if there is none. */
+export function lastSignIn(token: string) {
+  try {
+    const { amr } = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+    return Math.max(0, ...(amr ?? []).map((entry: { timestamp?: number }) => entry.timestamp ?? 0));
+  } catch {
+    return 0;
+  }
+}

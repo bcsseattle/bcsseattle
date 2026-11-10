@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CircleUser, Heart, Home, Vote, Wallet } from 'lucide-react';
+import { Heart, Home, MoreHorizontal, Vote, Wallet } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 const TABS = [
@@ -10,7 +10,8 @@ const TABS = [
   { href: '/give/', label: 'Give', icon: Heart },
   { href: '/elections/', label: 'Elections', icon: Vote },
   { href: '/funds/', label: 'Funds', icon: Wallet },
-  { href: '/account/', label: 'Account', icon: CircleUser }
+  // More holds Account, Members and Resources (decided 9 Nov 2026; the mock's fifth tab is Account).
+  { href: '/more/', label: 'More', icon: MoreHorizontal }
 ];
 
 /**

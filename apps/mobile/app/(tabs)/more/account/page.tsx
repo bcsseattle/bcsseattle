@@ -15,7 +15,7 @@ export default function AccountTab() {
 
   return (
     <>
-      <AppHeader title="Account" />
+      <AppHeader title="Account" back={{ label: 'More' }} />
       <div className="flex flex-col gap-6 px-4 pb-6">
         <div className="rounded-lg border bg-card px-4 py-3 shadow-sm">
           <p className="text-item">Signed in</p>

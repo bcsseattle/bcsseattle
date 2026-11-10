@@ -1,21 +1,16 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { AppHeader } from '~/components/app-header';
 import { AuthForm, Field } from '~/components/auth-form';
-import { useSession } from '~/lib/session';
+import { useRequireSession } from '~/lib/session';
 import { supabase } from '~/lib/supabase';
 
 /** Reached signed in: after a reset code or link, or (Phase 3) from Account › Password & sign-in. */
 export default function NewPassword() {
-  const { session, ready } = useSession();
   const router = useRouter();
-  useEffect(() => {
-    if (ready && !session) router.replace('/signin/');
-  }, [ready, session, router]);
-  if (!session) return null;
+  if (!useRequireSession()) return null;
 
   return (
     <>
