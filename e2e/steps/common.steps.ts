@@ -115,6 +115,10 @@ Then('I should see {string}', async function (this: E2EWorld, text: string) {
   await expect(this.page.getByText(text, { exact: false }).first()).toBeVisible();
 });
 
+Then('I should not see the heading {string}', async function (this: E2EWorld, text: string) {
+  await expect(this.page.getByRole('heading', { name: text, exact: true })).toHaveCount(0);
+});
+
 Then('I should not see {string}', async function (this: E2EWorld, text: string) {
   await expect(this.page.getByText(text, { exact: false })).toHaveCount(0);
 });
@@ -169,6 +173,10 @@ Then('the {string} field should be marked invalid', async function (this: E2EWor
   await expect
     .poll(() => field.evaluate((el) => !(el as HTMLInputElement).checkValidity() || el.getAttribute('aria-invalid') === 'true'))
     .toBe(true);
+});
+
+When('I follow the {string} link', async function (this: E2EWorld, name: string) {
+  await this.page.getByRole('link', { name, exact: true }).first().click();
 });
 
 When('I choose {string} from the menu', async function (this: E2EWorld, title: string) {

@@ -1,13 +1,9 @@
-import { Card } from './card';
+import { Banner } from './banner';
 
+/** An Info banner; kept so existing call sites read the same. */
 export const InfoBlock = ({ title, description, children }: any) => (
-  <Card className="p-4 bg-blue-50">
-    <div className="space-x-2">
-      <div>
-        <p className="text-lg font-semibold">{title}</p>
-        <p className="text-md">{description}</p>
-        {children}
-      </div>
-    </div>
-  </Card>
+  <Banner tone="info" title={title}>
+    {description}
+    {children}
+  </Banner>
 );

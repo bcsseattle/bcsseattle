@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
-import { ChevronRight, MoreHorizontal } from "lucide-react"
+import { ArrowLeft, MoreHorizontal } from "lucide-react"
+import Link from "next/link"
 
 import { cn } from "@/utils/cn"
 
@@ -19,7 +20,7 @@ const BreadcrumbList = React.forwardRef<
   <ol
     ref={ref}
     className={cn(
-      "flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5",
+      "flex flex-wrap items-center gap-2 break-words text-sm text-muted-foreground",
       className
     )}
     {...props}
@@ -33,7 +34,7 @@ const BreadcrumbItem = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <li
     ref={ref}
-    className={cn("inline-flex items-center gap-1.5", className)}
+    className={cn("inline-flex items-center gap-2", className)}
     {...props}
   />
 ))
@@ -50,7 +51,7 @@ const BreadcrumbLink = React.forwardRef<
   return (
     <Comp
       ref={ref}
-      className={cn("transition-colors hover:text-foreground", className)}
+      className={cn("transition-colors hover:text-foreground hover:underline underline-offset-4", className)}
       {...props}
     />
   )
@@ -66,7 +67,7 @@ const BreadcrumbPage = React.forwardRef<
     role="link"
     aria-disabled="true"
     aria-current="page"
-    className={cn("font-normal text-foreground", className)}
+    className={cn("font-medium text-foreground", className)}
     {...props}
   />
 ))
@@ -80,10 +81,10 @@ const BreadcrumbSeparator = ({
   // A plain hidden <li>: role="presentation" made it a non-item inside the list (BUG-066).
   <li
     aria-hidden="true"
-    className={cn("[&>svg]:w-3.5 [&>svg]:h-3.5", className)}
+    className={cn("text-border-strong", className)}
     {...props}
   >
-    {children ?? <ChevronRight />}
+    {children ?? "/"}
   </li>
 )
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator"
@@ -104,7 +105,25 @@ const BreadcrumbEllipsis = ({
 )
 BreadcrumbEllipsis.displayName = "BreadcrumbElipssis"
 
+/**
+ * Art Gallery Back link (Figma 82:220): up one level, named after the parent
+ * screen ("← Elections"). Sits above the page title; not on top-level screens.
+ */
+const BackLink = ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
+  <Link
+    href={href}
+    className={cn(
+      "inline-flex items-center gap-1.5 rounded-sm pb-2 text-sm font-medium text-muted-foreground ring-offset-card hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      className
+    )}
+  >
+    <ArrowLeft aria-hidden className="size-4" />
+    {children}
+  </Link>
+)
+
 export {
+  BackLink,
   Breadcrumb,
   BreadcrumbList,
   BreadcrumbItem,

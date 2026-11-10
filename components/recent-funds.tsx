@@ -1,3 +1,4 @@
+import { formatDate } from '@/utils/format';
 import { Data } from './payments/columns';
 import { CardHeader, CardTitle } from './ui/card';
 import { DataTable } from './payments/data-table';
@@ -75,8 +76,11 @@ export default async function RecentFunds({
   columns = [],
   stripeCustomerId,
   month = currentMonth.toString(),
-  year = currentYear.toString()
+  year = currentYear.toString(),
+  showTitle = true
 }: {
+  /** False inside a Panel that has its own title. */
+  showTitle?: boolean;
   members?: any[];
   columns?: ColumnDef<Data>[];
   stripeCustomerId?: string;
@@ -126,20 +130,18 @@ export default async function RecentFunds({
           fullName: member?.fullName,
           totalMembersInFamily: member?.totalMembersInFamily
         },
-        date: new Date(payment.created * 1000).toLocaleDateString('en-US', {
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric'
-        }),
+        date: formatDate(payment.created * 1000),
         amount: payment.amount
       };
     });
 
   return (
     <div>
-      <CardHeader>
-        <CardTitle>Recent Contributions</CardTitle>
-      </CardHeader>
+      {showTitle && (
+        <CardHeader>
+          <CardTitle>Recent Contributions</CardTitle>
+        </CardHeader>
+      )}
       <DataTable
         columns={columns}
         data={data}

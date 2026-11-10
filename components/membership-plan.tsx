@@ -1,5 +1,6 @@
 'use client';
 
+import { formatMoney } from '@/utils/format';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -75,11 +76,7 @@ export default function MembershipPlan({ user, products }: Props) {
       {products?.map((product) => {
         const price = product?.prices?.find((price) => price?.active);
         if (!price) return null;
-        const priceString = new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: price.currency!,
-          minimumFractionDigits: 0
-        }).format((price?.unit_amount || 0) / 100);
+        const priceString = formatMoney(price?.unit_amount || 0);
         return (
           <div key={product.id}>
             <Card>

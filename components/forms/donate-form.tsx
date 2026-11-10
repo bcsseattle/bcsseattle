@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { User } from '@supabase/supabase-js';
 import {
   DonationFormSchema,
@@ -34,15 +33,21 @@ import {
   Program,
   DonationPurpose
 } from '@/types';
-import { Card } from '../ui/card';
+import { Card, CardContent, CardHeader } from '../ui/card';
+import { ActionBar } from '@/components/ui/action-bar';
+import { Banner } from '@/components/ui/banner';
+import { OptionCard } from '@/components/ui/option-card';
+import { RadioGroup } from '@/components/ui/radio-group';
+import { SegmentedControl } from '@/components/ui/segmented-control';
+import { GiftSummary } from '@/components/donations/gift-summary';
+import { ArrowLeft } from 'lucide-react';
 import { US_STATES } from '@/utils/constants';
 import { submitDonation } from '@/utils/donation/handlers';
 import { checkoutWithStripeForDonation } from '@/utils/stripe/server';
-import { getErrorRedirect, getPriceString, getStatusRedirect } from '@/utils/helpers';
+import { getErrorRedirect, getStatusRedirect } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 import { getStripe } from '@/utils/stripe/client';
-import { Wizard } from '../ui/wizard';
 import Image from 'next/image';
-import { InfoBlock } from '../ui/info-block';
 
 interface DonateFormProps {
   user: User | null | undefined;
@@ -185,59 +190,77 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
     }
   }
 
-  const donationFrequencies = [
-    {
-      text: 'One-Time',
-      value: 'one_time'
-    },
-    { text: 'Monthly', value: 'month' },
-    { text: 'Yearly', value: 'year' }
+  // ---------------------------------------------------------------- display
+  // Donate (Figma 5:252) for step 1; Your information (24:2596) and Payment
+  // (24:2699) for steps 2 and 3. The logic above is unchanged.
+
+  const FREQUENCIES = [
+    { value: 'one_time', label: 'One-time' },
+    { value: 'month', label: 'Monthly' },
+    { value: 'year', label: 'Yearly' }
+  ];
+  const PRESET_AMOUNTS = ['100', '200', '250', '500'];
+  const OTHER = 'other';
+  const PAYMENT_METHODS = [
+    { value: 'card', label: 'Card', detail: 'Credit or debit card, processed securely by Stripe' },
+    { value: 'us_bank_account', label: 'Bank transfer', detail: 'US bank account through Stripe; can take a few days to clear' },
+    { value: 'zelle', label: 'Zelle', detail: 'Send to billing@bcsseattle.org and add your purpose in the memo' },
+    { value: 'check', label: 'Check', detail: 'Mail to 16224 Meadow Rd #502, Lynnwood, WA 98087' },
+    { value: 'cash', label: 'Cash', detail: 'Contact us to arrange a cash gift' }
   ];
 
-  const donationAmounts = ['100', '200', '250', '500'];
-  const donationButtons = donationAmounts.map((amount) => (
-    <Button
-      key={amount}
-      variant={form.watch('amount') === amount ? 'secondary' : 'outline'}
-      type="button"
-      onClick={() => form.setValue('amount', amount)}
-    >
-      ${amount}
-    </Button>
-  ));
+  const values = form.watch();
+  const amountCents = Math.round(Number(values.amount) * 100);
+  const amountText = Number.isFinite(amountCents) && amountCents > 0 ? formatMoney(amountCents) : '—';
+  const frequencyLabel = FREQUENCIES.find((f) => f.value === values.frequency)?.label ?? 'One-time';
+  const purposeLabel =
+    programs?.find((program) => program.key === values.purpose)?.value ?? 'General purpose';
+  const viaStripe = values.paymentMethod === 'card' || values.paymentMethod === 'us_bank_account';
+  const goBack = () => setWizardStep(wizardStep - 1);
 
-  const donationDetails = (
-    <div className="space-y-6">
+  const setFrequency = (frequency: string) => {
+    form.setValue('frequency', frequency as any);
+    form.setValue('isRecurring' as any, frequency !== 'one_time');
+  };
+
+  const giftSummaryRow = (
+    <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3 lg:hidden">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-caption text-muted-foreground">
+          {frequencyLabel} gift · {purposeLabel}
+        </span>
+        <span className="text-sm font-semibold text-foreground">{amountText}</span>
+      </div>
+      <Button type="button" variant="link" size="sm" onClick={() => setWizardStep(0)}>
+        Edit<span className="sr-only"> your gift</span>
+      </Button>
+    </div>
+  );
+
+  const backButton = (
+    <Button type="button" variant="ghost" size="sm" className="-ml-2.5 self-start" onClick={goBack}>
+      <ArrowLeft aria-hidden />
+      Back
+    </Button>
+  );
+
+  const stepOne = (
+    <div className="flex flex-col gap-6">
       <FormField
         control={form.control}
         name="frequency"
-        render={() => (
+        render={({ field }) => (
           <FormItem>
-            <FormControl>
-              <>
-                <div className="grid grid-cols-3 gap-4">
-                  {donationFrequencies.map((donationFrequency: any) => (
-                    <Button
-                      key={donationFrequency?.value}
-                      variant={
-                        form.watch('frequency') === donationFrequency?.value
-                          ? 'secondary'
-                          : 'outline'
-                      }
-                      type="button"
-                      onClick={() => {
-                        form.setValue('frequency', donationFrequency?.value);
-                        form.watch('frequency') === 'one_time'
-                          ? form.setValue('isRecurring', false)
-                          : form.setValue('isRecurring', true);
-                      }}
-                    >
-                      {donationFrequency?.text}
-                    </Button>
-                  ))}
-                </div>
-              </>
-            </FormControl>
+            <FormLabel id="frequency-label">How often</FormLabel>
+            {/* A block, so the inline label sits above the inline-flex control. */}
+            <div>
+              <SegmentedControl
+                aria-labelledby="frequency-label"
+                value={field.value}
+                onValueChange={setFrequency}
+                options={FREQUENCIES}
+              />
+            </div>
             <FormMessage />
           </FormItem>
         )}
@@ -247,65 +270,44 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
         name="amount"
         render={({ field }) => (
           <FormItem>
-            <FormControl>
-              <>
-                <div className="grid grid-cols-3 gap-4">
-                  {donationButtons}
-                  <Button
-                    variant={
-                      !donationAmounts.includes(form.watch('amount'))
-                        ? 'default'
-                        : 'outline'
-                    }
-                    type="button"
-                    onClick={() => form.setValue('amount', '1000.00')}
-                  >
-                    Custom
-                  </Button>
-                </div>
-              </>
-            </FormControl>
+            <FormLabel id="amount-label">Amount</FormLabel>
+            <RadioGroup
+              aria-labelledby="amount-label"
+              value={PRESET_AMOUNTS.includes(field.value) ? field.value : OTHER}
+              // "Other amount" starts from 1,000, as the Custom button did.
+              onValueChange={(v) => form.setValue('amount', v === OTHER ? '1000.00' : v)}
+              className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3"
+            >
+              {PRESET_AMOUNTS.map((amount) => (
+                <OptionCard key={amount} value={amount} label={formatMoney(Number(amount) * 100, { whole: true })} />
+              ))}
+              <OptionCard value={OTHER} label="Other amount" className="max-sm:col-span-2" />
+            </RadioGroup>
             <FormMessage />
           </FormItem>
         )}
       />
-      {!donationAmounts.includes(form.watch('amount')) && (
-        <>
-          <Slider
-            defaultValue={[Number(form.watch('amount'))]}
-            min={5}
-            max={100000}
-            step={1}
-            onChange={(e: any) => {
-              const amount = e.target.value.toString();
-              form.setValue('amount', amount);
-            }}
-          />
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
+      {!PRESET_AMOUNTS.includes(values.amount) && (
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Other amount (USD)</FormLabel>
+              {/* FormControl goes on the input itself, so the label names it. */}
+              <div className="relative max-w-xs">
+                <span aria-hidden className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-sm text-muted-foreground">
+                  USD
+                </span>
                 <FormControl>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                      $
-                    </div>
-                    <Input
-                      type="number"
-                      placeholder="$1,000"
-                      {...field}
-                      className="pl-8"
-                    />
-                  </div>
+                  <Input type="number" inputMode="decimal" placeholder="1,000" {...field} className="pl-12" />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       )}
-
       <FormField
         control={form.control}
         name="purpose"
@@ -315,366 +317,235 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue
-                    placeholder="General Purpose"
-                    // defaultValue={field.value}
-                  />
+                  <SelectValue placeholder="General purpose" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {
-                  programs?.map((program) => (
-                    <SelectItem key={program.id} value={program.key}>
-                      {program.value}
-                    </SelectItem>
-                  ))
-                }
-
-                
-                
+                {programs?.map((program) => (
+                  <SelectItem key={program.id} value={program.key}>
+                    {program.value}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <FormMessage />
           </FormItem>
         )}
       />
+      <ActionBar summary="Step 1 of 3 · Amount, then your information, then payment">
+        <Button type="button" size="lg" className="w-full" onClick={handleNextStep}>
+          Continue to your information
+        </Button>
+      </ActionBar>
+      <p className="mt-0 text-caption text-muted-foreground lg:hidden">
+        BCS Seattle is a 501(c)(3) nonprofit, EIN 99-2495973. We email a receipt after each payment.
+      </p>
     </div>
   );
 
-  const donorDetails = (
-    <div className="space-y-2">
+  const textField = (name: any, label: string, placeholder: string, autoComplete?: string) => (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <Input placeholder={placeholder} autoComplete={autoComplete} {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+
+  const stepTwo = (
+    <div className="flex flex-col gap-6">
+      {backButton}
+      <h2 className="text-section text-foreground">Your information</h2>
+      <div className="flex flex-col gap-2">
+        {giftSummaryRow}
+        {donor && (
+          <p className="mt-0 text-caption text-muted-foreground">
+            Filled in from your member account. Changes here apply to this gift only.
+          </p>
+        )}
+      </div>
       <FormField
         control={form.control}
         name="donorType"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Donor Type</FormLabel>
-            <Select onValueChange={field.onChange}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Individual" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="individual">Individual</SelectItem>
-                <SelectItem value="organization">Organization</SelectItem>
-              </SelectContent>
-            </Select>
+            <FormLabel id="donor-type-label">Donor type</FormLabel>
+            <div>
+              <SegmentedControl
+                aria-labelledby="donor-type-label"
+                value={field.value}
+                onValueChange={field.onChange}
+                options={[
+                  { value: 'individual', label: 'Individual' },
+                  { value: 'organization', label: 'Organization' }
+                ]}
+              />
+            </div>
             <FormMessage />
           </FormItem>
         )}
       />
-      {form.watch('donorType') === 'individual' && (
-        <FormField
-          control={form.control}
-          name="donorName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name of Donor</FormLabel>
-              <FormControl>
-                <Input placeholder="Your first and last name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      )}
-      {form.watch('donorType') === 'organization' && (
-        <FormField
-          control={form.control}
-          name="organizationName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Organization Name</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Name of your organization or company"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      )}
-      <FormField
-        control={form.control}
-        name="email"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Email</FormLabel>
-            <FormControl>
-              <Input placeholder="Enter your email address" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="phone"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Phone</FormLabel>
-            <FormControl>
-              <Input placeholder="Enter your phone number" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="address"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Street Address</FormLabel>
-            <FormControl>
-              <Input placeholder="Enter your street address" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <div className="flex justify-between space-x-2">
-        <div className="w-1/2">
-          <FormField
-            control={form.control}
-            name="city"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>City</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter your city" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="w-1/2">
+      <div className="flex flex-col gap-4">
+        {values.donorType === 'organization'
+          ? textField('organizationName', 'Organization name', 'Name of your organization or company', 'organization')
+          : textField('donorName', 'Name of donor', 'Your first and last name', 'name')}
+        {textField('email', 'Email', 'Enter your email address', 'email')}
+        {textField('phone', 'Phone', 'Enter your phone number', 'tel')}
+      </div>
+      <div className="flex flex-col gap-4">
+        {textField('address', 'Street address', 'Enter your street address', 'street-address')}
+        <div className="grid grid-cols-[1fr_7rem] gap-3">
+          {textField('city', 'City', 'Enter your city', 'address-level2')}
           <FormField
             control={form.control}
             name="state"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>State</FormLabel>
-                <FormControl>
-                  <Select onValueChange={field.onChange}>
-                    <SelectTrigger className="">
-                      <SelectValue placeholder="WA" {...field} />
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="WA" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {US_STATES.map((state) => (
-                        <SelectItem key={state} value={state}>
-                          {state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
+                  </FormControl>
+                  <SelectContent>
+                    {US_STATES.map((state) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
+        {textField('zip', 'ZIP', 'Enter your zip code', 'postal-code')}
       </div>
-      <FormField
-        control={form.control}
-        name="zip"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Zip</FormLabel>
-            <FormControl>
-              <Input placeholder="Enter your zip code" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <ActionBar summary="Step 2 of 3 · Then payment">
+        <Button type="button" size="lg" className="w-full" onClick={handleNextStep}>
+          Continue to payment
+        </Button>
+      </ActionBar>
     </div>
   );
 
-  const paymentMethod = (
-    <div className="space-y-6">
+  const stepThree = (
+    <div className="flex flex-col gap-6">
+      {backButton}
+      <h2 className="text-section text-foreground">Payment</h2>
+      {giftSummaryRow}
       <FormField
         control={form.control}
         name="paymentMethod"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Payment Method</FormLabel>
-            <FormControl>
-              <Select onValueChange={field.onChange}>
-                <SelectTrigger className="">
-                  <SelectValue placeholder="Credit Card" {...field} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="card">Credit Card</SelectItem>
-                  <SelectItem value="us_bank_account">Bank Transfer</SelectItem>
-                  <SelectItem value="zelle">Zelle</SelectItem>
-                  <SelectItem value="check">Check</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormControl>
+            <FormLabel id="payment-method-label">Payment method</FormLabel>
+            <RadioGroup
+              aria-labelledby="payment-method-label"
+              value={field.value}
+              onValueChange={field.onChange}
+              className="gap-2"
+            >
+              {PAYMENT_METHODS.map((method) => (
+                <OptionCard key={method.value} value={method.value} label={method.label} detail={method.detail} />
+              ))}
+            </RadioGroup>
             <FormMessage />
           </FormItem>
         )}
       />
-
-      {form.watch('paymentMethod') === 'zelle' && (
-        <div className="space-y-4">
-          <p>
-            Donate via Zelle® to billing@bcsseattle.org (Write your purpose in
-            Memo)
-          </p>
-          <Image
-            src="/images/zelle.png"
-            width={200}
-            height={200}
-            alt="BCSS Zelle QR"
-          />
+      {values.paymentMethod === 'zelle' && (
+        <div className="flex flex-col gap-3 rounded-lg border bg-card p-4 text-sm">
+          <p className="mt-0">Donate via Zelle® to billing@bcsseattle.org (Write your purpose in Memo)</p>
+          <Image src="/images/zelle.png" width={200} height={200} alt="BCS Seattle Zelle QR code" />
         </div>
       )}
-
-      {form.watch('paymentMethod') === 'check' && (
-        <InfoBlock
-          title="Check Donation"
-          description="Please mail your check to the following address:"
-        >
-          <div className="mt-8 text-sm">
-            <p>Baloch Community Services of Seattle</p>
-            <p>16224 Meadow Rd #502</p>
-            <p>Lynnwood, WA 98087</p>
-          </div>
-        </InfoBlock>
+      {values.paymentMethod === 'cash' && (
+        <Link href="/contact-us" className="text-sm text-accent underline underline-offset-4">
+          Contact us to arrange a cash gift
+        </Link>
       )}
-
-      {form.watch('paymentMethod') === 'cash' && (
-        <InfoBlock
-          title="Cash Donation"
-          description="Please contact us to arrange a cash donation."
-        >
-          <br />
-          <Link href="/contact-us" className="font-bold">
-            Contact us
-          </Link>{' '}
-        </InfoBlock>
-      )}
-
-      {form.watch('paymentMethod') === 'card' ||
-      form.watch('paymentMethod') === 'us_bank_account' ? (
+      {viaStripe && (
         <FormField
           control={form.control}
           name="isAnonymous"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4">
+            <FormItem className="flex flex-row items-start gap-3 space-y-0">
               <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} className="mt-0.5" />
               </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Keep this donation anonymous</FormLabel>
-                <FormDescription>
-                  You can choose to keep this donation anonymous. Your name will
-                  not appear on the public donor list.
-                </FormDescription>
+              <div className="flex flex-col gap-0.5">
+                <FormLabel className="text-sm font-medium">Keep this donation anonymous</FormLabel>
+                <FormDescription>Your name won&apos;t appear on the public donor list.</FormDescription>
               </div>
             </FormItem>
           )}
         />
-      ) : null}
+      )}
+      {viaStripe && (
+        <p className="mt-0 text-caption text-muted-foreground">
+          {values.paymentMethod === 'card' ? 'Card' : 'Bank'} details are entered in Stripe&apos;s secure payment
+          sheet. BCS Seattle is a 501(c)(3) nonprofit; we email a tax receipt for every gift.
+        </p>
+      )}
+      <ActionBar summary={viaStripe ? 'Step 3 of 3 · You confirm payment details with Stripe' : 'Step 3 of 3'}>
+        <Button type="submit" size="lg" className="w-full">
+          {viaStripe ? `Donate ${amountText}` : 'Done'}
+        </Button>
+      </ActionBar>
     </div>
   );
 
-  const wizardSteps = [
-    {
-      title: 'Donation',
-      content: <>{donationDetails}</>,
-      action: (
-        <div className="flex justify-between space-x-12">
-          <Button
-            variant={'default'}
-            className="flex-1 mt-4 text-white"
-            onClick={handleNextStep}
-            type="button"
-          >
-            Continue to your information
-          </Button>
-        </div>
-      )
-    },
-    {
-      title: 'Your Information',
-      content: donorDetails,
-      action: (
-        <div className="flex justify-between space-x-12">
-          <Button
-            variant="link"
-            className="flex-1 mt-4 justify-start to-blue-500"
-            onClick={() => setWizardStep(wizardStep - 1)}
-            type="button"
-          >
-            Back
-          </Button>
-          <Button
-            variant={'default'}
-            className="flex-1 mt-4 text-white"
-            onClick={handleNextStep}
-            type="button"
-          >
-            Continue to payment
-          </Button>
-        </div>
-      )
-    },
-    {
-      title: 'Payment Method',
-      content: paymentMethod,
-      action: (
-        <Button
-          variant="link"
-          className="flex-1 mt-4 justify-start to-blue-500"
-          onClick={() => setWizardStep(wizardStep - 1)}
-          type="button"
-        >
-          Back
-        </Button>
-      )
-    }
-  ];
-
   if (donationLoading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="flex flex-col items-center space-y-4">
-          <p>Processing your donation...</p>
-          <div className="w-12 h-12 border-4 border-t-blue-500 rounded-full animate-spin"></div>
-        </div>
+      <div role="status" className="flex h-96 flex-col items-center justify-center gap-4 text-sm text-muted-foreground">
+        <span className="size-8 animate-spin rounded-full border-2 border-border border-t-foreground" aria-hidden />
+        Processing your donation…
       </div>
     );
   }
 
   return (
-    <div className="">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
-          <Wizard steps={wizardSteps} wizardStep={wizardStep}>
-            {wizardStep === wizardSteps.length - 1 && (
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button className="" variant="secondary" type="submit">
-                  {form.watch('paymentMethod') === 'card' ||
-                  form.watch('paymentMethod') === 'us_bank_account'
-                    ? `Donate ${getPriceString(Math.round(Number(form.watch('amount')) * 100))} Now`
-                    : 'Done'}
-                </Button>
-              </div>
-            )}
-          </Wizard>
-        </form>
-      </Form>
+    <div className="grid gap-8 pt-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12 lg:pt-16">
+      <div className="flex min-w-0 flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <p className="mt-0 text-overline uppercase text-muted-foreground">Donate</p>
+          <h1 className="text-display text-foreground">Support BCS Seattle</h1>
+          <p className="mt-0 text-sm text-muted-foreground">
+            Your gift funds educational programs, cultural events and social services for the Baloch community in
+            Greater Seattle.
+          </p>
+        </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
+            {wizardStep === 0 && stepOne}
+            {wizardStep === 1 && stepTwo}
+            {wizardStep === 2 && stepThree}
+          </form>
+        </Form>
+      </div>
+      <aside aria-label="Your gift" className="hidden flex-col gap-4 lg:flex lg:pt-[130px]">
+        <Card>
+          <CardHeader>
+            <h2 className="text-section text-foreground">Your gift</h2>
+          </CardHeader>
+          <CardContent>
+            <GiftSummary frequency={frequencyLabel} amount={amountText} purpose={purposeLabel} total={amountText} />
+          </CardContent>
+        </Card>
+        <Banner tone="info" title="A receipt for every gift">
+          BCS Seattle is a 501(c)(3) nonprofit, EIN 99-2495973. We email a receipt after each payment.
+        </Banner>
+      </aside>
     </div>
   );
 }

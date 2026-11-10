@@ -4,9 +4,11 @@ const white = 'white';
 
 const LogoSvg = ({ ...props }) => (
   <svg
+    role="img"
+    aria-label="Baloch Community Services of Seattle logo"
     {...props}
     version="1.1"
-    viewBox="0 0 2048 2048"
+    viewBox="360 487 1082 1082"
     xmlSpace="preserve"
     xmlns="http://www.w3.org/2000/svg"
   >
