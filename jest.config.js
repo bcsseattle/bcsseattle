@@ -8,7 +8,9 @@ const createJestConfig = nextJest({
 // Add any custom config to be passed to Jest
 const customJestConfig = {
   testEnvironment: 'jest-environment-node',
-  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/.next-e2e/', '<rootDir>/node_modules/', '<rootDir>/e2e/'],
+  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/.next-e2e/', '<rootDir>/node_modules/', '<rootDir>/e2e/', '<rootDir>/apps/'],
+  // The mobile app (apps/mobile) has its own build and tests.
+  modulePathIgnorePatterns: ['<rootDir>/apps/'],
   // Bare 'utils/…' imports resolve from the project root, as in tsconfig.
   modulePaths: ['<rootDir>'],
   moduleNameMapper: {
