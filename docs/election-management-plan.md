@@ -1,6 +1,6 @@
 # Election management plan
 
-Status: **Phase 0, waiting for approval.** Nothing below is built yet. Every question was answered on 10 Nov 2026 (§10), and the plan below includes those answers.
+Status: **Phase 1 built** (plan approved 10 Nov 2026). Every question was answered on 10 Nov 2026 (§10), and the plan below includes those answers.
 
 This plan covers the full election lifecycle under **Admin › Elections**: create, nominate, review, lock the ballot, vote, certify, publish, and archive or cancel. Today most of these steps need SQL.
 
@@ -471,7 +471,10 @@ Plus two more scenarios: cancel with reason, and a tie settled by a run-off befo
 
 Each phase is one PR into `develop`, branched from the previous phase. Following the stacked-PR note, I'll target `develop` or retarget the PRs myself.
 
-1. **Data model and rules:** the ESLint config (W6), M1–M3, RLS, backfill, regenerated types, the `rules.ts` functions and unit tests, the database functions, access tests. Also the app's switch to the shared phase.
+1. **Data model and rules:** the ESLint config (W6), M1–M3, RLS, backfill, regenerated types, the `rules.ts` functions and unit tests, the database functions, access tests. Also the app's switch to the shared phase. *As built, it differs from the plan in three ways:*
+   - `election_certify` moves to Phase 5, with the tally it freezes.
+   - The `/admin/election-types` test page was deleted here, because it failed lint.
+   - Self-nomination, still the old flow until Phase 3, now requires an approved, active member. Before, anyone signed in could nominate themselves.
 2. **Create and edit:** the flag; the list, the step-by-step form, the overview, Activity and preview; delete the dead `election-admin.ts` helpers and the test pages.
 3. **Nominations:** the member nominate, accept, decline and withdraw flow, plus My nominations (website and app); admin review and manual add.
 4. **Ballot and voting:** lock and preview; seats on the ballot (handlers, website, app); turnout; extend and cancel; member pages reading the new state.
