@@ -133,7 +133,7 @@ Feature: Personal data is protected at the database and API level
     Then no election should have been created
 
   @P0 @api @BUG-046
-  Scenario: A candidate cannot withdraw once voting has opened, so votes for them stay
+  Scenario: A candidate cannot withdraw once the ballot is locked, so votes for them stay
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
     And there is an approved member named "Bilal"
     And there is an approved member named "Zara"
@@ -144,8 +144,8 @@ Feature: Personal data is protected at the database and API level
     And the vote for "Hani" should still be counted
 
   @P1 @api @BUG-046
-  Scenario: A candidate can withdraw before voting opens
-    Given there is an upcoming election with candidates "Hani" and "Nazir" for "President"
+  Scenario: A candidate can withdraw before the ballot is locked
+    Given there is a nominations election with candidates "Hani" and "Nazir" for "President"
     And there is an approved member named "Bilal"
     And "Bilal" is standing as "Hani"
     When "Bilal" withdraws as "Hani" through the public API

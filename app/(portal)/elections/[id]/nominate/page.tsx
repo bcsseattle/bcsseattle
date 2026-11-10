@@ -37,9 +37,11 @@ export default async function NominatePage(props: Props) {
     .eq('id', id)
     .single();
 
+  // This election's own positions, not every type's (W8).
   const { data: positions } = await supabase
-    .from('election_positions') // or wherever positions are stored
-    .select('*')
+    .from('ballot_positions')
+    .select('id, position:title, description')
+    .eq('election_id', id)
     .order('display_order', { ascending: true });
 
   if (error || !election) {

@@ -2,8 +2,8 @@ import type { Tables } from '@/types_db';
 import {
   ballotOffer,
   electedUnopposed as unopposed,
-  positionOrder,
-  votingWindows
+  electionPhase as sharedPhase,
+  positionOrder
 } from '@/utils/elections/rules';
 import { must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
@@ -11,28 +11,13 @@ import { supabase } from '~/lib/supabase';
 export type Election = Tables<'elections'>;
 
 /**
- * Where an election stands: the shared voting windows, plus the app's own
- * nomination window and phase words. Nominations are open from start to end
- * inclusive, as the server accepts them (the website differs, W15).
+ * Where an election stands, by the shared rule the website and the server
+ * use (status plus dates, windows inclusive; voting only once the ballot is
+ * locked). `phase` is the member wording and its tone; `stage` the phase itself.
  */
 export function electionPhase(e: Election, now = Date.now()) {
-  const w = votingWindows(e, now);
-  const nominationsOpen =
-    !!e.nomination_start &&
-    !!e.nomination_end &&
-    now >= Date.parse(e.nomination_start) &&
-    now <= Date.parse(e.nomination_end);
-
-  // Status in words, never colour alone. Same precedence as the website's detail page.
-  const phase = nominationsOpen
-    ? { label: 'Nominations open', tone: 'orange' as const }
-    : w.votingOpen
-      ? { label: 'Voting open', tone: 'green' as const }
-      : w.closed
-        ? { label: 'Closed', tone: 'neutral' as const }
-        : { label: 'Upcoming', tone: 'neutral' as const };
-
-  return { ...w, nominationsOpen, phase };
+  const p = sharedPhase(e, now);
+  return { ...p, stage: p.phase, phase: { label: p.label.member, tone: p.label.tone } };
 }
 
 /** A list query's rows, never null; errors thrown as their message. */
@@ -43,16 +28,16 @@ export async function rows<T>(
 }
 
 /**
- * An election's type tags, as on the website's list: Leadership when
- * positions are defined for its type (BUG-059), Initiatives when it has any.
+ * An election's type tags, as on the website's list: Leadership when it has
+ * positions on its ballot, Initiatives when it has any.
  */
 export function typeTags(
-  e: Pick<Election, 'id' | 'type'>,
-  positions: { election_type: string | null }[],
+  e: Pick<Election, 'id'>,
+  positions: { election_id: string }[],
   initiatives: { election_id: string | null }[]
 ) {
   return [
-    ...(positions.some((p) => p.election_type === e.type) ? ['Leadership'] : []),
+    ...(positions.some((p) => p.election_id === e.id) ? ['Leadership'] : []),
     ...(initiatives.some((i) => i.election_id === e.id) ? ['Initiatives'] : [])
   ];
 }
@@ -91,9 +76,9 @@ export async function loadElection(id: string, userId: string) {
       ),
       rows(
         supabase
-          .from('election_positions')
-          .select('position, description, display_order')
-          .eq('election_type', election.type ?? 'leadership')
+          .from('ballot_positions')
+          .select('position:title, description, display_order')
+          .eq('election_id', id)
           .order('display_order')
       ),
       rows(

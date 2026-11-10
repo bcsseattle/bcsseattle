@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/portal/page-header';
 import { StatePanel } from '@/components/ui/state-panel';
 import { formatDate } from '@/utils/format';
 import { getServerFeatureFlag } from '@/utils/server-feature-flags';
+import { electionPhase } from '@/utils/elections/rules';
 import {
   FEATURE_FLAGS,
   createFeatureFlagArray
@@ -96,7 +97,9 @@ export default async function ElectionsPage(props: Props) {
   // Get basic election data first
   const { data: elections, error } = await supabase
     .from('elections')
-    .select('id, title, description, type, start_date, end_date')
+    .select(
+      'id, title, description, status, type, nomination_start, nomination_end, start_date, end_date, enable_separate_voting_periods, candidate_voting_start, candidate_voting_end'
+    )
     .gt('end_date', new Date().toISOString())
     .order('start_date', { ascending: true });
 
@@ -108,11 +111,7 @@ export default async function ElectionsPage(props: Props) {
   const electionsWithCounts = await Promise.all(
     (elections || []).map(async (election) => {
       const [positionsData, initiativesData] = await Promise.all([
-        // Positions are defined per election type, not per election (BUG-059).
-        supabase
-          .from('election_positions')
-          .select('id')
-          .eq('election_type', String(election.type)),
+        supabase.from('ballot_positions').select('id').eq('election_id', election.id),
         supabase
           .from('initiatives')
           .select('id')
@@ -129,9 +128,7 @@ export default async function ElectionsPage(props: Props) {
 
   // Elections (Figma 11:860). Only current and upcoming elections are loaded
   // (the query is unchanged), so the mock's "Past" tab is left out.
-  const now = Date.now();
-  const isOpen = (e: { start_date: string; end_date: string }) =>
-    new Date(e.start_date).getTime() <= now && now <= new Date(e.end_date).getTime();
+  const isOpen = (e: (typeof electionsWithCounts)[number]) => electionPhase(e).votingOpen;
   const firstOpenId = electionsWithCounts.find(isOpen)?.id;
 
   return (
@@ -148,13 +145,14 @@ export default async function ElectionsPage(props: Props) {
         <div className="flex flex-col gap-4">
           {electionsWithCounts.map((election) => {
             const contentTypes = getElectionContentTypes(election);
-            const open = isOpen(election);
+            const p = electionPhase(election);
+            const open = p.votingOpen;
             return (
               <ElectionCard
                 key={election.id}
                 title={election.title}
                 description={getElectionDescription(election, contentTypes)}
-                phase={open ? { label: 'Voting open', tone: 'green' } : { label: 'Upcoming', tone: 'neutral' }}
+                phase={{ label: p.label.member, tone: p.label.tone }}
                 types={contentTypes}
                 dates={`${formatDate(election.start_date)} – ${formatDate(election.end_date)}`}
                 action={

@@ -42,7 +42,13 @@ jest.mock('@/utils/election-config', () => ({
 
 const ELECTION = 'e1';
 const hour = 3_600_000;
-const open = { id: ELECTION, start_date: new Date(Date.now() - hour).toISOString(), end_date: new Date(Date.now() + hour).toISOString() };
+const open = {
+  id: ELECTION,
+  status: 'ballot_locked',
+  type: 'initiative',
+  start_date: new Date(Date.now() - hour).toISOString(),
+  end_date: new Date(Date.now() + hour).toISOString()
+};
 const president = { candidateId: 'c1', position: 'ignored-from-request' };
 const yes = { initiativeId: 'i1', vote: 'yes' as const };
 
@@ -52,6 +58,7 @@ beforeEach(() => {
   (currentUserIsActiveMember as jest.Mock).mockResolvedValue(true);
   results = {
     elections: { data: open, error: null },
+    election_voters: { data: { user_id: 'u1' }, error: null },
     votes: { data: [], error: null },
     candidates: { data: [{ id: 'c1', position: 'President' }], error: null },
     initiatives: { data: [{ id: 'i1' }], error: null }
@@ -96,6 +103,17 @@ describe('submitCombinedVotes', () => {
   ])('rejects voting when the election has %s', async (_, dates) => {
     results.elections = { data: { ...open, ...dates }, error: null };
     expect((await vote()).error).toMatch(/not currently open/);
+  });
+
+  it('rejects voting before the ballot is locked', async () => {
+    results.elections = { data: { ...open, status: 'scheduled' }, error: null };
+    expect((await vote()).error).toMatch(/not currently open/);
+  });
+
+  it('rejects a member who isn\'t on the voter roll (B11)', async () => {
+    results.election_voters = { data: null, error: null };
+    expect((await vote()).error).toMatch(/voter roll/);
+    expect(inserts.votes).toBeUndefined();
   });
 
   it('rejects a second ballot from the same member (BUG-016)', async () => {

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 
 export type ElectionPhase = {
   label: string;
-  tone: 'green' | 'blue' | 'orange' | 'neutral';
+  tone: 'green' | 'blue' | 'orange' | 'red' | 'neutral';
 };
 
 /**

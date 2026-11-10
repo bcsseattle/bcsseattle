@@ -51,7 +51,7 @@ export default function NominateForm({
   electionTitle: string;
   electionId: string;
   userId: string;
-  positions: Array<ElectionPosition>;
+  positions: Array<Pick<ElectionPosition, 'id' | 'position' | 'description'>>;
   member: Member;
 }) {
   const router = useRouter();

@@ -5,7 +5,7 @@ const election = (id: string, overrides: Record<string, unknown> = {}) => ({
   id,
   title: `Election ${id}`,
   type: 'initiative',
-  status: 'voting_open',
+  status: 'ballot_locked',
   is_active: true,
   start_date: hours(-100),
   end_date: hours(100),
@@ -87,7 +87,7 @@ it('counts the candidate window when voting periods are separate', async () => {
 
 it('announces nominations that opened in the last day', async () => {
   data.elections = [
-    election('noms', { status: 'nominations_open', start_date: hours(200), end_date: hours(300), nomination_start: hours(-1), nomination_end: hours(72) })
+    election('noms', { status: 'scheduled', start_date: hours(200), end_date: hours(300), nomination_start: hours(-1), nomination_end: hours(72) })
   ];
   await cron();
   expect(sendPush).toHaveBeenCalledWith(['u1', 'u2', 'u3'], {
@@ -102,4 +102,13 @@ it('sends nothing for inactive elections or quiet days', async () => {
   const body = await (await cron()).json();
   expect(sendPush).not.toHaveBeenCalled();
   expect(body).toEqual({ sent: [] });
+});
+
+it('says nothing about voting while the ballot is unlocked, or about nominations after it is', async () => {
+  data.elections = [
+    election('unlocked', { status: 'scheduled', start_date: hours(-3), end_date: hours(10) }),
+    election('locked-noms', { nomination_start: hours(-1), nomination_end: hours(72), start_date: hours(100) })
+  ];
+  await cron();
+  expect(sendPush).not.toHaveBeenCalled();
 });

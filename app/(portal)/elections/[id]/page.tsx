@@ -10,7 +10,6 @@ import { Ballot } from '@/components/elections/ballot';
 import Candidates from '@/components/elections/candidates';
 import { PhaseTimeline } from '@/components/elections/phase-timeline';
 import { VotedCard } from '@/components/elections/voted-card';
-import dayjs from '@/libs/dayjs';
 import { supportsUnopposedCandidates } from '@/utils/election-types';
 import { ElectionType } from '@/types';
 import { formatDeadline } from '@/utils/format';
@@ -19,8 +18,8 @@ import {
   ballotOffer,
   ballotQuestions,
   electedUnopposed,
-  positionOrder as orderPositions,
-  votingWindows
+  electionPhase,
+  positionOrder as orderPositions
 } from '@/utils/elections/rules';
 import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
@@ -115,34 +114,24 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
     }
   }
 
-  // Positions are defined per election type; the shared rules fall back to defaults.
+  // This election's own positions (ballot_positions); the shared rules fall back to defaults.
   const { data: dbPositions } = await supabase
-    .from('election_positions')
-    .select('position, description, display_order')
-    .eq('election_type', election.type!)
+    .from('ballot_positions')
+    .select('position:title, description, display_order')
+    .eq('election_id', id)
     .order('display_order');
   const positionOrder = orderPositions(election.type, dbPositions, candidates || []);
 
-  // Use consistent UTC for all date comparisons to avoid timezone issues
-  const nowUtc = dayjs.utc();
-  // Candidate voting has its own window when separate periods are on (BUG-015, BUG-060).
-  const windows = votingWindows(election, nowUtc.valueOf());
-  const {
-    candidateVotingOpen,
-    votingOpen: isVotingOpen,
-    upcoming: isUpcoming,
-    closed: isClosed
-  } = windows;
+  // The shared phase: status (what admins decided) plus the dates, windows
+  // inclusive. Voting is open only once the ballot is locked (BUG-015, BUG-060).
+  const windows = electionPhase(election);
+  const { candidateVotingOpen, votingOpen: isVotingOpen, votingOver: isClosed } = windows;
 
   // Determine if candidates were elected unopposed
   const candidatesElectedUnopposed = electedUnopposed(election, candidates ?? [], candidateVotingOpen);
 
-  // Fix timezone issue by ensuring consistent UTC comparison
-  const isNominationOpen =
-    election.nomination_start &&
-    election.nomination_end &&
-    dayjs.utc(election.nomination_start).isBefore(nowUtc) &&
-    nowUtc.isBefore(dayjs.utc(election.nomination_end));
+  // Edges included, as the server accepts nominations (W15).
+  const isNominationOpen = windows.nominationsOpen;
 
   const supportsUnopposed = supportsUnopposedCandidates(election.type as ElectionType);
 
@@ -178,15 +167,7 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           : ([vote.initiatives?.title ?? '', vote.vote_value === 'yes' ? 'Support' : vote.vote_value === 'no' ? 'Oppose' : 'Abstain'] as const)
       );
 
-  const phase = isNominationOpen
-    ? { label: 'Nominations open', tone: 'blue' as const }
-    : isVotingOpen
-      ? { label: 'Voting open', tone: 'green' as const }
-      : isClosed
-        ? { label: 'Completed', tone: 'neutral' as const }
-        : isUpcoming
-          ? { label: 'Upcoming', tone: 'neutral' as const }
-          : { label: 'Closed', tone: 'neutral' as const };
+  const phase = { label: windows.label.member, tone: windows.label.tone };
 
   return (
     <div className="flex flex-col gap-6">
