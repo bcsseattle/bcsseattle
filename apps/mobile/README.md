@@ -6,7 +6,7 @@ A static Next.js export wrapped by Capacitor 8. The design and the reasons behin
 - **Shared UI:** comes from the website's `components/ui` and Tailwind tokens. Inside the app, `@/` means the repo root and `~/` means this folder.
 - **Dependencies:** Next, React, Supabase and Tailwind resolve from the root package, so the app and the shared components always use the same copy. This package declares only the Capacitor packages.
 - **Session:** stored in the Keychain on iOS and in Keystore-encrypted storage on Android (`lib/supabase.ts`).
-- **Links that open the app:** `org.bcsseattle.app://…`, and `https://bcsseattle.org/m/*` once the website serves the association files. `lib/app-links.ts` maps each link to a screen.
+- **Links that open the app:** `org.bcsseattle.app://…`, and `https://www.bcsseattle.org/m/*` once the website serves the association files. `lib/app-links.ts` maps each link to a screen.
 
 ## Setup
 

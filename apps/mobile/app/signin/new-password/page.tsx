@@ -1,25 +1,37 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { AppHeader } from '~/components/app-header';
 import { AuthForm, Field } from '~/components/auth-form';
-import { useSession } from '~/lib/session';
+import { useRequireSession } from '~/lib/session';
 import { supabase } from '~/lib/supabase';
 
-/** Reached signed in: after a reset code or link, or (Phase 3) from Account › Password & sign-in. */
-export default function NewPassword() {
-  const { session, ready } = useSession();
+/**
+ * Reached signed in: after a reset code or link (then it returns to Home), or
+ * from Account › Password & sign-in with ?from=account (then back to Account).
+ */
+export default function NewPasswordPage() {
+  return (
+    <Suspense>
+      <NewPassword />
+    </Suspense>
+  );
+}
+
+function NewPassword() {
   const router = useRouter();
-  useEffect(() => {
-    if (ready && !session) router.replace('/signin/');
-  }, [ready, session, router]);
-  if (!session) return null;
+  const fromAccount = useSearchParams().get('from') === 'account';
+  const done = fromAccount ? '/more/account/' : '/home/';
+  if (!useRequireSession()) return null;
 
   return (
     <>
-      <AppHeader title="New password" back={{ label: 'Cancel', href: '/home/' }} />
+      <AppHeader
+        title="New password"
+        back={fromAccount ? { label: 'Account', href: done } : { label: 'Cancel', href: done }}
+      />
       <div className="h-4" />
       <AuthForm
         submitLabel="Save password"
@@ -29,7 +41,7 @@ export default function NewPassword() {
           const { error } = await supabase.auth.updateUser({ password });
           if (error) return error.message;
           toast.success('Password saved.');
-          router.replace('/home/');
+          router.replace(done);
         }}
       >
         <Field label="New password" name="password" type="password" autoComplete="new-password" />

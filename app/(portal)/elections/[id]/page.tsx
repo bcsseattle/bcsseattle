@@ -5,28 +5,24 @@ import { Card } from '@/components/ui/card';
 import { buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Banner } from '@/components/ui/banner';
-import { TransactionStep, TransactionSteps } from '@/components/ui/transaction-step';
 import { PageHeader } from '@/components/portal/page-header';
 import { Ballot } from '@/components/elections/ballot';
 import Candidates from '@/components/elections/candidates';
+import { PhaseTimeline } from '@/components/elections/phase-timeline';
+import { VotedCard } from '@/components/elections/voted-card';
 import dayjs from '@/libs/dayjs';
-import { Database } from '@/types_db';
 import { supportsUnopposedCandidates } from '@/utils/election-types';
 import { ElectionType } from '@/types';
-import { formatDate, formatDeadline } from '@/utils/format';
-
-// Import voting period helper functions
+import { formatDeadline } from '@/utils/format';
+import { currentUserIsActiveMember } from '@/utils/election-config';
 import {
-  currentUserIsActiveMember,
-  isCandidateVotingOpen,
-  getCandidateVotingPeriod,
-  shouldShowUnopposedStatus
-} from '@/utils/election-config';
+  ballotOffer,
+  ballotQuestions,
+  electedUnopposed,
+  positionOrder as orderPositions,
+  votingWindows
+} from '@/utils/elections/rules';
 import { BreadcrumbName } from '@/components/ui/breadcrumbs';
-
-type Election = Database['public']['Tables']['elections']['Row'];
-type Candidate = Database['public']['Tables']['candidates']['Row'];
-type Initiative = Database['public']['Tables']['initiatives']['Row'];
 
 interface ElectionPageProps {
   params: Promise<{ id: string }>;
@@ -119,117 +115,27 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
     }
   }
 
-  async function getPositionOrder(
-    electionType: string,
-    candidates: Candidate[]
-  ) {
-    // Try to fetch from database first
-    const { data: dbPositions } = await supabase
-      .from('election_positions')
-      .select('position, description, display_order')
-      .eq('election_type', electionType)
-      .order('display_order');
-
-    if (dbPositions?.length) {
-      return dbPositions;
-    }
-
-    // Fallback to hardcoded positions based on election type
-    const defaultPositions = {
-      leadership: [
-        {
-          position: 'President',
-          description:
-            'Chief executive officer who leads the organization and represents it publicly',
-          display_order: 1
-        },
-        {
-          position: 'Vice President',
-          description:
-            'Second in command who assists the president and steps in when needed',
-          display_order: 2
-        },
-        {
-          position: 'Secretary',
-          description:
-            'Records meeting minutes, manages correspondence, and maintains official documents',
-          display_order: 3
-        },
-        {
-          position: 'Treasurer',
-          description:
-            'Manages organizational finances, budget, and financial reporting',
-          display_order: 4
-        }
-      ],
-      board: [
-        {
-          position: 'Chairperson',
-          description: 'Leads board meetings and oversees board activities',
-          display_order: 1
-        },
-        {
-          position: 'Board Member',
-          description:
-            'Participates in board decisions and organizational governance',
-          display_order: 2
-        }
-      ],
-      committee: [
-        {
-          position: 'Committee Chair',
-          description:
-            'Leads committee activities and coordinates with the board',
-          display_order: 1
-        },
-        {
-          position: 'Committee Member',
-          description:
-            'Participates in committee work and supports committee goals',
-          display_order: 2
-        }
-      ]
-    };
-
-    const typePositions =
-      defaultPositions[electionType as keyof typeof defaultPositions];
-    if (typePositions) {
-      return typePositions;
-    }
-
-    // Final fallback: extract unique positions from candidates
-    return Array.from(new Set(candidates?.map((c) => c.position) || [])).map(
-      (position, index) => ({
-        position,
-        description: '',
-        display_order: index + 1
-      })
-    );
-  }
-
-  const positionOrder = await getPositionOrder(
-    election.type!!,
-    candidates || []
-  );
+  // Positions are defined per election type; the shared rules fall back to defaults.
+  const { data: dbPositions } = await supabase
+    .from('election_positions')
+    .select('position, description, display_order')
+    .eq('election_type', election.type!)
+    .order('display_order');
+  const positionOrder = orderPositions(election.type, dbPositions, candidates || []);
 
   // Use consistent UTC for all date comparisons to avoid timezone issues
   const nowUtc = dayjs.utc();
-  const startUtc = dayjs.utc(election.start_date);
-  const endUtc = dayjs.utc(election.end_date);
+  // Candidate voting has its own window when separate periods are on (BUG-015, BUG-060).
+  const windows = votingWindows(election, nowUtc.valueOf());
+  const {
+    candidateVotingOpen,
+    votingOpen: isVotingOpen,
+    upcoming: isUpcoming,
+    closed: isClosed
+  } = windows;
 
-  // Configuration for separate candidate/initiative voting periods
-  const candidateVotingOpen = await isCandidateVotingOpen(id, nowUtc);
-  const isInitiativeVotingOpen = (nowUtc.isAfter(startUtc) || nowUtc.isSame(startUtc)) && (nowUtc.isBefore(endUtc) || nowUtc.isSame(endUtc));
-  
-  const isVotingOpen = candidateVotingOpen || isInitiativeVotingOpen;
-  const isUpcoming = nowUtc.isBefore(startUtc);
-  const isClosed = nowUtc.isAfter(endUtc);
-  
   // Determine if candidates were elected unopposed
-  const candidatesElectedUnopposed = await shouldShowUnopposedStatus(id, candidateVotingOpen, !!(candidates && candidates.length > 0));
-
-  // Get candidate voting period for display
-  const candidateVotingPeriod = await getCandidateVotingPeriod(id);
+  const candidatesElectedUnopposed = electedUnopposed(election, candidates ?? [], candidateVotingOpen);
 
   // Fix timezone issue by ensuring consistent UTC comparison
   const isNominationOpen =
@@ -244,47 +150,24 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
   // check the vote pages and endpoints make.
   const canVote = !!user && (await currentUserIsActiveMember());
 
-  // What is still open to this member. Candidate voting has its own window
-  // when separate periods are on (BUG-015, BUG-060).
-  const offerCandidates =
-    candidateVotingOpen && !hasCandidateVotes && !candidatesElectedUnopposed && !!candidates?.length;
-  const offerInitiatives = isInitiativeVotingOpen && !hasInitiativeVotes && !!initiatives?.length;
+  // What is still open to this member.
+  const { offerCandidates, offerInitiatives } = ballotOffer({
+    windows,
+    votedCandidates: hasCandidateVotes,
+    votedInitiatives: hasInitiativeVotes,
+    electedUnopposed: candidatesElectedUnopposed,
+    candidateCount: candidates?.length ?? 0,
+    initiativeCount: initiatives?.length ?? 0
+  });
   const showBallot = isVotingOpen && canVote && (offerCandidates || offerInitiatives);
 
-  const ballotPositions = offerCandidates
-    ? positionOrder
-        .map((p) => ({
-          position: p.position,
-          description: p.description,
-          candidates: (candidates ?? [])
-            .filter((c) => c.position === p.position)
-            .map((c) => ({ id: c.id, name: c.full_name, detail: c.bio }))
-        }))
-        .filter((p) => p.candidates.length > 0)
-    : [];
-  const ballotInitiatives = offerInitiatives
-    ? (initiatives ?? []).map((i) => ({
-        id: i.id,
-        title: i.title,
-        description: i.description,
-        url: i.additional_info_url
-      }))
-    : [];
-
-  // Phase timeline (TransactionStep, Figma 11:1196).
-  const nominationState =
-    election.nomination_start && election.nomination_end
-      ? isNominationOpen
-        ? 'current'
-        : nowUtc.isAfter(dayjs.utc(election.nomination_end))
-          ? 'done'
-          : 'upcoming'
-      : null;
-  const votingDetail = isVotingOpen
-    ? `Closes ${formatDeadline(election.end_date)}`
-    : isUpcoming
-      ? `Opens ${formatDeadline(election.start_date)}`
-      : `Closed ${formatDate(election.end_date)}`;
+  const { positions: ballotPositions, initiatives: ballotInitiatives } = ballotQuestions({
+    offerCandidates,
+    offerInitiatives,
+    positions: positionOrder,
+    candidates: candidates ?? [],
+    initiatives: initiatives ?? []
+  });
 
   const votedRows = (kind: 'candidates' | 'initiatives') =>
     (userVotes ?? [])
@@ -322,32 +205,13 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         }
       />
 
-      <TransactionSteps>
-        {nominationState && (
-          <TransactionStep
-            label="Nomination period"
-            state={nominationState}
-            detail={`${formatDate(election.nomination_start!)} – ${formatDate(election.nomination_end!)}`}
-          />
-        )}
-        {candidateVotingPeriod.end && (
-          <TransactionStep
-            label="Candidate voting"
-            state={candidateVotingOpen ? 'current' : nowUtc.isAfter(dayjs.utc(candidateVotingPeriod.end)) ? 'done' : 'upcoming'}
-            detail={`Closes ${formatDeadline(candidateVotingPeriod.end)}`}
-          />
-        )}
-        <TransactionStep
-          label="Voting period"
-          state={isVotingOpen ? 'current' : isClosed ? 'done' : 'upcoming'}
-          detail={votingDetail}
-        />
-        <TransactionStep
-          label="Results"
-          state={isClosed ? 'done' : 'upcoming'}
-          detail={isClosed ? 'Available now' : 'After voting closes'}
-        />
-      </TransactionSteps>
+      <PhaseTimeline
+        election={election}
+        windows={windows}
+        nominationsOpen={!!isNominationOpen}
+        // W16: shows whenever candidate_voting_end is set.
+        candidateVotingEnd={election.candidate_voting_end}
+      />
 
       {supportsUnopposed && candidatesElectedUnopposed && (
         <Banner tone="success" title="Candidates elected unopposed">
@@ -412,22 +276,22 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
       {(hasCandidateVotes || hasInitiativeVotes) && (
         <div className="grid gap-4 md:grid-cols-2">
           {hasCandidateVotes && candidateSession && (
-            <VotedCard
-              title="Your leadership votes"
-              code={candidateSession.confirmation_code}
-              href={`/elections/${election.id}/vote/candidates/confirmation?code=${candidateSession.confirmation_code}`}
-              when={candidateSession.completed_at}
-              rows={votedRows('candidates')}
-            />
+            <VotedCard title="Your leadership votes" rows={votedRows('candidates')}>
+              <ConfirmationLink
+                code={candidateSession.confirmation_code}
+                href={`/elections/${election.id}/vote/candidates/confirmation?code=${candidateSession.confirmation_code}`}
+                when={candidateSession.completed_at}
+              />
+            </VotedCard>
           )}
           {hasInitiativeVotes && initiativeSession && (
-            <VotedCard
-              title="Your initiative votes"
-              code={initiativeSession.confirmation_code}
-              href={`/elections/${election.id}/vote/initiatives/confirmation?code=${initiativeSession.confirmation_code}`}
-              when={initiativeSession.completed_at}
-              rows={votedRows('initiatives')}
-            />
+            <VotedCard title="Your initiative votes" rows={votedRows('initiatives')}>
+              <ConfirmationLink
+                code={initiativeSession.confirmation_code}
+                href={`/elections/${election.id}/vote/initiatives/confirmation?code=${initiativeSession.confirmation_code}`}
+                when={initiativeSession.completed_at}
+              />
+            </VotedCard>
           )}
         </div>
       )}
@@ -474,42 +338,16 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
   );
 }
 
-/** A part of the ballot this member has already submitted. */
-function VotedCard({
-  title,
-  code,
-  href,
-  when,
-  rows
-}: {
-  title: string;
-  code: string | null;
-  href: string;
-  when: string | null;
-  rows: (readonly [string, string])[];
-}) {
+/** A submitted part's code and its confirmation page. */
+function ConfirmationLink({ code, href, when }: { code: string | null; href: string; when: string | null }) {
   return (
-    <Card className="flex flex-col gap-3 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-section text-foreground">{title}</h2>
-        <Badge tone="green">Submitted</Badge>
-      </div>
-      {rows.length > 0 && (
-        <dl className="text-sm">
-          {rows.map(([question, answer]) => (
-            <div key={question} className="flex justify-between gap-3 border-b py-2 last:border-b-0">
-              <dt className="text-muted-foreground">{question}</dt>
-              <dd className="text-right font-medium text-foreground">{answer}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
+    <>
       <p className="mt-0 text-caption text-muted-foreground">
         {when && `Submitted ${formatDeadline(when)}. `}Confirmation code: <span className="font-mono">{code}</span>
       </p>
       <Link href={href} className="self-start text-caption font-medium text-accent underline-offset-4 hover:underline">
         View confirmation
       </Link>
-    </Card>
+    </>
   );
 }

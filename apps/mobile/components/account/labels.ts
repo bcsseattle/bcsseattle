@@ -1,0 +1,45 @@
+import type { Tables } from '@/types_db';
+import { formatMoney } from '@/utils/format';
+
+export type Membership = 'none' | 'pending' | 'rejected' | 'inactive' | 'active';
+
+/**
+ * Where a member stands: the app's one rule. Active needs approval and
+ * status 'active', as current_user_is_active_member() does in RLS; an
+ * unapproved application still marked pending is pending.
+ */
+export function membershipOf(member: Pick<Tables<'members'>, 'isApproved' | 'status'> | null): Membership {
+  if (!member) return 'none';
+  if (member.isApproved && member.status === 'active') return 'active';
+  if (member.status === 'rejected') return 'rejected';
+  if (!member.isApproved && member.status === 'pending') return 'pending';
+  return 'inactive';
+}
+
+/** Each state in words (status is never colour alone), with its badge tone. */
+export const MEMBERSHIP = {
+  none: { label: 'Not a member', tone: 'neutral' },
+  active: { label: 'Active member', tone: 'green' },
+  pending: { label: 'Application pending', tone: 'orange' },
+  rejected: { label: 'Not approved', tone: 'red' },
+  inactive: { label: 'Membership inactive', tone: 'neutral' }
+} as const;
+
+export const memberState = (member: Parameters<typeof membershipOf>[0]) => MEMBERSHIP[membershipOf(member)];
+
+/** Checkout's quantity for a family plan: the family size, 1 to 5 (utils/stripe/server.ts). */
+export const familyQuantity = (size?: number | null) => Math.min(Math.max(Math.floor(Number(size)) || 1, 1), 5);
+
+/**
+ * "USD 15.00 / month", "USD 30.00 / 6 months", "USD 20.00" (one-time): the
+ * price times the subscription's quantity, which is what the member pays.
+ */
+export function priceLabel(
+  price: Pick<Tables<'prices'>, 'unit_amount' | 'interval' | 'interval_count'> | null | undefined,
+  quantity?: number | null
+) {
+  const amount = formatMoney((price?.unit_amount ?? 0) * (quantity ?? 1));
+  if (!price?.interval) return amount;
+  const count = price.interval_count ?? 1;
+  return `${amount} / ${count === 1 ? price.interval : `${count} ${price.interval}s`}`;
+}

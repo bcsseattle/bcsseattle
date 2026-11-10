@@ -5,6 +5,7 @@ import { getSession } from '@/utils/auth-helpers/server';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { BreadcrumbName } from '@/components/ui/breadcrumbs';
+import { isOpen } from '@/utils/giving';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -43,8 +44,7 @@ export default async function DonatePage({ params }: PageProps) {
   }
 
   // If fundraiser has ended or is not active, redirect to main page.
-  // No end date means open-ended (BUG-038).
-  if (fundraiser.status !== 'active' || (fundraiser.ends_at && new Date(fundraiser.ends_at) < new Date())) {
+  if (!isOpen(fundraiser)) {
     return (
       <div className="max-w-2xl pb-8 pt-8 lg:pt-16">
         <div className="rounded-lg border bg-card p-8 text-center">

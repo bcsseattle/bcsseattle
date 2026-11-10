@@ -5,7 +5,7 @@
 	<!-- Universal links for the website's /m/ pages; the site serves the AASA file. -->
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:bcsseattle.org</string>
+		<string>applinks:www.bcsseattle.org</string>
 	</array>
 </dict>
 </plist>

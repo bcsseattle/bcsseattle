@@ -68,3 +68,13 @@ export function useSignedInRedirect() {
     if (ready && session) router.replace('/home/');
   }, [ready, session, router]);
 }
+
+/** Members-only screens: the session, or null while it loads or after sending a signed-out visitor to Sign in. */
+export function useRequireSession() {
+  const { session, ready } = useSession();
+  const router = useRouter();
+  useEffect(() => {
+    if (ready && !session) router.replace('/signin/');
+  }, [ready, session, router]);
+  return session;
+}

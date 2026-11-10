@@ -29,13 +29,17 @@ export function parseAppLink(href: string, siteUrl: string): AppLink | null {
     const tokenHash = query.get('token_hash');
     const type = query.get('type') as EmailLinkType;
     if (!tokenHash || !EMAIL_TYPES.includes(type)) return null;
-    const to = type === 'recovery' ? '/signin/new-password/' : type === 'email_change' ? '/account/' : '/home/';
+    const to = type === 'recovery' ? '/signin/new-password/' : type === 'email_change' ? '/more/account/' : '/home/';
     return { to, verify: { tokenHash, type } };
   }
   if (path === '/return/checkout') {
     const kind = query.get('kind');
-    return { to: kind === 'donation' || kind === 'fundraiser' ? '/give/' : '/account/' };
+    if (kind !== 'donation' && kind !== 'fundraiser') return { to: '/more/account/' };
+    // Gift complete or pending (Figma 24:2778 / 24:2843), read from the donation itself.
+    const result = new URLSearchParams({ kind, id: query.get('id') ?? '' });
+    if (query.get('canceled')) result.set('canceled', '1');
+    return { to: `/give/result/?${result}` };
   }
-  if (path === '/return/portal') return { to: '/account/' };
+  if (path === '/return/portal') return { to: '/more/account/' };
   return null;
 }

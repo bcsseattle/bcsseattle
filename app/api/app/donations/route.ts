@@ -25,7 +25,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ donationId: donation.id, status: 'pending' });
   }
 
-  // The price the /donate page offers for this frequency.
+  // The price for this frequency: the one-time price for a one-time gift,
+  // otherwise the recurring price with the same interval. (Not "first price
+  // that matches either", which could charge a monthly gift once.)
   const { data: product } = await supabase
     .from('products')
     .select('prices(*)')
@@ -33,8 +35,8 @@ export async function POST(request: NextRequest) {
     .eq('name', 'BCS Donation')
     .eq('prices.active', true)
     .maybeSingle();
-  const price = (product?.prices as Price[] | undefined)?.find(
-    (p) => p.interval === values.frequency || p.type === 'one_time'
+  const price = (product?.prices as Price[] | undefined)?.find((p) =>
+    values.frequency === 'one_time' ? p.type === 'one_time' : p.type === 'recurring' && p.interval === values.frequency
   );
   if (!price) return fail('Giving is not available right now.', 502);
 

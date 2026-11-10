@@ -1,6 +1,6 @@
 # BCS Seattle mobile app: plan (Phase 0)
 
-Status: **draft, waiting for go-ahead.** Nothing here has been built yet.
+Status: **approved; being built.** Phases 1 and 2 merged (#19, #20). The decisions are recorded in §9.
 Branch: `mobile/phase-0-plan` (from `develop`). Date: 9 Nov 2026.
 
 This plan covers the iOS and Android apps for signed-in BCS Seattle members, built with Capacitor. It compares architectures, proposes the repo layout and IDs, and works through auth, payments and store policy, store requirements, native features, and a mapping from each feature to its screen. Each decision you need to make is marked **Decide**, and §9 collects them.
@@ -157,7 +157,7 @@ pnpm-workspace.yaml          # packages: ['apps/*']; the root stays the website
     ```
   - Use the fingerprint from Play Console › App signing, not your local keystore.
   - Apple's CDN can take up to 24 hours to pick up AASA changes.
-- **Supabase redirect allowlist** (for you to add): `https://bcsseattle.org/m/**` and `org.bcsseattle.app://**`.
+- **Supabase redirect allowlist** (for you to add): `https://www.bcsseattle.org/m/**` and `org.bcsseattle.app://**`.
 
 ### 3.4 OAuth and Sign in with Apple
 OAuth is off, so guideline 4.8 doesn't apply. Its exemption: "Another login service is not required if: Your app exclusively uses your company's own account setup and sign-in systems."
@@ -333,7 +333,7 @@ Figma node IDs are on the "Mobile app" page. "Direct" means the app reads Supaba
 | 0 | this one | This plan |
 | 1. Backend readiness | `mobile/phase-1-backend` | <ul><li>Bearer auth, CORS, `/api/app/*` routes and their tests</li><li>`/m/*` web routes and `.well-known` files</li><li>Optional `returnUrl` and `url` additions to the Stripe functions</li><li>Checklist for you: Supabase allowlist, email templates, Stripe portal and redirect settings</li><li>Migrations only after Decide 3 and 4</li></ul> |
 | 2. App shell | `mobile/phase-2-shell` | <ul><li>`apps/mobile`, iOS and Android projects, tab bar, headers, action bar</li><li>Auth screens and secure session storage</li><li>Deep-link router; a spike on the Stripe return behaviour</li></ul> |
-| 3. Features | `mobile/phase-3-features` | Home, Give, Elections (nominate, vote, results), Funds and Account (plan, receipts, profile, deletion) |
+| 3. Features | `mobile/phase-3-features` | <ul><li>Home, Give, Elections (nominate, vote, results), Funds, More (Account with plan, receipts, profile and deletion; Members; Resources), Apply</li><li>**Shared views (decided 9 Nov 2026):** where an app screen and a website page show the same thing, the markup moves into one shared view component. The website page keeps loading its data on the server and passes it in; the app screen loads it on the device. One UI to maintain, guarded by the e2e suite.</li></ul> |
 | 4. Native polish | `mobile/phase-4-native` | <ul><li>The native features you approve</li><li>Android back button (`@capacitor/app` `backButton`: pop the stack, then exit from a tab root)</li><li>Haptics on vote and gift confirmation, status bar per screen, safe areas, Dynamic Type (rem-based type plus `-webkit-text-size-adjust`)</li><li>Offline screen</li></ul> |
 | 5. Store readiness | `mobile/phase-5-store` | <ul><li>Icons, splash, privacy manifest, permission strings</li><li>Release signing configuration</li><li>README section: local runs, TestFlight and Play internal-testing builds</li></ul> |
 
@@ -346,16 +346,19 @@ Every phase runs `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm test`, `pnpm build
 
 ---
 
-## 9. Decisions I need from you
-1. Architecture **C** with a static Next.js app in `apps/mobile` (§1).
-2. The domain (`bcsseattle.org`?), app name "BCS Seattle", and IDs `org.bcsseattle.app` (§2).
-3. Account deletion, option (a) migration or (b) manual requests, and the new `/account-deletion` web page (§5.1).
-4. Which native features to build, and the `device_tokens` table if push is approved (§6).
-5. Where the member directory goes (§7).
-6. Will BCS seek a Candid Seal (for in-app Apple Pay donations later)? It doesn't block v1.
-7. Square icon master art (§5.3).
-8. How the App Review test account becomes an active member without a real charge (§5.4).
-9. Approval for the plugin list above.
+## 9. Decisions
+
+| # | Decision | Answer (9 Nov 2026) |
+|---|---|---|
+| 1 | Architecture | **C**, a static Next.js app in `apps/mobile`. |
+| 2 | Domain, name, IDs | `www.bcsseattle.org` (the bare domain redirects there, and Apple doesn't follow redirects for app links), "BCS Seattle", `org.bcsseattle.app`. |
+| 3 | Account deletion | **(a) migration** (`20261109120000_account_deletion.sql`), `POST /api/app/account/delete`, and the public `/account-deletion` page. |
+| 4 | Native features | The necessary ones: **push notifications** (with the `device_tokens` table), offline screen, saving and sharing receipt PDFs. Not biometrics or haptics. |
+| 5 | Member directory | A **More** tab replaces Account as the fifth tab. It holds **Account**, **Members** (the directory) and **Resources**. |
+| 6 | Candid Seal | Open; doesn't block v1. |
+| 7 | Icon master art | Open (Phase 5). |
+| 8 | Review test account | Open (Phase 5). |
+| 9 | Plugins | Approved: core, cli, ios, android, app, app-launcher, browser, filesystem, share, secure storage. Push and network come with Phase 4. |
 
 ## 10. What you need to do outside the code
 
@@ -365,7 +368,7 @@ Every phase runs `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm test`, `pnpm build
 - **Firebase project** (if push is approved): `GoogleService-Info.plist` and `google-services.json`, an APNs auth key uploaded to Firebase, and an FCM service-account key stored as a server secret in Vercel.
 
 **Supabase (production)**
-- Add `https://bcsseattle.org/m/**` and `org.bcsseattle.app://**` to the redirect allowlist.
+- Add `https://www.bcsseattle.org/m/**` and `org.bcsseattle.app://**` to the redirect allowlist.
 - Check that the email templates include `{{ .Token }}`.
 - Later, switch the links to `/m/auth/confirm?token_hash=…` (§3.3).
 
