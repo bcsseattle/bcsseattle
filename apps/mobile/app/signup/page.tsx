@@ -1,22 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { MailCheck } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import { StatePanel } from '@/components/ui/state-panel';
 import { AppHeader } from '~/components/app-header';
 import { AuthForm, Field } from '~/components/auth-form';
-import { useSignedInRedirect } from '~/lib/session';
+import { useSession } from '~/lib/session';
 import { supabase } from '~/lib/supabase';
 
 /**
- * Creates the sign-in account. Applying for membership (the Register form) is
- * the next step, built in Phase 3. When email confirmation is on, Supabase
- * returns no session and the member confirms by email first.
+ * Creates the sign-in account, then goes on to Apply for membership. When
+ * email confirmation is on, Supabase returns no session and the member
+ * confirms by email first. Someone already signed in goes to Home.
  */
 export default function SignUp() {
-  useSignedInRedirect();
+  const { session, ready } = useSession();
+  const router = useRouter();
+  const signingUp = useRef(false);
+  useEffect(() => {
+    if (ready && session) router.replace(signingUp.current ? '/apply/' : '/home/');
+  }, [ready, session, router]);
   const [sentTo, setSentTo] = useState<string>();
 
   if (sentTo) {
@@ -47,6 +53,7 @@ export default function SignUp() {
         submitLabel="Create account"
         onSubmit={async (form) => {
           const email = String(form.get('email') ?? '').trim();
+          signingUp.current = true;
           const { data, error } = await supabase.auth.signUp({ email, password: String(form.get('password') ?? '') });
           if (error) return error.message;
           if (!data.session) setSentTo(email);
