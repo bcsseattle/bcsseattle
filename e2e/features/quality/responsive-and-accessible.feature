@@ -25,6 +25,7 @@ Feature: The site works on phones and with assistive technology
       | /funeral-burials        |
       | /youth-programs         |
       | /privacy                |
+      | /account-deletion       |
       | /terms                  |
       | /signin/password_signin |
       | /register               |
