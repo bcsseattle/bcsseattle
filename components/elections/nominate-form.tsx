@@ -23,17 +23,20 @@ export function NominateForm({
   action,
   positions,
   members,
-  myName
+  myName,
+  canSelf = true
 }: {
   action: (state: NominationState, formData: FormData) => Promise<NominationState>;
   positions: { id: string; title: string; description: string | null }[];
   /** Approved, active members other than you, by name. */
   members: { user_id: string; full_name: string }[];
   myName: string;
+  /** False when you already stand in this election (one position each). */
+  canSelf?: boolean;
 }) {
   const [state, formAction] = React.useActionState(action, {});
   const v = state.values ?? {};
-  const [who, setWho] = React.useState(v.who ?? 'self');
+  const [who, setWho] = React.useState(v.who ?? (canSelf ? 'self' : 'other'));
   const [position, setPosition] = React.useState(v.position ?? positions[0]?.id ?? '');
   const description = positions.find((p) => p.id === position)?.description;
 
@@ -42,7 +45,12 @@ export function NominateForm({
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1.5 text-sm font-medium">Who are you nominating?</legend>
         <RadioGroup name="who" value={who} onValueChange={setWho} aria-label="Who are you nominating?">
-          <OptionCard value="self" label="Myself" detail="Your details go to the admins for review after nominations close." />
+          <OptionCard
+            value="self"
+            label="Myself"
+            disabled={!canSelf}
+            detail={canSelf ? 'Your details go to the admins for review after nominations close.' : 'You’re already standing in this election.'}
+          />
           <OptionCard value="other" label="Another member" detail="They’ll see it under My nominations and can accept or decline." />
         </RadioGroup>
       </fieldset>

@@ -5,6 +5,7 @@ import LegacyNominateForm from '@/components/nominate-form';
 import { NominateForm } from '@/components/elections/nominate-form';
 import { PageHeader } from '@/components/portal/page-header';
 import { StatePanel } from '@/components/ui/state-panel';
+import { Banner } from '@/components/ui/banner';
 import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 import { createClient } from '@/utils/supabase/server';
 import { checkFeatureFlag } from '@/utils/server-feature-flags';
@@ -24,10 +25,18 @@ export default async function NominatePage(props: Props) {
   } = await supabase.auth.getUser();
   if (!user) return redirect('/signin');
 
-  const { data: member } = await supabase.from('members').select('*').eq('user_id', user.id).maybeSingle();
+  const { data: member } = await supabase
+    .from('members')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle();
   if (!member) return redirect('/register');
 
-  const { data: election } = await supabase.from('elections').select('*').eq('id', id).maybeSingle();
+  const { data: election } = await supabase
+    .from('elections')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
   if (!election) notFound();
 
   // This election's own positions, not every type's (W8).
@@ -45,7 +54,11 @@ export default async function NominatePage(props: Props) {
           electionTitle={election.title}
           electionId={election.id}
           userId={user.id}
-          positions={(positions ?? []).map((p) => ({ id: p.id, position: p.title, description: p.description }))}
+          positions={(positions ?? []).map((p) => ({
+            id: p.id,
+            position: p.title,
+            description: p.description
+          }))}
           member={member}
         />
       </div>
@@ -65,11 +78,30 @@ export default async function NominatePage(props: Props) {
     />
   );
 
+  // One position per election (B2): someone already standing can still nominate others.
+  const [{ data: accepted }, { data: candidacy }] = await Promise.all([
+    supabase
+      .from('nominations')
+      .select('position')
+      .eq('election_id', id)
+      .eq('nominee_user_id', user.id)
+      .in('status', ['submitted', 'approved'])
+      .maybeSingle(),
+    supabase
+      .from('candidates')
+      .select('position')
+      .eq('election_id', id)
+      .eq('user_id', user.id)
+      .maybeSingle()
+  ]);
+  const standingFor = accepted?.position ?? candidacy?.position;
+
   let body: React.ReactNode;
   if (!phase.nominationsOpen) {
     body = (
       <StatePanel title="Nominations aren’t open">
-        {election.nomination_start && Date.now() < Date.parse(election.nomination_start)
+        {election.nomination_start &&
+        Date.now() < Date.parse(election.nomination_start)
           ? `They open ${formatDeadline(election.nomination_start)}.`
           : 'Nominations for this election have closed.'}
       </StatePanel>
@@ -81,14 +113,28 @@ export default async function NominatePage(props: Props) {
       </StatePanel>
     );
   } else {
-    const { data: members } = await supabase.rpc('election_nominees', { p_election: id });
+    const { data: members } = await supabase.rpc('election_nominees', {
+      p_election: id
+    });
     body = (
-      <NominateForm
-        action={nominate.bind(null, id)}
-        positions={positions ?? []}
-        members={(members ?? []).filter((m) => m.user_id !== user.id)}
-        myName={member.fullName ?? ''}
-      />
+      <>
+        {standingFor && (
+          <Banner
+            tone="info"
+            title={`You’re already standing for ${standingFor}`}
+          >
+            You can stand for one position per election, so you can only
+            nominate someone else.
+          </Banner>
+        )}
+        <NominateForm
+          action={nominate.bind(null, id)}
+          canSelf={!standingFor}
+          positions={positions ?? []}
+          members={(members ?? []).filter((m) => m.user_id !== user.id)}
+          myName={member.fullName ?? ''}
+        />
+      </>
     );
   }
 
@@ -98,7 +144,10 @@ export default async function NominatePage(props: Props) {
       {header}
       {body}
       <p className="mt-0 text-sm text-muted-foreground">
-        <Link href="/account/nominations" className="underline underline-offset-2">
+        <Link
+          href="/account/nominations"
+          className="underline underline-offset-2"
+        >
           My nominations
         </Link>{' '}
         shows the nominations you’ve made and received.

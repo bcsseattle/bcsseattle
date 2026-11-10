@@ -10,7 +10,7 @@
 -- functions, which check who is calling, the window and eligibility.
 
 -- Approved, active, and joined by the election's cutoff (B3, B11).
-CREATE FUNCTION public.election_member_eligible(p_election uuid, p_user uuid) RETURNS boolean
+CREATE OR REPLACE FUNCTION public.election_member_eligible(p_election uuid, p_user uuid) RETURNS boolean
   LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.members m JOIN public.elections e ON e.id = p_election
@@ -21,7 +21,7 @@ $$;
 REVOKE ALL ON FUNCTION public.election_member_eligible(uuid, uuid) FROM PUBLIC, anon, authenticated;
 
 -- Published, inside the nominations window, edges included.
-CREATE FUNCTION public.election_nominations_open(e public.elections) RETURNS boolean
+CREATE OR REPLACE FUNCTION public.election_nominations_open(e public.elections) RETURNS boolean
   LANGUAGE sql STABLE SET search_path = '' AS $$
   SELECT e.status = 'scheduled' AND e.nomination_start IS NOT NULL AND e.nomination_end IS NOT NULL
      AND now() BETWEEN e.nomination_start AND e.nomination_end
@@ -29,7 +29,7 @@ $$;
 
 -- candidates.manifesto must be empty or 10 to 1,000 characters; nominations
 -- copy it on approval, so the same rule applies when it's written.
-CREATE FUNCTION public.nomination_check_details(p_full_name text, p_manifesto text, p_bio text) RETURNS void
+CREATE OR REPLACE FUNCTION public.nomination_check_details(p_full_name text, p_manifesto text, p_bio text) RETURNS void
   LANGUAGE plpgsql IMMUTABLE AS $$
 BEGIN
   IF length(btrim(coalesce(p_full_name, ''))) < 2 THEN
@@ -46,14 +46,14 @@ BEGIN
   END IF;
 END $$;
 
-CREATE FUNCTION public.nomination_log(p_action text) RETURNS void
+CREATE OR REPLACE FUNCTION public.nomination_log(p_action text) RETURNS void
   LANGUAGE sql AS $$
   SELECT set_config('bcs.action', p_action, true), set_config('bcs.reason', '', true);
 $$;
 
 -- Nominate yourself (details required, submitted for review) or another member
 -- (they accept or decline). Returns the nomination's id.
-CREATE FUNCTION public.nomination_create(
+CREATE OR REPLACE FUNCTION public.nomination_create(
   p_election uuid,
   p_position uuid,
   p_nominee uuid,
@@ -89,7 +89,8 @@ BEGIN
     RAISE EXCEPTION 'That member can''t be nominated: only approved members with an active membership can stand.' USING ERRCODE = '22023';
   END IF;
   IF EXISTS (SELECT 1 FROM public.nominations WHERE election_id = p_election AND nominee_user_id = p_nominee
-             AND status IN ('submitted', 'approved')) THEN
+             AND status IN ('submitted', 'approved'))
+     OR EXISTS (SELECT 1 FROM public.candidates WHERE election_id = p_election AND user_id = p_nominee) THEN
     RAISE EXCEPTION '%', CASE WHEN self THEN 'You''ve already accepted a nomination in this election. Withdraw it first to stand for another position.'
       ELSE 'They''ve already accepted a nomination in this election.' END USING ERRCODE = '22023';
   END IF;
@@ -139,7 +140,7 @@ END $$;
 -- The nominee accepts (with their own name, statement and photo) while
 -- nominations are open, or declines any time before the ballot is locked.
 -- Accepting declines their other pending nominations in the election.
-CREATE FUNCTION public.nomination_respond(
+CREATE OR REPLACE FUNCTION public.nomination_respond(
   p_nomination uuid,
   p_accept boolean,
   p_full_name text DEFAULT NULL,
@@ -177,7 +178,8 @@ BEGIN
     RAISE EXCEPTION 'Only approved members with an active membership can stand.' USING ERRCODE = '42501';
   END IF;
   IF EXISTS (SELECT 1 FROM public.nominations WHERE election_id = n.election_id AND nominee_user_id = auth.uid()
-             AND status IN ('submitted', 'approved')) THEN
+             AND status IN ('submitted', 'approved'))
+     OR EXISTS (SELECT 1 FROM public.candidates WHERE election_id = n.election_id AND user_id = auth.uid()) THEN
     RAISE EXCEPTION 'You''ve already accepted a nomination in this election. Withdraw it first to accept this one.' USING ERRCODE = '22023';
   END IF;
   PERFORM public.nomination_check_details(p_full_name, p_manifesto, p_bio);
@@ -197,7 +199,7 @@ END $$;
 
 -- The nominee changes their name, statement or photo until the ballot is
 -- locked. On an approved nomination the candidate changes with it.
-CREATE FUNCTION public.nomination_update(
+CREATE OR REPLACE FUNCTION public.nomination_update(
   p_nomination uuid,
   p_full_name text,
   p_bio text DEFAULT NULL,
@@ -238,7 +240,7 @@ END $$;
 -- Until the ballot is locked: the nominee withdraws any of theirs (an approved
 -- one takes the candidate off the ballot); the nominator withdraws one the
 -- nominee hasn't answered yet.
-CREATE FUNCTION public.nomination_withdraw(p_nomination uuid) RETURNS void
+CREATE OR REPLACE FUNCTION public.nomination_withdraw(p_nomination uuid) RETURNS void
   LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE n public.nominations;
 BEGIN
@@ -263,7 +265,7 @@ END $$;
 
 -- Admin review, before the ballot is locked: approve a submitted nomination
 -- (creating the candidate) or reject it with a reason the nominee sees.
-CREATE FUNCTION public.nomination_decide(p_nomination uuid, p_approve boolean, p_reason text DEFAULT NULL) RETURNS void
+CREATE OR REPLACE FUNCTION public.nomination_decide(p_nomination uuid, p_approve boolean, p_reason text DEFAULT NULL) RETURNS void
   LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE
   n public.nominations;
@@ -281,6 +283,9 @@ BEGIN
   IF p_approve THEN
     IF n.status <> 'submitted' THEN
       RAISE EXCEPTION 'Only a nomination the nominee has accepted can be approved.' USING ERRCODE = '22023';
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.candidates WHERE election_id = n.election_id AND user_id = n.nominee_user_id) THEN
+      RAISE EXCEPTION 'This member is already on the ballot.' USING ERRCODE = '22023';
     END IF;
     INSERT INTO public.candidates (election_id, user_id, full_name, position, ballot_position_id, bio, manifesto, photo_url)
     VALUES (n.election_id, n.nominee_user_id, n.full_name, n.position, n.ballot_position_id, n.bio, n.manifesto, n.photo_url)
@@ -301,7 +306,7 @@ END $$;
 -- An admin adds a candidate directly, before the ballot is locked: a member
 -- (recorded as an approved nomination, so it shows under their nominations)
 -- or a name only. Returns the candidate's id.
-CREATE FUNCTION public.election_add_candidate(
+CREATE OR REPLACE FUNCTION public.election_add_candidate(
   p_election uuid,
   p_position uuid,
   p_user uuid,
@@ -328,7 +333,8 @@ BEGIN
       RAISE EXCEPTION 'That member can''t stand: only approved members with an active membership can.' USING ERRCODE = '22023';
     END IF;
     IF EXISTS (SELECT 1 FROM public.nominations WHERE election_id = p_election AND nominee_user_id = p_user
-               AND status IN ('submitted', 'approved')) THEN
+               AND status IN ('submitted', 'approved'))
+       OR EXISTS (SELECT 1 FROM public.candidates WHERE election_id = p_election AND user_id = p_user) THEN
       RAISE EXCEPTION 'That member has already accepted a nomination in this election.' USING ERRCODE = '22023';
     END IF;
   END IF;
@@ -353,7 +359,7 @@ END $$;
 
 -- Who can be nominated: approved, active members, by name only. The nominate
 -- form lists them; the directory already shows these names to active members.
-CREATE FUNCTION public.election_nominees(p_election uuid) RETURNS TABLE (user_id uuid, full_name text)
+CREATE OR REPLACE FUNCTION public.election_nominees(p_election uuid) RETURNS TABLE (user_id uuid, full_name text)
   LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
   SELECT m.user_id, coalesce(nullif(btrim(m."fullName"), ''), 'Member') AS full_name
   FROM public.members m JOIN public.elections e ON e.id = p_election
