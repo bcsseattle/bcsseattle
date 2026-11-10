@@ -18,6 +18,7 @@ import { getElectionTypeDescription } from '@/utils/election-types';
 import { ElectionType } from '@/types';
 import { formatDeadline } from '@/utils/format';
 import { BreadcrumbName } from '@/components/ui/breadcrumbs';
+import { PortalPageSkeleton } from '@/components/ui/page-skeletons';
 
 export default function ElectionResultsPage() {
   const params = useParams();
@@ -41,14 +42,7 @@ export default function ElectionResultsPage() {
 
   if (loading) {
     return (
-      <div className="w-full">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex items-center space-x-2">
-            <RefreshCw className="h-4 w-4 animate-spin" />
-            <span>Loading election results...</span>
-          </div>
-        </div>
-      </div>
+      <PortalPageSkeleton />
     );
   }
 

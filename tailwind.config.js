@@ -125,8 +125,14 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        // Skeleton shimmer (Art Gallery SkeletonRow): a highlight sweeps left to right.
+        shimmer: {
+          from: { backgroundPosition: "120% 0" },
+          to: { backgroundPosition: "-20% 0" },
+        },
       },
       animation: {
+        shimmer: "shimmer 1.2s linear infinite",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
