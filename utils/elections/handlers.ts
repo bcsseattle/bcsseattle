@@ -7,7 +7,7 @@ import { createClient } from '@/utils/supabase/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { ballotRefusal, PHASE_COLUMNS } from '@/utils/elections/access';
 import { currentUserIsActiveMember } from '@/utils/election-config';
-import { electionPhase } from '@/utils/elections/rules';
+import { electionPhase, positionOnBallot, type Position } from '@/utils/elections/rules';
 import {
   Candidate,
   NominateFormSchema,
@@ -68,9 +68,10 @@ async function hasVoted(userId: string, electionId: string, kind: 'candidates' |
   return (data?.length ?? 0) > 0;
 }
 
-// Voting handlers following the same pattern as membership handlers
 /**
- * Candidates must belong to the election, and at most one vote per position.
+ * Candidates must belong to the election and stand for a position on the
+ * ballot (not vacant, not elected unopposed). Withdrawn candidates can't be
+ * chosen, and each position takes at most as many votes as it has seats.
  * Positions come from the database, never from the request (BUG-011).
  */
 async function validateCandidateVotes(
@@ -80,19 +81,33 @@ async function validateCandidateVotes(
 ): Promise<string | null> {
   if (candidateVotes.length === 0) return null;
   const candidateIds = candidateVotes.map((v) => v.candidateId);
-  const { data: validCandidates } = await supabase
-    .from('candidates')
-    .select('id, position')
-    .eq('election_id', electionId)
-    .in('id', candidateIds);
+  if (new Set(candidateIds).size !== candidateIds.length) return 'Each candidate can be chosen once';
 
-  const positionById = new Map((validCandidates ?? []).map((c) => [c.id, c.position]));
-  const invalid = candidateIds.filter((id) => !positionById.has(id));
+  const [{ data: all }, { data: dbPositions }] = await Promise.all([
+    supabase.from('candidates').select('id, position, withdrawn_at').eq('election_id', electionId),
+    supabase.from('ballot_positions').select('title, seats, vacant, unopposed_decision').eq('election_id', electionId)
+  ]);
+  const candidates = all ?? [];
+  const byId = new Map(candidates.map((c) => [c.id, c]));
+  const invalid = candidateIds.filter((id) => !byId.has(id));
   if (invalid.length > 0) return `Invalid candidate IDs: ${invalid.join(', ')}`;
+  if (candidateIds.some((id) => byId.get(id)!.withdrawn_at)) return 'A withdrawn candidate can’t be chosen';
 
-  const positions = candidateIds.map((id) => positionById.get(id));
-  if (new Set(positions).size !== positions.length) {
-    return 'Cannot vote for multiple candidates in the same position';
+  // Elections set up before per-election positions: one seat each.
+  const position = (title: string): Position =>
+    (dbPositions ?? []).map((p) => ({ position: p.title, description: null, display_order: 0, seats: p.seats, vacant: p.vacant, unopposed_decision: p.unopposed_decision }))
+      .find((p) => p.position === title) ?? { position: title, description: null, display_order: 0 };
+  const chosen = new Map<string, number>();
+  for (const id of candidateIds) {
+    const title = byId.get(id)!.position;
+    chosen.set(title, (chosen.get(title) ?? 0) + 1);
+  }
+  for (const [title, count] of Array.from(chosen)) {
+    const p = position(title);
+    if (!positionOnBallot(p, candidates)) return `${title} isn’t on the ballot`;
+    if (count > (p.seats ?? 1)) {
+      return (p.seats ?? 1) === 1 ? 'Cannot vote for multiple candidates in the same position' : `Choose up to ${p.seats} candidates for ${title}`;
+    }
   }
   return null;
 }

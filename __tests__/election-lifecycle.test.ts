@@ -1,6 +1,9 @@
 import {
   ADMIN_TAB,
   adminActions,
+  ballotQuestions,
+  electedUnopposed,
+  positionOnBallot,
   defaultTimeline,
   electionPhase,
   fromLocalInput,
@@ -327,5 +330,49 @@ describe('admin list and overview', () => {
     expect(r.warning).toBeNull();
     expect(toLocalInput(t.start_date)).toBe('2026-12-25T09:00');
     expect(toLocalInput(t.end_date)).toBe('2027-01-08T20:00');
+  });
+});
+
+describe('the ballot after the lock', () => {
+  const pos = (position: string, extra: Record<string, unknown> = {}) => ({ position, description: null, display_order: 1, seats: 1, ...extra });
+  const cand = (id: string, position: string, withdrawn_at: string | null = null) => ({ id, position, full_name: id, bio: null, withdrawn_at });
+  const candidates = [cand('a', 'President'), cand('b', 'President'), cand('c', 'Treasurer'), cand('d', 'Director'), cand('e', 'Director')];
+
+  it('leaves off vacant positions, uncontested ones elected unopposed, and empty ones', () => {
+    expect(positionOnBallot(pos('President'), candidates)).toBe(true);
+    expect(positionOnBallot(pos('Treasurer', { unopposed_decision: 'elect' }), candidates)).toBe(false);
+    expect(positionOnBallot(pos('Treasurer', { unopposed_decision: 'keep_on_ballot' }), candidates)).toBe(true);
+    expect(positionOnBallot(pos('Secretary', { vacant: true }), candidates)).toBe(false);
+    expect(positionOnBallot(pos('Secretary'), candidates)).toBe(false);
+  });
+
+  it('counts seats: two candidates for three seats are uncontested', () => {
+    expect(positionOnBallot(pos('Director', { seats: 3, unopposed_decision: 'elect' }), candidates)).toBe(false);
+    expect(positionOnBallot(pos('Director', { seats: 1, unopposed_decision: 'elect' }), candidates)).toBe(true);
+  });
+
+  it('gives each position its seats, and marks withdrawn candidates', () => {
+    const q = ballotQuestions({
+      offerCandidates: true,
+      offerInitiatives: false,
+      positions: [pos('President'), pos('Treasurer', { unopposed_decision: 'elect' }), pos('Director', { seats: 2, unopposed_decision: 'keep_on_ballot' })],
+      candidates: [...candidates.slice(0, 4), cand('e', 'Director', '2026-12-01T00:00:00Z')],
+      initiatives: []
+    });
+    expect(q.positions.map((p) => [p.position, p.seats])).toEqual([
+      ['President', 1],
+      ['Director', 2]
+    ]);
+    expect(q.positions[1].candidates.map((c) => c.withdrawn)).toEqual([false, true]);
+  });
+
+  it('says everyone was elected unopposed only when nothing is left to vote for', () => {
+    const e = { type: 'leadership' as const, show_unopposed_status: null };
+    const two = [cand('a', 'President'), cand('c', 'Treasurer')];
+    expect(electedUnopposed(e, two, true, [pos('President', { unopposed_decision: 'elect' }), pos('Treasurer', { unopposed_decision: 'elect' })])).toBe(true);
+    expect(electedUnopposed(e, two, true, [pos('President', { unopposed_decision: 'keep_on_ballot' }), pos('Treasurer', { unopposed_decision: 'elect' })])).toBe(false);
+    // Without decisions (elections locked before this), the old all-or-nothing rule applies.
+    expect(electedUnopposed(e, two, false, [pos('President'), pos('Treasurer')])).toBe(true);
+    expect(electedUnopposed(e, two, true, [pos('President'), pos('Treasurer')])).toBe(false);
   });
 });
