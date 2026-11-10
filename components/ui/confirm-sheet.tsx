@@ -29,7 +29,8 @@ export function ConfirmSheet({
   confirmLabel,
   cancelLabel = 'Cancel',
   onConfirm,
-  pending = false
+  pending = false,
+  tone = 'default'
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,6 +40,8 @@ export function ConfirmSheet({
   cancelLabel?: React.ReactNode;
   onConfirm: () => void;
   pending?: boolean;
+  /** `destructive` draws the confirm button as the library's Destructive (danger outline), for deletions. */
+  tone?: 'default' | 'destructive';
 }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -58,7 +61,12 @@ export function ConfirmSheet({
           <AlertDialogCancel disabled={pending} className="max-md:h-11 max-md:border max-md:border-input max-md:bg-card">
             {cancelLabel}
           </AlertDialogCancel>
-          <Button onClick={onConfirm} disabled={pending} className="max-md:h-11">
+          <Button
+            onClick={onConfirm}
+            disabled={pending}
+            variant={tone === 'destructive' ? 'destructive' : 'default'}
+            className="max-md:h-11"
+          >
             {confirmLabel}
           </Button>
         </AlertDialogFooter>

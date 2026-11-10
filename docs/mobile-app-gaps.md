@@ -21,7 +21,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | W11 | **Abandoned payment attempts leave pending donation rows.** Each card or bank attempt saves a pending `donations` row before Stripe opens; leaving Stripe or trying again leaves it pending. | `submitDonation` (website and app) | Pending rows that never complete clutter the records. | Expire pending card/bank rows when the Checkout session expires (webhook `checkout.session.expired`), or create the row only on success. |
 | W12 | **Donations are matched to donors by email.** `getOrCreateDonor` looks donors up by email, so a gift entered with another person's email is filed under their donor record. | `utils/donation/handlers.ts` | Misattributed gifts, and the giver can't see their own gift (RLS). | For signed-in givers, match on `user_id` first. |
 | W13 | **The app's receipt routes report problems as redirects to website pages**, not `{ error }` JSON, because they wrap the website's PDF routes. The app shows a general "no receipt" message. | `app/api/app/receipts/contributions`, `app/api/app/donations/[donationId]/pdf` | Members don't see the real reason (for example, no payments that year). | Return 4xx JSON with the message from the app routes. |
-| W14 | **Funds bank balance.** The real bank and Stripe balances need the Stripe secret key, so only the server can read them. | `app/(portal)/community-funds`, `getBankBalance` | The app shows the website's fallback estimate. | `GET /api/app/community-funds/summary` for active members, reusing the website's functions. Planned in the Phase 3 consolidation pass. |
 
 ## Production settings and accounts (yours to do)
 
@@ -53,7 +52,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | F2 | The Ballot mock says votes are "saved as you go". They aren't: nothing counts until the member submits. The app says so. | Mock copy. |
 | F3 | The Account mock's footer has a placeholder EIN ("99-2495973"). The app leaves it out. | Provide the real line if wanted. |
 | F4 | The Payment mock (24:2699) shows an in-app payment sheet. On iOS, Stripe opens in Safari instead (plan §4). | Intentional until D1. |
-| F5 | Funds: the mock's "Available funds" and "Processing fees" need the bank and Stripe figures, which only the server can read. | The app shows the website's fallback estimate until the summary route exists (Phase 3 consolidation). |
 
 ## Known app limitations
 
@@ -65,8 +63,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | A4 | Taps in the iOS Simulator can't be automated from a Claude session: macOS blocks synthetic clicks without an Accessibility grant. iOS form flows are checked on Android and in the browser, and tapped by hand. | Not a product gap; affects how each phase is verified. |
 | A5 | **Browser testing needs a workaround for CORS.** The website sends CORS headers only to the app's native origins (`capacitor://localhost`, `https://localhost`), so testing the app in a desktop browser needs `--disable-web-security` or a relay. | Add a dev-only origin (for example `http://localhost:3200`) to `APP_ORIGINS` when `NODE_ENV !== 'production'`. Website change. |
 | A6 | **Local Checkout can't complete.** The e2e stack's active prices have fake Stripe IDs (`price_e2e_*`). | Seed real Stripe test-mode price IDs into the e2e stack. |
-| A7 | **The account deletion confirm button isn't red.** `ConfirmSheet` has no destructive tone, so the danger is carried by the wording only. | Add `tone="destructive"` to the shared `components/ui/confirm-sheet.tsx` (Phase 3 consolidation). |
-| A8 | **`/signin/new-password/` always returns to Home**, and its back button says "Cancel". When it's opened from Account › Password & sign-in, it should return to Account. | Pass a return path (Phase 3 consolidation). |
 | A9 | **Not yet checked live:** the contribution receipt PDF itself (no local member has Stripe payments), the portal return URL in Stripe, and the native share sheet. | The share code is the same path the donation receipt used successfully. Check on device in the manual checklist. |
 
 ## Done
@@ -76,3 +72,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | — | Privacy page was "Under construction" | PR #21 |
 | — | App links named `bcsseattle.org`, which redirects; now `www.bcsseattle.org` | `da1cdb8`, Phase 3 |
 | — | The app's donation route could charge a monthly gift once | `2578bb8`, Phase 3 |
+| — | Funds couldn't show the real bank and Stripe figures (was W14, F5): `GET /api/app/community-funds/summary` | Phase 3 |
+| — | Account deletion's confirm button wasn't marked destructive (was A7): `ConfirmSheet` `tone="destructive"` | Phase 3 |
+| — | The new password screen always returned to Home (was A8): `?from=account` returns to Account | Phase 3 |

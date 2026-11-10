@@ -174,6 +174,7 @@ export default function DeleteAccount() {
         open={confirming}
         onOpenChange={(open) => !pending && setConfirming(open)}
         title="Delete your account?"
+        tone="destructive"
         confirmLabel={pending ? 'Deleting…' : 'Delete my account'}
         onConfirm={remove}
         pending={pending}

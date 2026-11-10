@@ -39,7 +39,13 @@ jest.mock('@/utils/donation/handlers', () => ({ submitDonation: jest.fn() }));
 jest.mock('@/utils/fundraisers/handlers', () => ({ submitDonation: jest.fn() }));
 jest.mock('@/utils/membership/handlers', () => ({ registerMember: jest.fn() }));
 jest.mock('@/utils/elections/handlers', () => ({ nominateCandidate: jest.fn() }));
-jest.mock('@/utils/supabase/admin', () => ({ getStripePayments: jest.fn(), getTotalCustomerSpent: jest.fn() }));
+jest.mock('@/utils/supabase/admin', () => ({
+  getStripePayments: jest.fn(),
+  getTotalCustomerSpent: jest.fn(),
+  getBankBalance: jest.fn(),
+  getStripeAvailableBalance: jest.fn(),
+  getStripeRecentTransactions: jest.fn()
+}));
 jest.mock('@/app/(portal)/account/[memberId]/contributions/pdf/route', () => ({
   GET: jest.fn(async () => new Response('%PDF', { headers: { 'content-type': 'application/pdf' } }))
 }));
@@ -49,7 +55,13 @@ import { submitDonation } from '@/utils/donation/handlers';
 import { submitDonation as submitFundraiserDonation } from '@/utils/fundraisers/handlers';
 import { registerMember } from '@/utils/membership/handlers';
 import { nominateCandidate } from '@/utils/elections/handlers';
-import { getStripePayments, getTotalCustomerSpent } from '@/utils/supabase/admin';
+import {
+  getBankBalance,
+  getStripeAvailableBalance,
+  getStripePayments,
+  getStripeRecentTransactions,
+  getTotalCustomerSpent
+} from '@/utils/supabase/admin';
 import { GET as contributionsPdf } from '@/app/(portal)/account/[memberId]/contributions/pdf/route';
 import { POST as checkout } from '@/app/api/app/checkout/route';
 import { POST as billingPortal } from '@/app/api/app/billing-portal/route';
@@ -58,6 +70,7 @@ import { POST as giveToFundraiser } from '@/app/api/app/fundraisers/[id]/donatio
 import { POST as register } from '@/app/api/app/register/route';
 import { POST as nominate } from '@/app/api/app/elections/[id]/nominate/route';
 import { GET as fundsPayments } from '@/app/api/app/community-funds/payments/route';
+import { GET as fundsSummary } from '@/app/api/app/community-funds/summary/route';
 import { GET as memberTotal } from '@/app/api/app/members/[id]/total/route';
 import { GET as contributionReceipt } from '@/app/api/app/receipts/contributions/route';
 import { GET as confirmEmail } from '@/app/m/auth/confirm/route';
@@ -86,6 +99,7 @@ describe('every route needs a signed-in user', () => {
     ['register', () => register(json('/api/app/register', {}))],
     ['nominate', () => nominate(new NextRequest('http://localhost/x', { method: 'POST' }), id('e1'))],
     ['funds payments', () => fundsPayments(new NextRequest('http://localhost/x'))],
+    ['funds summary', () => fundsSummary()],
     ['member total', () => memberTotal(new Request('http://localhost/x'), id('m1'))],
     ['contribution receipt', () => contributionReceipt(new NextRequest('http://localhost/x'))]
   ])('%s answers 401 without one', async (_name, call) => {
@@ -366,5 +380,34 @@ describe('/.well-known deep-link files', () => {
       sha256_cert_fingerprints: ['AA:BB', 'CC:DD']
     });
     expect(assetlinks().headers.get('content-type')).toContain('application/json');
+  });
+});
+
+describe('GET /api/app/community-funds/summary', () => {
+  it('is for active members only', async () => {
+    mockDb.rows.members = { isApproved: true, status: 'pending' };
+    expect((await fundsSummary()).status).toBe(403);
+    expect(getStripeAvailableBalance).not.toHaveBeenCalled();
+  });
+
+  it("returns the totals /community-funds shows, in cents", async () => {
+    mockDb.rows.members = ACTIVE;
+    mocked(getStripeAvailableBalance).mockResolvedValue({ available: [{ amount: 1200 }], pending: [{ amount: 300 }] });
+    mocked(getStripeRecentTransactions).mockResolvedValue([{ fee: 59 }, { fee: 41 }]);
+    mocked(getBankBalance).mockResolvedValue({ amount: 500000, asOf: 1794000000 });
+    expect(await (await fundsSummary()).json()).toEqual({
+      bankBalance: 500000,
+      bankAsOf: 1794000000,
+      stripeBalance: 1500,
+      stripeFees: 100
+    });
+  });
+
+  it('reports no bank figures until a bank account is linked', async () => {
+    mockDb.rows.members = ACTIVE;
+    mocked(getStripeAvailableBalance).mockResolvedValue({ available: [], pending: [] });
+    mocked(getStripeRecentTransactions).mockResolvedValue([]);
+    mocked(getBankBalance).mockResolvedValue(null);
+    expect(await (await fundsSummary()).json()).toEqual({ bankBalance: null, bankAsOf: null, stripeBalance: 0, stripeFees: 0 });
   });
 });

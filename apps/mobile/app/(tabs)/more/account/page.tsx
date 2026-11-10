@@ -98,7 +98,7 @@ export default function Account() {
                   <ListGroup>
                     <ListRow label="Name" value={fullName ?? 'Add your name'} href="/more/account/name/" />
                     <ListRow label="Email" value={email} href="/more/account/email/" />
-                    <ListRow label="Password & sign-in" href="/signin/new-password/" />
+                    <ListRow label="Password & sign-in" href="/signin/new-password/?from=account" />
                   </ListGroup>
                 </Section>
               </>

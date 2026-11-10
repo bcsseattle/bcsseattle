@@ -14,9 +14,12 @@ import { Loaded } from '~/components/screen';
 import { CappedMoneyList } from '~/components/home/capped-money-list';
 import { MembersOnly } from '~/components/home/membership';
 import { MonthPayments } from '~/components/home/month-payments';
-import { must } from '~/lib/api';
+import { api, must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
 import { useData } from '~/lib/use-data';
+
+/** The totals only the website's server can read (GET /api/app/community-funds/summary), in cents. */
+type Summary = { bankBalance: number | null; bankAsOf: number | null; stripeBalance: number; stripeFees: number };
 
 const METHOD: Record<string, string> = {
   card: 'Card',
@@ -48,7 +51,7 @@ export default function FundsTab() {
 function Funds() {
   const [tab, setTab] = useState('contributions');
   const state = useData(async () => {
-    const [funds, expenses, donations, members] = await Promise.all([
+    const [funds, expenses, donations, members, summary] = await Promise.all([
       must(
         supabase
           .from('funds')
@@ -78,19 +81,22 @@ function Funds() {
         supabase
           .from('members')
           .select('fullName, customers(stripe_customer_id)')
-      )
+      ),
+      // Not fatal: without it the screen shows the estimate, as the website does before a bank is linked.
+      api<Summary>('/api/app/community-funds/summary').catch(() => null)
     ]);
     return {
       funds: funds ?? [],
       expenses: expenses ?? [],
       donations: donations ?? [],
-      members: members ?? []
+      members: members ?? [],
+      summary
     };
   });
 
   return (
     <Loaded state={state}>
-      {({ funds, expenses, donations, members }) => {
+      {({ funds, expenses, donations, members, summary }) => {
         // The website's figures (app/(portal)/community-funds): money received
         // outside Stripe is completed Zelle, check, cash or external donations.
         const received = funds.reduce((sum, f) => sum + f.amount, 0);
@@ -100,6 +106,9 @@ function Funds() {
           )
           .reduce((sum, d) => sum + d.donation_amount, 0);
         const spent = expenses.reduce((sum, e) => sum + e.amount, 0);
+        // As /community-funds: the linked bank's balance, or the estimate until one is linked.
+        const bank = summary?.bankBalance ?? received + offline - spent;
+        const stripe = summary?.stripeBalance ?? 0;
         // members.stripe_customer_id points at customers.id; the Stripe id is on customers.
         const names = new Map(
           members.flatMap((m) =>
@@ -113,21 +122,21 @@ function Funds() {
           <>
             <section aria-label="Overview" className="flex flex-col gap-2">
               <StatTile
-                label="Bank balance"
-                value={formatMoney(received + offline - spent)}
-                note="Estimated from records"
+                label="Available funds"
+                value={formatMoney(bank + stripe)}
+                note={`Bank + ${formatMoney(stripe)} in Stripe`}
               />
               <ListGroup>
-                <ListRow label="Funds received" value={formatMoney(received)} />
-                <ListRow
-                  label="Donations outside Stripe"
-                  value={formatMoney(offline)}
-                />
+                <ListRow label="Bank balance" value={formatMoney(bank)} />
+                <ListRow label="In Stripe" value={formatMoney(stripe)} />
                 <ListRow label="Expenses" value={formatMoney(-spent)} />
+                {summary && <ListRow label="Processing fees" value={formatMoney(-summary.stripeFees)} />}
               </ListGroup>
               <p className="px-1 text-caption text-muted-foreground">
-                The balance is funds received plus Zelle, check and cash
-                donations, less expenses. Private expenses are not shown.
+                {summary?.bankAsOf
+                  ? `Bank balance as of ${formatDate(summary.bankAsOf * 1000)}.`
+                  : `Bank balance estimated from records: funds received (${formatMoney(received)}) plus Zelle, check and cash donations (${formatMoney(offline)}), less expenses.`}{' '}
+                Private expenses are not shown.
               </p>
             </section>
 
