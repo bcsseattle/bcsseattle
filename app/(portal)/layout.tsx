@@ -35,11 +35,11 @@ export default async function PortalLayout({ children }: { children: React.React
 
   return (
     <div className="min-h-screen lg:flex">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r bg-card lg:block">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r bg-card lg:block print:hidden">
         <PortalSidebar isMember={isMember} isAdmin={isAdmin} />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-13 items-center gap-3 border-b bg-card px-4 lg:px-6">
+        <header className="flex h-13 items-center gap-3 border-b bg-card px-4 lg:px-6 print:hidden">
           <PortalMenu isMember={isMember} isAdmin={isAdmin} />
           <Breadcrumbs portal />
         </header>
