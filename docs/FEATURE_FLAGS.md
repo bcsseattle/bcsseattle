@@ -26,6 +26,12 @@ This application uses a comprehensive feature flag system that follows industry 
 - **Purpose**: Allows non-members to participate in voting
 - **Default**: `false`
 
+### `enableElectionManagement`
+- **Purpose**: Turns on the new Admin › Elections flow: the tabbed list, the step-by-step create and edit form, the election overview and its activity log (`docs/election-management-plan.md`). Off, `/admin/elections` shows the old read-only table.
+- **Env**: `FF_ENABLE_ELECTION_MANAGEMENT=true`
+- **Default**: `false`. The e2e suite turns it on.
+- The database rules behind it (statuses, the frozen ballot, the admin functions) apply whether the flag is on or off.
+
 ### `enableDebugMode`
 - **Purpose**: Shows debug information and logs feature flag context
 - **Default**: `true` in development, `false` in production

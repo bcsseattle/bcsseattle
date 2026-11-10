@@ -42,6 +42,8 @@ const env = {
   // No longer read by the app (BUG-053); the e2e check signs in with it to prove that.
   SUPABASE_DEFAULT_PASSWORD: 'e2e-default-password',
   CRON_SECRET: 'e2e-cron-secret',
+  // The suite covers the new Admin › Elections flow (docs/election-management-plan.md).
+  FF_ENABLE_ELECTION_MANAGEMENT: 'true',
   // Resend's client throws at import without a key; this one can never send.
   RESEND_API_KEY: 're_e2e_dummy_never_sends',
   // STRIPE_*_LIVE must stay *unset*, not blank: the app reads `LIVE ?? TEST`, so

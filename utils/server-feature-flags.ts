@@ -68,6 +68,7 @@ export async function getServerFeatureFlag(
     [FEATURE_FLAGS.SHOW_FEATURE_FLAGS]: 'showFeatureFlags',
     [FEATURE_FLAGS.ENABLE_NEW_UI]: 'enableNewUI',
     [FEATURE_FLAGS.ALLOW_ANONYMOUS_FEEDBACK]: 'allowAnonymousFeedback',
+    [FEATURE_FLAGS.ENABLE_ELECTION_MANAGEMENT]: 'enableElectionManagement',
   };
 
   // Build result object
