@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { BarChart3, ChevronRight, UserPlus } from 'lucide-react';
+import { PhaseTimeline } from '@/components/elections/phase-timeline';
+import { VotedCard } from '@/components/elections/voted-card';
 import { ListGroup, ListRow } from '@/components/portal/list-row';
 import { Badge } from '@/components/ui/badge';
 import { Banner } from '@/components/ui/banner';
@@ -15,7 +17,6 @@ import {
   loadElection,
   type ElectionData
 } from '~/components/elections/election';
-import { PhaseTimeline } from '~/components/elections/phase-timeline';
 import { useMember } from '~/lib/member';
 import { useSession } from '~/lib/session';
 import { useData } from '~/lib/use-data';
@@ -65,7 +66,14 @@ function Detail({ d, isActive }: { d: ElectionData; isActive?: boolean }) {
         )}
       </div>
 
-      <PhaseTimeline election={e} phase={p} />
+      <PhaseTimeline
+        election={e}
+        windows={p}
+        nominationsOpen={p.nominationsOpen}
+        // Only when separate periods are on, so candidate_voting_end applies (unlike the website, W16).
+        candidateVotingEnd={p.separate ? e.candidate_voting_end : null}
+        className="rounded-lg border bg-card p-4"
+      />
 
       {d.myCandidacy && (
         <Banner
@@ -156,9 +164,8 @@ function Detail({ d, isActive }: { d: ElectionData; isActive?: boolean }) {
                         <PersonRow
                           name={c.full_name}
                           imageUrl={c.photo_url}
-                          secondary={
-                            pos.candidates.length === 1 ? 'Unopposed' : c.bio
-                          }
+                          // Only once they are elected unopposed, as on the website.
+                          secondary={d.electedUnopposed ? 'Unopposed' : c.bio}
                           className="flex-1"
                         />
                         <ChevronRight
@@ -240,34 +247,18 @@ function MyVotes({ d }: { d: ElectionData }) {
   return (
     <Section label="Your ballot">
       {parts.map((part) => (
-        <div
+        <VotedCard
           key={part.title}
-          className="flex flex-col gap-3 rounded-lg border bg-card p-4"
+          title={part.title}
+          rows={part.rows}
+          headingLevel="h3"
+          className="shadow-none"
         >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-item text-foreground">{part.title}</h3>
-            <Badge tone="green">Submitted</Badge>
-          </div>
-          {part.rows.length > 0 && (
-            <dl className="text-sm">
-              {part.rows.map(([question, answer]) => (
-                <div
-                  key={question}
-                  className="flex justify-between gap-3 border-b py-2 last:border-b-0"
-                >
-                  <dt className="text-muted-foreground">{question}</dt>
-                  <dd className="text-right font-medium text-foreground">
-                    {answer}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          )}
           <Code
             code={part.session?.confirmation_code ?? null}
             when={part.session?.completed_at ?? null}
           />
-        </div>
+        </VotedCard>
       ))}
       {/* Older combined ballots have one confirmation for the whole election. */}
       {d.confirmations.map((c) => (

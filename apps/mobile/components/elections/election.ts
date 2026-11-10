@@ -1,129 +1,38 @@
 import type { Tables } from '@/types_db';
-import type { ElectionType } from '@/types';
-import { ELECTION_TYPE_CONFIGS } from '@/utils/election-types';
+import {
+  ballotOffer,
+  electedUnopposed as unopposed,
+  positionOrder,
+  votingWindows
+} from '@/utils/elections/rules';
 import { must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
 
 export type Election = Tables<'elections'>;
-type Window = { start: string; end: string };
-
-const within = (now: number, { start, end }: Window) =>
-  now >= Date.parse(start) && now <= Date.parse(end);
 
 /**
- * Where an election stands, by the same rules as the website: candidate voting
- * follows candidate_voting_start/end when separate periods are on (null means
- * the type's default, BUG-060), initiative voting follows start/end_date.
- * The server checks all of this again when a vote or nomination comes in.
+ * Where an election stands: the shared voting windows, plus the app's own
+ * nomination window and phase words. Nominations are open from start to end
+ * inclusive, as the server accepts them (the website differs, W15).
  */
 export function electionPhase(e: Election, now = Date.now()) {
-  const separate =
-    e.enable_separate_voting_periods ??
-    ELECTION_TYPE_CONFIGS[e.type as ElectionType]
-      ?.defaultSeparateVotingPeriods ??
-    false;
-  const candidateWindow = {
-    start: (separate && e.candidate_voting_start) || e.start_date,
-    end: (separate && e.candidate_voting_end) || e.end_date
-  };
+  const w = votingWindows(e, now);
   const nominationsOpen =
     !!e.nomination_start &&
     !!e.nomination_end &&
-    within(now, { start: e.nomination_start, end: e.nomination_end });
-  const candidateVotingOpen = within(now, candidateWindow);
-  const initiativeVotingOpen = within(now, {
-    start: e.start_date,
-    end: e.end_date
-  });
-  const votingOpen = candidateVotingOpen || initiativeVotingOpen;
-  const closed = now > Date.parse(e.end_date);
+    now >= Date.parse(e.nomination_start) &&
+    now <= Date.parse(e.nomination_end);
 
   // Status in words, never colour alone. Same precedence as the website's detail page.
   const phase = nominationsOpen
     ? { label: 'Nominations open', tone: 'orange' as const }
-    : votingOpen
+    : w.votingOpen
       ? { label: 'Voting open', tone: 'green' as const }
-      : closed
+      : w.closed
         ? { label: 'Closed', tone: 'neutral' as const }
         : { label: 'Upcoming', tone: 'neutral' as const };
 
-  return {
-    nominationsOpen,
-    candidateVotingOpen,
-    initiativeVotingOpen,
-    votingOpen,
-    closed,
-    candidateWindow,
-    separate,
-    phase
-  };
-}
-
-export type Position = {
-  position: string;
-  description: string | null;
-  display_order: number;
-};
-
-// The website's fallbacks (app/(portal)/elections/[id]/page.tsx) when election_positions has no rows for the type.
-const DEFAULT_POSITIONS: Record<string, [string, string][]> = {
-  leadership: [
-    [
-      'President',
-      'Chief executive officer who leads the organization and represents it publicly'
-    ],
-    [
-      'Vice President',
-      'Second in command who assists the president and steps in when needed'
-    ],
-    [
-      'Secretary',
-      'Records meeting minutes, manages correspondence, and maintains official documents'
-    ],
-    [
-      'Treasurer',
-      'Manages organizational finances, budget, and financial reporting'
-    ]
-  ],
-  board: [
-    ['Chairperson', 'Leads board meetings and oversees board activities'],
-    [
-      'Board Member',
-      'Participates in board decisions and organizational governance'
-    ]
-  ],
-  committee: [
-    [
-      'Committee Chair',
-      'Leads committee activities and coordinates with the board'
-    ],
-    [
-      'Committee Member',
-      'Participates in committee work and supports committee goals'
-    ]
-  ]
-};
-
-export function positionOrder(
-  type: string,
-  dbPositions: Position[],
-  candidates: { position: string }[]
-): Position[] {
-  if (dbPositions.length) return dbPositions;
-  const defaults = DEFAULT_POSITIONS[type];
-  if (defaults)
-    return defaults.map(([position, description], i) => ({
-      position,
-      description,
-      display_order: i + 1
-    }));
-  return Array.from(new Set(candidates.map((c) => c.position))).map(
-    (position, i) => ({
-      position,
-      description: null,
-      display_order: i + 1
-    })
-  );
+  return { ...w, nominationsOpen, phase };
 }
 
 /** A list query's rows, never null; errors thrown as their message. */
@@ -131,6 +40,21 @@ export async function rows<T>(
   query: PromiseLike<{ data: T[] | null; error: { message: string } | null }>
 ): Promise<T[]> {
   return (await must(query)) ?? [];
+}
+
+/**
+ * An election's type tags, as on the website's list: Leadership when
+ * positions are defined for its type (BUG-059), Initiatives when it has any.
+ */
+export function typeTags(
+  e: Pick<Election, 'id' | 'type'>,
+  positions: { election_type: string | null }[],
+  initiatives: { election_id: string | null }[]
+) {
+  return [
+    ...(positions.some((p) => p.election_type === e.type) ? ['Leadership'] : []),
+    ...(initiatives.some((i) => i.election_id === e.id) ? ['Initiatives'] : [])
+  ];
 }
 
 export const INITIATIVE_WORD = {
@@ -211,30 +135,19 @@ export async function loadElection(id: string, userId: string) {
   const votedInitiatives =
     !!session('initiatives') || votes.some((v) => v.initiative_id);
 
-  // shouldShowUnopposedStatus: after candidate voting, when no position was contested.
-  const showUnopposed =
-    election.show_unopposed_status ??
-    ELECTION_TYPE_CONFIGS[election.type as ElectionType]
-      ?.defaultShowUnopposedStatus ??
-    true;
-  const counts = new Map<string, number>();
-  candidates.forEach((c) =>
-    counts.set(c.position, (counts.get(c.position) ?? 0) + 1)
-  );
+  // Elected only once candidate voting has closed. The website's rule also
+  // says so before voting opens (during nominations); the app doesn't.
   const electedUnopposed =
-    showUnopposed &&
-    candidates.length > 0 &&
-    !p.candidateVotingOpen &&
-    Array.from(counts.values()).every((n) => n <= 1);
-
-  // What the ballot offers, as on the website's detail page.
-  const offerCandidates =
-    p.candidateVotingOpen &&
-    !votedCandidates &&
-    !electedUnopposed &&
-    candidates.length > 0;
-  const offerInitiatives =
-    p.initiativeVotingOpen && !votedInitiatives && initiatives.length > 0;
+    unopposed(election, candidates, p.candidateVotingOpen) &&
+    p.now > Date.parse(p.candidateWindow.end);
+  const { offerCandidates, offerInitiatives } = ballotOffer({
+    windows: p,
+    votedCandidates,
+    votedInitiatives,
+    electedUnopposed,
+    candidateCount: candidates.length,
+    initiativeCount: initiatives.length
+  });
 
   return {
     election,
@@ -258,27 +171,3 @@ export async function loadElection(id: string, userId: string) {
 }
 
 export type ElectionData = Awaited<ReturnType<typeof loadElection>>;
-
-/** The ballot's questions: positions in order with their candidates, then initiatives. */
-export function ballotQuestions(d: ElectionData) {
-  const positions = d.offerCandidates
-    ? d.positions
-        .map((p) => ({
-          position: p.position,
-          description: p.description,
-          candidates: d.candidates
-            .filter((c) => c.position === p.position)
-            .map((c) => ({ id: c.id, name: c.full_name, detail: c.bio }))
-        }))
-        .filter((p) => p.candidates.length > 0)
-    : [];
-  const initiatives = d.offerInitiatives
-    ? d.initiatives.map((i) => ({
-        id: i.id,
-        title: i.title,
-        description: i.description,
-        url: i.additional_info_url
-      }))
-    : [];
-  return { positions, initiatives };
-}

@@ -12,6 +12,7 @@ import { Loaded } from '~/components/screen';
 import {
   electionPhase,
   rows,
+  typeTags,
   type Election
 } from '~/components/elections/election';
 import { supabase } from '~/lib/supabase';
@@ -43,14 +44,7 @@ export default function ElectionsTab() {
     // Type tags as on the website: positions are defined per election type (BUG-059).
     const list: Row[] = elections.map((e) => ({
       ...e,
-      types: [
-        ...(positions.some((p) => p.election_type === e.type)
-          ? ['Leadership']
-          : []),
-        ...(initiatives.some((i) => i.election_id === e.id)
-          ? ['Initiatives']
-          : [])
-      ]
+      types: typeTags(e, positions, initiatives)
     }));
     const now = Date.now();
     return {

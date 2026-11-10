@@ -14,6 +14,12 @@ import { FundraiserTile } from '~/components/home/fundraiser-tile';
 import { ClosedPanel, membershipOf } from '~/components/home/membership';
 import { SiteLinkRows } from '~/components/home/site-link-rows';
 import { PROGRAMS } from '~/components/home/site-links';
+import {
+  ballotOffer,
+  electedUnopposed,
+  votingWindows
+} from '@/utils/elections/rules';
+import { rows, typeTags } from '~/components/elections/election';
 import { must } from '~/lib/api';
 import { useMember, type Me } from '~/lib/member';
 import { supabase } from '~/lib/supabase';
@@ -48,7 +54,6 @@ function Summary({ me }: { me: Me }) {
   const active = membership === 'active';
 
   const state = useData(async () => {
-    const now = new Date().toISOString();
     const [plans, fundraisers, elections] = await Promise.all([
       me.member
         ? must(
@@ -71,59 +76,77 @@ function Summary({ me }: { me: Me }) {
           .limit(1)
       ),
       active
-        ? must(
+        ? rows(
             supabase
               .from('elections')
-              .select('id, title, description, start_date, end_date')
-              .lte('start_date', now)
-              .gte('end_date', now)
+              .select('*')
               .order('end_date', { ascending: true })
           )
         : []
     ]);
-    // An election needs this member's vote while a part of its ballot (candidates, initiatives) isn't submitted.
+    // Open by the Elections tab's rules (the candidate window counts), and
+    // still offering this member a part of its ballot.
+    const open = elections.filter((e) => votingWindows(e).votingOpen);
+    const ids = open.map((e) => e.id);
     // candidates has no foreign key to elections, so each part is read on its own.
-    const ids = (elections ?? []).map((e) => e.id);
-    const [candidates, initiatives, sessions] = ids.length
+    const [positions, candidates, initiatives, sessions, votes] = ids.length
       ? await Promise.all([
-          must(
+          rows(supabase.from('election_positions').select('election_type')),
+          rows(
             supabase
               .from('candidates')
-              .select('election_id')
+              .select('election_id, position')
               .in('election_id', ids)
           ),
-          must(
+          rows(
             supabase
               .from('initiatives')
               .select('election_id')
               .in('election_id', ids)
           ),
-          must(
+          rows(
             supabase
               .from('vote_sessions')
               .select('election_id, session_type')
               .eq('user_id', me.userId)
               .not('completed_at', 'is', null)
               .in('election_id', ids)
+          ),
+          rows(
+            supabase
+              .from('votes')
+              .select('election_id, candidate_id, initiative_id')
+              .eq('user_id', me.userId)
+              .in('election_id', ids)
           )
         ])
-      : [[], [], []];
-    const has = (rows: { election_id: string | null }[] | null, id: string) =>
-      !!rows?.some((r) => r.election_id === id);
-    const done = (id: string, type: string) =>
-      !!sessions?.some((s) => s.election_id === id && s.session_type === type);
-    const toVote = (elections ?? [])
+      : [[], [], [], [], []];
+    const toVote = open
       .map((e) => {
-        const leadership = has(candidates, e.id);
-        const measures = has(initiatives, e.id);
+        const windows = votingWindows(e);
+        const mine = <T extends { election_id: string | null }>(list: T[]) =>
+          list.filter((r) => r.election_id === e.id);
+        const done = (type: string) =>
+          mine(sessions).some((s) => s.session_type === type);
+        // Votes from any ballot count, as on the election screen (BUG-016).
+        const { offerCandidates, offerInitiatives } = ballotOffer({
+          windows,
+          votedCandidates:
+            done('candidates') || mine(votes).some((v) => v.candidate_id),
+          votedInitiatives:
+            done('initiatives') || mine(votes).some((v) => v.initiative_id),
+          electedUnopposed: electedUnopposed(
+            e,
+            mine(candidates),
+            windows.candidateVotingOpen
+          ),
+          candidateCount: mine(candidates).length,
+          initiativeCount: mine(initiatives).length
+        });
         return {
           ...e,
-          types: [leadership && 'Leadership', measures && 'Initiatives'].filter(
-            Boolean
-          ) as string[],
-          open:
-            (leadership && !done(e.id, 'candidates')) ||
-            (measures && !done(e.id, 'initiatives'))
+          types: typeTags(e, positions, initiatives),
+          open: offerCandidates || offerInitiatives
         };
       })
       .filter((e) => e.open);
