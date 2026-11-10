@@ -29,6 +29,8 @@ import { sendSMS } from '../membership/handlers';
 type CheckoutResponse = {
   errorRedirect?: string;
   sessionId?: string;
+  /** The hosted Checkout page; the mobile app opens it in the browser. */
+  url?: string;
 };
 
 export async function checkoutWithStripe(
@@ -154,7 +156,7 @@ export async function checkoutWithStripe(
         console.error(err);
         throw new Error('Unable to update member record.');
       }
-      return { sessionId: session.id };
+      return { sessionId: session.id, url: session.url ?? undefined };
     } else {
       throw new Error('Unable to create checkout session.');
     }
@@ -304,7 +306,7 @@ export async function checkoutWithStripeForDonation(
         console.error(err);
         throw new Error('Unable to update donation record.');
       }
-      return { sessionId: session.id };
+      return { sessionId: session.id, url: session.url ?? undefined };
     } else {
       throw new Error('Unable to create checkout session.');
     }
@@ -382,7 +384,7 @@ export async function checkoutWithStripeForFundraiser(
     const session = await stripe.checkout.sessions.create(params);
     
     if (session) {
-      return { sessionId: session.id };
+      return { sessionId: session.id, url: session.url ?? undefined };
     } else {
       throw new Error('Unable to create checkout session.');
     }
@@ -407,7 +409,7 @@ export async function checkoutWithStripeForFundraiser(
   }
 }
 
-export async function createStripePortal(currentPath: string) {
+export async function createStripePortal(currentPath: string, returnPath: string = '/account') {
   try {
     const supabase = await createClient();
     const {
@@ -440,7 +442,7 @@ export async function createStripePortal(currentPath: string) {
     try {
       const { url } = await stripe.billingPortal.sessions.create({
         customer,
-        return_url: getURL('/account')
+        return_url: getURL(returnPath)
       });
       if (!url) {
         throw new Error('Could not create billing portal');
