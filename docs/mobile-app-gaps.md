@@ -39,7 +39,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Item | Notes |
 |---|---|---|
-| P1 | **Apply the account deletion migration** `20261109120000_account_deletion.sql` to production. | Production migration history must be repaired first (BUG-071 in `docs/BUGS.md`) before `supabase db push` will run. |
+| P1 | **Apply the pending migrations to production** with `supabase db push --linked` after the PRs merge: `20261108050000`–`20261108080000` (already on `develop`), `20261109120000`, `20261109130000` (#22) and `20261110090000` (#23). | BUG-071 was fixed on 2026-11-08 (history repaired), so `db push` works. Run `db push --linked --dry-run` first; steps in the reply of 10 Nov 2026 (back up, dry run, push, `migration list --linked`). |
 | P2 | **Supabase redirect allowlist:** add `https://www.bcsseattle.org/m/**` and `org.bcsseattle.app://**`. | It's the www host: `bcsseattle.org` 308-redirects to www, and Apple doesn't follow redirects for app links. |
 | P3 | **Email templates** (Magic Link, Reset Password) must include `{{ .Token }}`. Later, point the links at `{{ .SiteURL }}/m/auth/confirm?token_hash={{ .TokenHash }}&type=…`. | The app's code screens depend on the token. |
 | P4 | **Vercel env:** `APPLE_TEAM_ID`, `ANDROID_CERT_SHA256`. Confirm `NEXT_PUBLIC_SITE_URL=https://www.bcsseattle.org`. | Until they're set, the association files return 404, so app links over https don't work. |
