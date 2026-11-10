@@ -273,7 +273,7 @@ It's additive; no existing page changes.
 
 | Feature | What members get | Backend work | Plugins |
 |---|---|---|---|
-| **Push notifications** | Election opening and closing reminders, nominations open, "a payment failed" | <ul><li>A `device_tokens` table (user, platform, token) with RLS: owner insert and delete. **Schema change, needs approval.**</li><li>`POST`/`DELETE` `/api/app/devices`.</li><li>Sender: FCM HTTP v1 for both platforms (APNs through FCM), using a service-account secret on the server, signed with Node `crypto` so nothing new is added.</li><li>Triggers: the existing Stripe webhook's failed-payment branch (next to `sendPaymentFailedEmail`), and a daily cron that finds elections opening or closing in the next 24 hours (`vercel.json`).</li></ul> | `@capacitor/push-notifications` (official). A Firebase project (yours). |
+| **Push notifications** (built in Phase 4: iOS goes straight to APNs, so the iOS app needs no Firebase SDK; Android through FCM HTTP v1) | Election opening and closing reminders, nominations open, "a payment failed" | <ul><li>A `device_tokens` table (user, platform, token) with RLS: owner insert and delete. **Schema change, needs approval.**</li><li>`POST`/`DELETE` `/api/app/devices`.</li><li>Sender: FCM HTTP v1 for both platforms (APNs through FCM), using a service-account secret on the server, signed with Node `crypto` so nothing new is added.</li><li>Triggers: the existing Stripe webhook's failed-payment branch (next to `sendPaymentFailedEmail`), and a daily cron that finds elections opening or closing in the next 24 hours (`vercel.json`).</li></ul> | `@capacitor/push-notifications` (official). A Firebase project (yours). |
 | **Biometric unlock** | Face ID or fingerprint to reopen the app after 5 minutes in the background. Tokens stay in Keychain/Keystore either way. | None | `@aparajita/capacitor-biometric-auth` (community). `NSFaceIDUsageDescription`. |
 | **Offline / retry** | A clear offline screen with Retry instead of a broken page. Votes and payments are never queued offline. The confirm step needs a connection. | None | `@capacitor/network` (official) |
 | **Share and save receipt PDFs** | Contribution receipt for a tax year and donation receipts: save to Files, print, email. | None beyond the bearer-aware `createClient()`: the existing PDF routes work as they are. | `@capacitor/filesystem` and `@capacitor/share` (official) |
@@ -358,7 +358,7 @@ Every phase runs `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm test`, `pnpm build
 | 6 | Candid Seal | Open; doesn't block v1. |
 | 7 | Icon master art | Open (Phase 5). |
 | 8 | Review test account | Open (Phase 5). |
-| 9 | Plugins | Approved: core, cli, ios, android, app, app-launcher, browser, filesystem, share, secure storage. Push and network come with Phase 4. |
+| 9 | Plugins | Approved: core, cli, ios, android, app, app-launcher, browser, filesystem, share, secure storage; push-notifications and network (Phase 4, under decision 4). Phase 4 also adds **text-zoom** so text follows Dynamic Type and Android's font size (the brief's requirement; CSS alone doesn't reach the iOS web view). |
 
 ## 10. What you need to do outside the code
 

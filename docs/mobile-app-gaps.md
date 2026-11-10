@@ -46,6 +46,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | P5 | **Stripe customer portal:** decide whether members may pause or cancel there. | It's a Stripe dashboard setting, not code. |
 | P6 | **Privacy policy:** have it reviewed (PR #21). Add a mailing address if you want one shown. | Required by both stores. |
 | P7 | **Apple Developer and Google Play accounts:** Team ID, signing, enabling Associated Domains on `org.bcsseattle.app`, and the Play App Signing SHA-256. | See plan §10. |
+| P8 | **Push notifications:** (1) Apple Developer › Keys: create a key with APNs, then set `APNS_KEY` (the .p8 contents), `APNS_KEY_ID` and `APNS_PRODUCTION=true` for TestFlight/App Store builds in Vercel; enable Push Notifications on the `org.bcsseattle.app` App ID. (2) Create a Firebase project with an Android app `org.bcsseattle.app`; put its `google-services.json` in `apps/mobile/android/app/`, set `FCM_SERVICE_ACCOUNT` (service account JSON) in Vercel, and build the app with `NEXT_PUBLIC_ANDROID_PUSH=1`. (3) Apply migration `20261110090000_device_tokens.sql` to production. | Until then nothing is sent and the app hides the Notifications row on Android; iOS shows it. |
 
 ## Decisions still open
 
@@ -69,7 +70,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Limitation | Notes |
 |---|---|---|
-| A1 | On iOS, the Keychain keeps the session after the app is deleted, so reinstalling can come back signed in. | Clear it on first launch (Phase 4) if wanted. |
 | A2 | Home can't say whether this month's contribution was paid. That's only known in Stripe. | It shows the plan and its renewal date instead. |
 | A3 | The app's unit tests (`node --test`) can't import `@/` paths, so the elections phase logic is covered by Playwright runs, not unit tests. | Add a small test setup that resolves `@/` if this grows. |
 | A4 | Taps in the iOS Simulator can't be automated from a Claude session: macOS blocks synthetic clicks without an Accessibility grant. iOS form flows are checked on Android and in the browser, and tapped by hand. | Not a product gap; affects how each phase is verified. |
@@ -87,3 +87,4 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | — | Funds couldn't show the real bank and Stripe figures (was W14, F5): `GET /api/app/community-funds/summary` | Phase 3 |
 | — | Account deletion's confirm button wasn't marked destructive (was A7): `ConfirmSheet` `tone="destructive"` | Phase 3 |
 | — | The new password screen always returned to Home (was A8): `?from=account` returns to Account | Phase 3 |
+| — | iOS reinstall came back signed in (was A1): the stored session is wiped on the first launch after an install | Phase 4 |

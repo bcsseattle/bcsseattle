@@ -7,6 +7,7 @@ import type { Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { supabase } from '~/lib/supabase';
 import { parseAppLink } from '~/lib/app-links';
+import { listenForPush, startPush } from '~/lib/push';
 
 type SessionState = { session: Session | null; ready: boolean };
 const SessionContext = createContext<SessionState>({ session: null, ready: false });
@@ -51,11 +52,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         isActive ? supabase.auth.startAutoRefresh() : supabase.auth.stopAutoRefresh()
       )
     ];
+    const stopPush = listenForPush((url) => router.push(url));
     return () => {
+      stopPush();
       data.subscription.unsubscribe();
       listeners.forEach((listener) => listener.then((l) => l.remove()));
     };
   }, [router]);
+
+  // Signed in: register this device for notifications if the member already allowed them (never asks here).
+  const userId = state.session?.user.id;
+  useEffect(() => {
+    if (userId) startPush().catch(() => undefined);
+  }, [userId]);
 
   return <SessionContext.Provider value={state}>{children}</SessionContext.Provider>;
 }

@@ -92,6 +92,27 @@ export type Database = {
         }
         Relationships: []
       }
+      device_tokens: {
+        Row: {
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          platform: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       donations: {
         Row: {
           currency: string | null
@@ -1384,6 +1405,10 @@ export type Database = {
           votes_per_user_avg: number
           suspicious_activity_count: number
         }[]
+      }
+      register_device: {
+        Args: { p_token: string; p_platform: string }
+        Returns: undefined
       }
       user_can_vote_in_session: {
         Args: {

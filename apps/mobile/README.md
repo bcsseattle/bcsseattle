@@ -34,3 +34,18 @@ echo 'NEXT_PUBLIC_SITE_URL=http://localhost:3100' >> .env.local
 To open a link in the app from the command line:
 - iOS: `xcrun simctl openurl booted 'org.bcsseattle.app://return/portal'`. iOS asks "Open in BCS Seattle?" first.
 - Android: `adb shell am start -a android.intent.action.VIEW -d "'org.bcsseattle.app://return/portal'"`. Quote the URL, or the device's shell cuts it at `&`.
+
+## Push notifications
+
+- **Server:** `utils/push.ts` sends to iOS through APNs and to Android through FCM. Each platform is skipped until its env values are set (see the root `.env.example`).
+- **Senders:** the Stripe webhook (failed payment) and the daily `/api/cron/election-reminders`.
+- **App:** Account › Notifications asks for permission; the app never asks on launch. A tapped notification opens its `url`.
+- **Android:** add `android/app/google-services.json` from your Firebase project, then build with `NEXT_PUBLIC_ANDROID_PUSH=1`.
+- **Simulator test (iOS):** this shows a notification without APNs; tapping it opens `url`:
+  ```sh
+  xcrun simctl push booted org.bcsseattle.app payload.json
+  ```
+  with `payload.json`:
+  ```json
+  {"aps":{"alert":{"title":"Voting is open","body":"Cast your ballot."}},"url":"/elections/"}
+  ```
