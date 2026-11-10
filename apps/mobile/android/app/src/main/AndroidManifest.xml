@@ -36,7 +36,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="bcsseattle.org" android:pathPrefix="/m/" />
+                <data android:scheme="https" android:host="www.bcsseattle.org" android:pathPrefix="/m/" />
             </intent-filter>
 
         </activity>

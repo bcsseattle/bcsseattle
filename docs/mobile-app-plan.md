@@ -157,7 +157,7 @@ pnpm-workspace.yaml          # packages: ['apps/*']; the root stays the website
     ```
   - Use the fingerprint from Play Console › App signing, not your local keystore.
   - Apple's CDN can take up to 24 hours to pick up AASA changes.
-- **Supabase redirect allowlist** (for you to add): `https://bcsseattle.org/m/**` and `org.bcsseattle.app://**`.
+- **Supabase redirect allowlist** (for you to add): `https://www.bcsseattle.org/m/**` and `org.bcsseattle.app://**`.
 
 ### 3.4 OAuth and Sign in with Apple
 OAuth is off, so guideline 4.8 doesn't apply. Its exemption: "Another login service is not required if: Your app exclusively uses your company's own account setup and sign-in systems."
@@ -351,7 +351,7 @@ Every phase runs `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm test`, `pnpm build
 | # | Decision | Answer (9 Nov 2026) |
 |---|---|---|
 | 1 | Architecture | **C**, a static Next.js app in `apps/mobile`. |
-| 2 | Domain, name, IDs | `bcsseattle.org`, "BCS Seattle", `org.bcsseattle.app`. |
+| 2 | Domain, name, IDs | `www.bcsseattle.org` (the bare domain redirects there, and Apple doesn't follow redirects for app links), "BCS Seattle", `org.bcsseattle.app`. |
 | 3 | Account deletion | **(a) migration** (`20261109120000_account_deletion.sql`), `POST /api/app/account/delete`, and the public `/account-deletion` page. |
 | 4 | Native features | The necessary ones: **push notifications** (with the `device_tokens` table), offline screen, saving and sharing receipt PDFs. Not biometrics or haptics. |
 | 5 | Member directory | A **More** tab replaces Account as the fifth tab. It holds **Account**, **Members** (the directory) and **Resources**. |
@@ -368,7 +368,7 @@ Every phase runs `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm test`, `pnpm build
 - **Firebase project** (if push is approved): `GoogleService-Info.plist` and `google-services.json`, an APNs auth key uploaded to Firebase, and an FCM service-account key stored as a server secret in Vercel.
 
 **Supabase (production)**
-- Add `https://bcsseattle.org/m/**` and `org.bcsseattle.app://**` to the redirect allowlist.
+- Add `https://www.bcsseattle.org/m/**` and `org.bcsseattle.app://**` to the redirect allowlist.
 - Check that the email templates include `{{ .Token }}`.
 - Later, switch the links to `/m/auth/confirm?token_hash=…` (§3.3).
 
