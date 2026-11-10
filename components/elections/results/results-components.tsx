@@ -9,6 +9,7 @@ import { Trophy, TrendingUp, Users, Vote, BarChart3, Crown, Building } from 'luc
 import { ElectionResults } from '@/hooks/useElectionResults';
 import { getElectionTypeDescription, supportsUnopposedCandidates } from '@/utils/election-types';
 import { ElectionType } from '@/types';
+import { candidateResultWord, initiativeResultWord } from '@/utils/elections/rules';
 import { formatDeadline } from '@/utils/format';
 
 interface ResultsOverviewProps {
@@ -321,12 +322,23 @@ export function CandidateResults({ results }: CandidateResultsProps) {
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{candidate.fullName}</p>
-                        {index === 0 && candidate.voteCount > 0 && (
-                          <Badge variant="default" className="bg-primary text-primary-foreground">
-                            <Trophy className="h-3 w-3 mr-1" />
-                            Leading
-                          </Badge>
-                        )}
+                        {(() => {
+                          // W17: final words once voting is over, the certified outcome when there is one.
+                          const word = candidateResultWord({
+                            outcome: candidate.outcome,
+                            isTop: index === 0,
+                            votes: candidate.voteCount,
+                            votingOpen: results.votingStatus.candidateVotingOpen
+                          });
+                          return (
+                            word && (
+                              <Badge tone={word === 'Withdrawn' ? 'neutral' : 'green'}>
+                                {word !== 'Withdrawn' && <Trophy aria-hidden className="h-3 w-3 mr-1" />}
+                                {word}
+                              </Badge>
+                            )
+                          );
+                        })()}
                       </div>
                       {candidate.bio && (
                         <p className="text-sm text-muted-foreground line-clamp-2">
@@ -420,20 +432,16 @@ export function InitiativeResults({ results }: InitiativeResultsProps) {
             {/* Result indicator */}
             <div className="pt-4 border-t">
               <div className="flex items-center justify-center">
-                {initiative.votes.yes > initiative.votes.no ? (
-                  <Badge variant="default" className="bg-primary">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    Currently Passing
-                  </Badge>
-                ) : initiative.votes.no > initiative.votes.yes ? (
-                  <Badge variant="destructive">
-                    Currently Failing
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">
-                    Tied
-                  </Badge>
-                )}
+                {(() => {
+                  const { word, tone } = initiativeResultWord({
+                    outcome: initiative.outcome,
+                    note: initiative.note,
+                    yes: initiative.votes.yes,
+                    no: initiative.votes.no,
+                    votingOpen: results.votingStatus.initiativeVotingOpen
+                  });
+                  return <Badge tone={tone}>{word}</Badge>;
+                })()}
               </div>
             </div>
           </CardContent>

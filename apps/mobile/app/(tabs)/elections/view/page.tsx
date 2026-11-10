@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { BarChart3, ChevronRight, UserPlus } from 'lucide-react';
+import { ChevronRight, UserPlus } from 'lucide-react';
 import { PhaseTimeline } from '@/components/elections/phase-timeline';
 import { VotedCard } from '@/components/elections/voted-card';
 import { ListGroup, ListRow } from '@/components/portal/list-row';
@@ -52,7 +52,7 @@ function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; 
     ? { label: 'Vote', href: `/elections/ballot/?id=${e.id}` }
     : canNominate
       ? { label: 'Nominate yourself', href: `/elections/nominate/?id=${e.id}` }
-      : p.closed
+      : p.stage === 'results_published' || p.stage === 'archived'
         ? { label: 'View results', href: results }
         : null;
 
@@ -113,8 +113,12 @@ function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; 
 
       <MyVotes d={d} />
 
-      {(p.votingOpen ||
-        (canNominate && primary?.label !== 'Nominate yourself')) && (
+      {p.votingOver && (e.status === 'ballot_locked' || e.status === 'certified') && (
+        <Banner tone="info" title="Voting has closed">
+          Results are published once the votes are certified.
+        </Banner>
+      )}
+      {canNominate && primary?.label !== 'Nominate yourself' && (
         <ListGroup>
           {canNominate && primary?.label !== 'Nominate yourself' && (
             <ListRow
@@ -123,9 +127,7 @@ function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; 
               href={`/elections/nominate/?id=${e.id}`}
             />
           )}
-          {p.votingOpen && (
-            <ListRow label="Live results" icon={BarChart3} href={results} />
-          )}
+
         </ListGroup>
       )}
 
