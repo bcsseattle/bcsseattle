@@ -534,6 +534,7 @@ export type Database = {
       }
       elections: {
         Row: {
+          cancel_reason: string | null
           candidate_voting_end: string | null
           candidate_voting_start: string | null
           created_at: string | null
@@ -558,6 +559,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          cancel_reason?: string | null
           candidate_voting_end?: string | null
           candidate_voting_start?: string | null
           created_at?: string | null
@@ -582,6 +584,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          cancel_reason?: string | null
           candidate_voting_end?: string | null
           candidate_voting_start?: string | null
           created_at?: string | null
@@ -1695,6 +1698,7 @@ export type Database = {
       election_for_admin_action: {
         Args: { p_action: string; p_election: string; p_reason?: string }
         Returns: {
+          cancel_reason: string | null
           candidate_voting_end: string | null
           candidate_voting_start: string | null
           created_at: string | null

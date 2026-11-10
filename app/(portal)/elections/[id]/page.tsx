@@ -200,6 +200,16 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         </Banner>
       )}
 
+      {election.status === 'cancelled' && (
+        <Banner tone="attention" title="This election was cancelled">
+          {election.cancel_reason ?? 'Nothing from it will be counted.'}
+        </Banner>
+      )}
+      {windows.phase === 'draft' && (
+        <Banner tone="info" title="Preview">
+          This is how members will see the election once it’s published. Only admins can see a draft.
+        </Banner>
+      )}
       {isNominationOpen && (
         <Banner
           tone="info"

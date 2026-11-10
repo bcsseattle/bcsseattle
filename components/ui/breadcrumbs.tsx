@@ -49,7 +49,6 @@ const TITLES: Record<string, string> = {
   terms: 'Terms of use',
   vision: 'Vision',
   vote: 'Vote',
-  'voting-config': 'Voting settings',
   'what-we-do': 'What we do',
   'youth-programs': 'Youth programs',
   // Sign-in views (/signin/[id], utils/auth-helpers/settings.ts)

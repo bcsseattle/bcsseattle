@@ -115,7 +115,7 @@ Baloch Community Services of Seattle (BCSS) is a 501(c)(3) serving Baloch famili
 | Separate candidate voting period, early close, "Elected Unopposed" | ❌ | | Logic always returns "open"; can only be set in SQL |
 | Feature flags (env, database, URL override) | ⚠️ | `utils/feature-flags.ts` | The URL override works in production for anyone (BUG-020) |
 | Security self-test endpoint | ⚠️ | `/api/elections/security` | Admin check is commented out |
-| Debug pages | ✅ | `/admin/voting-config`, `/admin/election-types` | Admin-only since 2026-11-08 (BUG-078) |
+| Debug pages | Removed | — | Deleted with the elections work (Phase 1 and 2): the new Admin › Elections screens show the same information. |
 
 ---
 
@@ -129,7 +129,7 @@ All 70 bugs (BUG-001–070) are tracked in [BUGS.md](BUGS.md), grouped as Critic
 
 ### 5.1 Admin tooling (biggest product gap)
 
-- **GAP-A1. Election admin.** Only `/admin/members` exists. Creating elections, positions, candidates and initiatives, and closing voting early, all need SQL. The helpers in `utils/election-admin.ts` have no callers.
+- **GAP-A1. Election admin.** In progress: `docs/election-management-plan.md`. Phase 2 adds the admin list, the step-by-step form and the overview, behind `enableElectionManagement`.
 - **GAP-A2. Fundraiser admin.** Can create, but can't edit (BUG-017), post updates, see a donation list, export donors, publish from draft, or set a minimum donation.
 - **GAP-A3. One admin model.** Admin is decided in four ways: `users.is_admin`, `profiles.is_admin`, `user_metadata.role`, plus a `user_roles` table and `profiles.role` column that don't exist. Pick one and enforce it in RLS. There is no UI to grant admin.
 - ~~**GAP-A4. Debug pages.**~~ Done 2026-11-08: moved to `/admin/voting-config` and `/admin/election-types` (BUG-078).

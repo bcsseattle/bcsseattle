@@ -30,7 +30,8 @@ export function ConfirmSheet({
   cancelLabel = 'Cancel',
   onConfirm,
   pending = false,
-  tone = 'default'
+  tone = 'default',
+  fields
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -42,6 +43,8 @@ export function ConfirmSheet({
   pending?: boolean;
   /** `destructive` draws the confirm button as the library's Destructive (danger outline), for deletions. */
   tone?: 'default' | 'destructive';
+  /** Form fields shown under the description (the description itself is a paragraph). */
+  fields?: React.ReactNode;
 }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -57,6 +60,7 @@ export function ConfirmSheet({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription className="max-md:text-muted-foreground">{children}</AlertDialogDescription>
         </AlertDialogHeader>
+        {fields}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending} className="max-md:h-11 max-md:border max-md:border-input max-md:bg-card">
             {cancelLabel}
