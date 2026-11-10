@@ -5,25 +5,17 @@ import Link from 'next/link';
 import { Clock, Lock, UserPlus, UserX } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import { StatePanel } from '@/components/ui/state-panel';
+import { Badge } from '@/components/ui/badge';
+import type { Tables } from '@/types_db';
+import { memberState, membershipOf, type Membership } from '~/components/account/labels';
 import { Loaded } from '~/components/screen';
 import { openInApp } from '~/lib/open';
 import { useMember, type Me } from '~/lib/member';
 
-export type Membership =
-  | 'none'
-  | 'pending'
-  | 'rejected'
-  | 'inactive'
-  | 'active';
-
-/** Where the signed-in person stands, in the website's terms (members/[id]/pending, community-funds redirects). */
-export function membershipOf(me: Me): Membership {
-  const m = me.member;
-  if (!m) return 'none';
-  if (me.isActive) return 'active';
-  if (m.status === 'rejected') return 'rejected';
-  if (!m.isApproved) return 'pending';
-  return 'inactive';
+/** A member's state as a badge, in words (Account, the directory, a profile). */
+export function MemberBadge({ member }: { member: Tables<'members'> | null }) {
+  const { label, tone } = memberState(member);
+  return <Badge tone={tone}>{label}</Badge>;
 }
 
 /** Why a members-only screen is closed to this person, and their one way forward. */
@@ -91,7 +83,7 @@ export function MembersOnly({ children }: { children: (me: Me) => ReactNode }) {
   return (
     <Loaded state={me}>
       {(data) => {
-        const membership = membershipOf(data);
+        const membership = membershipOf(data.member);
         return membership === 'active' ? (
           children(data)
         ) : (

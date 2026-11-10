@@ -8,6 +8,7 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 import { StatePanel } from '@/components/ui/state-panel';
 import { StatTile } from '@/components/ui/stat-tile';
 import { formatDate, formatMoney } from '@/utils/format';
+import { paidWith } from '@/utils/giving';
 import { purposeTitleMap } from '@/utils/helpers';
 import { AppHeader } from '~/components/app-header';
 import { Loaded } from '~/components/screen';
@@ -20,15 +21,6 @@ import { useData } from '~/lib/use-data';
 
 /** The totals only the website's server can read (GET /api/app/community-funds/summary), in cents. */
 type Summary = { bankBalance: number | null; bankAsOf: number | null; stripeBalance: number; stripeFees: number };
-
-const METHOD: Record<string, string> = {
-  card: 'Card',
-  us_bank_account: 'Bank',
-  zelle: 'Zelle',
-  check: 'Check',
-  cash: 'Cash',
-  external: 'External'
-};
 
 /**
  * Community funds (Figma 19:2389), the same data as the website's
@@ -174,7 +166,7 @@ function Funds() {
                         }
                         secondary={[
                           purposeTitleMap[d.purpose ?? ''] ?? 'Donation',
-                          METHOD[d.payment_method ?? '']
+                          d.payment_method && paidWith(d.payment_method)
                         ]
                           .filter(Boolean)
                           .join(' · ')}

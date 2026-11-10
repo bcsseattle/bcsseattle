@@ -3,13 +3,12 @@
 import Link from 'next/link';
 import { ChevronRight, Users } from 'lucide-react';
 import { ListGroup } from '@/components/portal/list-row';
-import { MemberStatusBadge } from '@/components/portal/member-row';
 import { PersonRow } from '@/components/ui/person-row';
 import { StatePanel } from '@/components/ui/state-panel';
 import { StatTile } from '@/components/ui/stat-tile';
-import { formatMoney } from '@/utils/format';
 import { Loaded, Screen } from '~/components/screen';
-import { MembersOnly } from '~/components/home/membership';
+import { familyQuantity, membershipOf, priceLabel } from '~/components/account/labels';
+import { MemberBadge, MembersOnly } from '~/components/home/membership';
 import { must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
 import { useData } from '~/lib/use-data';
@@ -33,7 +32,7 @@ function Directory() {
           .order('fullName', { ascending: true })
       ),
       must(supabase.from('subscriptions').select('id, status, price_id')),
-      must(supabase.from('prices').select('id, unit_amount, interval'))
+      must(supabase.from('prices').select('id, unit_amount, interval, interval_count'))
     ]);
     return {
       members: members ?? [],
@@ -45,13 +44,13 @@ function Directory() {
   return (
     <Loaded state={state}>
       {({ members, subscriptions, prices }) => {
-        const active = members.filter((m) => m.status === 'active');
-        // The website's plan column: the plan's price times the family size, or "Yet to choose" without an active plan.
+        const active = members.filter((m) => membershipOf(m) === 'active');
+        // The website's plan column: the plan's price times the family size, capped at 5 as Checkout caps it.
         const plan = (m: (typeof members)[number]) => {
           const sub = subscriptions.find((s) => s.id === m.subscription_id);
           const price = prices.find((p) => p.id === sub?.price_id);
           return sub?.status === 'active'
-            ? `${formatMoney((price?.unit_amount ?? 0) * (m.totalMembersInFamily ?? 0))} / ${price?.interval}`
+            ? priceLabel(price, familyQuantity(m.totalMembersInFamily))
             : 'No contribution plan yet';
         };
         return (
@@ -86,7 +85,7 @@ function Directory() {
                           secondary={[m.city, plan(m)]
                             .filter(Boolean)
                             .join(' · ')}
-                          trailing={<MemberStatusBadge status={m.status} />}
+                          trailing={<MemberBadge member={m} />}
                         />
                         <ChevronRight
                           aria-hidden

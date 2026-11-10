@@ -3,15 +3,16 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { SearchX } from 'lucide-react';
+import { FundraiserImage } from '@/components/fundraisers/fundraiser-card';
 import { FundraiserProgress } from '@/components/fundraisers/fundraiser-progress';
 import { MoneyList, MoneyRow } from '@/components/portal/money-row';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { StatePanel } from '@/components/ui/state-panel';
 import { formatDate, formatMoney } from '@/utils/format';
+import { categoryLabel, isOpen } from '@/utils/giving';
 import { ListGroup } from '@/components/portal/list-row';
 import { Loaded, Screen, Section } from '~/components/screen';
-import { FundraiserImage, categoryLabel, isOpen } from '~/components/give/fundraiser-card';
 import { must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
 import { useData } from '~/lib/use-data';

@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Banknote, ChevronRight, FileText, Receipt, SlidersHorizontal, Trash2, UserPlus } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PersonRow } from '@/components/ui/person-row';
 import { ListGroup, ListRow } from '@/components/portal/list-row';
 import { AppHeader } from '~/components/app-header';
 import { Loaded, RowButton, Section } from '~/components/screen';
-import { memberState, priceLabel } from '~/components/account/labels';
+import { priceLabel } from '~/components/account/labels';
 import { loadMembership, openBillingPortal } from '~/components/account/membership';
+import { MemberBadge } from '~/components/home/membership';
 import { useMember } from '~/lib/member';
 import { useSession } from '~/lib/session';
 import { signOut } from '~/lib/supabase';
@@ -30,7 +30,6 @@ export default function Account() {
       <div className="flex flex-col gap-6 px-4 py-4 pb-8">
         <Loaded state={me}>
           {({ member, fullName, email }) => {
-            const state = memberState(member);
             const extra = membership.data;
             const gifts = extra?.gifts;
             return (
@@ -45,7 +44,7 @@ export default function Account() {
                         : 'You haven’t applied for membership'
                     }
                   />
-                  <Badge tone={state.tone}>{state.label}</Badge>
+                  <MemberBadge member={member} />
                 </div>
 
                 <Section label="Membership">
@@ -56,7 +55,12 @@ export default function Account() {
                         <ListRow
                           label="My contribution"
                           icon={Banknote}
-                          value={extra && (extra.subscription?.prices ? priceLabel(extra.subscription.prices) : 'Start a plan')}
+                          value={
+                            extra &&
+                            (extra.subscription?.prices
+                              ? priceLabel(extra.subscription.prices, extra.subscription.quantity)
+                              : 'Start a plan')
+                          }
                           href="/more/account/contribution/"
                         />
                         <RowButton

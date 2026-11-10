@@ -7,11 +7,12 @@ import { ElectionCard } from '@/components/elections/election-card';
 import { ListGroup, ListRow } from '@/components/portal/list-row';
 import { buttonVariants } from '@/components/ui/button';
 import { StatTile } from '@/components/ui/stat-tile';
-import { formatDate, formatMoney } from '@/utils/format';
+import { formatDate } from '@/utils/format';
 import { AppHeader } from '~/components/app-header';
 import { Loaded } from '~/components/screen';
-import { FundraiserTile } from '~/components/home/fundraiser-tile';
-import { ClosedPanel, membershipOf } from '~/components/home/membership';
+import { membershipOf, priceLabel } from '~/components/account/labels';
+import { AppFundraiserCard, fundraiserHref } from '~/components/give/fundraiser-card';
+import { ClosedPanel } from '~/components/home/membership';
 import { SiteLinkRows } from '~/components/home/site-link-rows';
 import { PROGRAMS } from '~/components/home/site-links';
 import { must } from '~/lib/api';
@@ -36,15 +37,15 @@ export default function HomeTab() {
   );
 }
 
-const INTERVAL: Record<string, [string, string]> = {
-  day: ['Daily', 'day'],
-  week: ['Weekly', 'week'],
-  month: ['Monthly', 'month'],
-  year: ['Annual', 'year']
+const INTERVAL: Record<string, string> = {
+  day: 'Daily',
+  week: 'Weekly',
+  month: 'Monthly',
+  year: 'Annual'
 };
 
 function Summary({ me }: { me: Me }) {
-  const membership = membershipOf(me);
+  const membership = membershipOf(me.member);
   const active = membership === 'active';
 
   const state = useData(async () => {
@@ -188,13 +189,8 @@ function Summary({ me }: { me: Me }) {
               >
                 {plan ? (
                   <StatTile
-                    label={`${INTERVAL[plan.prices?.interval ?? '']?.[0] ?? 'Your'} plan`}
-                    value={`${formatMoney((plan.prices?.unit_amount ?? 0) * (plan.quantity ?? 1))} / ${
-                      (plan.prices?.interval_count ?? 1) > 1
-                        ? `${plan.prices?.interval_count} ${INTERVAL[plan.prices?.interval ?? '']?.[1]}s`
-                        : (INTERVAL[plan.prices?.interval ?? '']?.[1] ??
-                          'period')
-                    }`}
+                    label={`${INTERVAL[plan.prices?.interval ?? ''] ?? 'Your'} plan`}
+                    value={priceLabel(plan.prices, plan.quantity)}
                     note={`${plan.cancel_at_period_end ? 'Ends' : 'Renews'} ${formatDate(plan.current_period_end)}`}
                   />
                 ) : (
@@ -212,7 +208,7 @@ function Summary({ me }: { me: Me }) {
                 title="Featured fundraiser"
                 link={{ href: '/give/', label: 'See all' }}
               >
-                <FundraiserTile fundraiser={fundraiser} />
+                <AppFundraiserCard fundraiser={fundraiser} donateHref={fundraiserHref(fundraiser.id)} />
               </HomeSection>
             )}
           </>

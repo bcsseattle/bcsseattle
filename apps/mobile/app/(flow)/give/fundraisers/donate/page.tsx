@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CircleOff } from 'lucide-react';
+import { GiftSummaryRow } from '@/components/donations/gift-rows';
 import { ActionBar } from '@/components/ui/action-bar';
 import { Banner } from '@/components/ui/banner';
 import { Button } from '@/components/ui/button';
@@ -11,9 +12,9 @@ import { StatePanel } from '@/components/ui/state-panel';
 import { Textarea } from '@/components/ui/textarea';
 import type { Fundraiser } from '@/types';
 import { formatMoney } from '@/utils/format';
+import { dollars, isOpen } from '@/utils/giving';
 import { Loaded } from '~/components/screen';
-import { CheckRow, FieldRow, FlowScreen, GiftSummaryRow, dollars } from '~/components/give/gift';
-import { isOpen } from '~/components/give/fundraiser-card';
+import { CheckRow, FieldRow, FlowScreen } from '~/components/give/gift';
 import { api, must } from '~/lib/api';
 import { openOutside } from '~/lib/open';
 import { useSession } from '~/lib/session';
@@ -105,7 +106,7 @@ function DonateForm({ fundraiser, initialName }: { fundraiser: Fundraiser; initi
         submit();
       }}
     >
-      <GiftSummaryRow caption="One-time gift · Fundraiser" amount={fundraiser.title} />
+      <GiftSummaryRow caption="One-time gift · Fundraiser" amount={fundraiser.title} touch />
       <FieldRow
         label="Amount (USD)"
         htmlFor="amount"

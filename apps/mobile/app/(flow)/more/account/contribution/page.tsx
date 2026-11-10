@@ -98,7 +98,7 @@ export default function MyContribution() {
       >
         <ListGroup>
           <ListRow label="Plan" value={`${getSubscriptionInterval(price)} contribution`} />
-          <ListRow label="Amount" value={priceLabel(price)} />
+          <ListRow label="Amount" value={priceLabel(price, subscription.quantity)} />
           <ListRow
             label={subscription.cancel_at_period_end ? 'Ends' : 'Renews'}
             value={formatDate(subscription.current_period_end)}
