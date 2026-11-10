@@ -43,7 +43,7 @@ export default function ElectionDetail() {
 function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; reload: () => Promise<void> }) {
   const { election: e, phase: p } = d;
   const canBallot =
-    p.votingOpen && !!isActive && (d.offerCandidates || d.offerInitiatives);
+    p.votingOpen && !!isActive && d.onRoll && (d.offerCandidates || d.offerInitiatives);
   const canNominate = p.nominationsOpen && !d.myCandidacy && !d.myAcceptedNomination;
   const results = `/elections/results/?id=${e.id}`;
 
@@ -80,6 +80,17 @@ function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; 
       {d.electedUnopposed && (
         <Banner tone="success" title="Candidates elected unopposed">
           Every position had one candidate, so they are elected without a vote.
+        </Banner>
+      )}
+      {p.votingOpen && isActive && !d.onRoll && (
+        <Banner tone="attention" title="You aren’t on the voter roll for this election">
+          The roll was set when the ballot was locked. If you think this is
+          wrong, contact BCS Seattle.
+        </Banner>
+      )}
+      {p.lockOverdue && (
+        <Banner tone="info" title="Voting will open soon">
+          The ballot is being finalised. Check back shortly.
         </Banner>
       )}
       {p.votingOpen && isActive === false && (

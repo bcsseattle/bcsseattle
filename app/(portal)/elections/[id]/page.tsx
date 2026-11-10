@@ -159,7 +159,15 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
 
   // The ballot is offered only to approved, active members (BUG-007), the same
   // check the vote pages and endpoints make.
-  const canVote = !!user && (await currentUserIsActiveMember());
+  const activeMember = !!user && (await currentUserIsActiveMember());
+  // The voter roll is taken when the ballot is locked (B11): members who joined
+  // after the cutoff, or after the lock, can't vote in this election.
+  const { data: rollRow } =
+    activeMember && isVotingOpen
+      ? await supabase.from('election_voters').select('user_id').eq('election_id', id).eq('user_id', user!.id).maybeSingle()
+      : { data: null };
+  const offRoll = activeMember && isVotingOpen && !rollRow;
+  const canVote = activeMember && !offRoll;
 
   // What is still open to this member.
   const { offerCandidates, offerInitiatives } = ballotOffer({
@@ -285,7 +293,23 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         </Banner>
       )}
 
-      {isVotingOpen && user && !canVote && (
+      {offRoll && (
+        <Banner tone="attention" title="You aren’t on the voter roll for this election">
+          The roll was set when the ballot was locked
+          {election.eligibility_cutoff ? `, from members who had joined by ${formatDeadline(election.eligibility_cutoff)}` : ''}. If you think this is wrong, contact BCS Seattle.
+        </Banner>
+      )}
+      {windows.lockOverdue && (
+        <Banner tone="info" title="Voting will open soon">
+          The ballot is being finalised. Check back shortly.
+        </Banner>
+      )}
+      {windows.phase === 'ballot_ready' && (
+        <Banner tone="info" title={`Voting opens ${formatDeadline(windows.candidateWindow.start < election.start_date ? windows.candidateWindow.start : election.start_date)}`}>
+          The ballot is final. You’ll be able to vote here then.
+        </Banner>
+      )}
+      {isVotingOpen && user && !activeMember && (
         <Banner tone="attention" title="Only approved members with active membership can vote">
           If you think this is wrong, contact BCS Seattle.
         </Banner>

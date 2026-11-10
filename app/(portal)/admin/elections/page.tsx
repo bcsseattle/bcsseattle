@@ -17,14 +17,14 @@ export default async function AdminElectionsPage() {
   return (await electionManagementEnabled()) ? <ManageElections /> : <LegacyElections />;
 }
 
-/** Where each next action is done. Later phases add the ballot, voting and results tabs. */
+/** Where each next action is done. Phase 5 adds the results tab. */
 const actionHref = (id: string, action: NextAction) =>
   action === 'finish_setup'
     ? `/admin/elections/${id}/edit?step=review`
     : action === 'preview'
       ? `/elections/${id}`
-      : action === 'review_nominations'
-        ? `/admin/elections/${id}?tab=nominations`
+      : action === 'review_nominations' || action === 'lock_ballot' || action === 'turnout'
+        ? `/admin/elections/${id}?tab=${{ review_nominations: 'nominations', lock_ballot: 'ballot', turnout: 'voting' }[action]}`
         : `/admin/elections/${id}`;
 
 async function ManageElections() {

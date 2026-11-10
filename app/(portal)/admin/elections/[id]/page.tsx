@@ -13,7 +13,9 @@ import { supabaseAdmin } from '@/utils/supabase/admin';
 import { formatDeadline } from '@/utils/format';
 import {
   NOMINATION_LABEL,
+  positionOnBallot,
   separatePeriods,
+  toLocalInput,
   validateTimeline,
   type ElectionPhase,
   type NominationStatus
@@ -23,18 +25,33 @@ import {
   addCandidate,
   approveNomination,
   cancelElection,
+  decidePosition,
   deleteDraft,
   editCandidate,
+  extendDeadline,
+  lockBallot,
   publishElection,
-  rejectNomination
+  rejectNomination,
+  withdrawCandidate
 } from '../actions';
+import {
+  DecisionButton,
+  ExtendForm,
+  LockBallotButton,
+  WithdrawCandidateButton
+} from '@/components/admin/elections/ballot-controls';
+import { StatTile } from '@/components/ui/stat-tile';
+import { ELECTION_TYPE_CONFIGS } from '@/utils/election-types';
+import type { ElectionType } from '@/types';
 import { AddCandidateForm, EditCandidate, ReviewButtons } from '@/components/admin/elections/nomination-review';
 import { loadAdminElection, requireElectionManagement, type AdminElection } from '../data';
 
-// Later phases add Ballot, Voting and Results.
+// Phase 5 adds Results.
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'nominations', label: 'Nominations' },
+  { key: 'ballot', label: 'Ballot' },
+  { key: 'voting', label: 'Voting' },
   { key: 'activity', label: 'Activity' },
   { key: 'settings', label: 'Settings' }
 ] as const;
@@ -73,6 +90,10 @@ export default async function AdminElectionPage(props: {
       <Link href={`/admin/elections/${id}/edit?step=review`} className={buttonVariants()}>
         Finish setup
       </Link>
+    ) : next?.action === 'lock_ballot' || next?.action === 'turnout' ? (
+      <Link href={`/admin/elections/${id}?tab=${next.action === 'lock_ballot' ? 'ballot' : 'voting'}`} className={buttonVariants()}>
+        {next.label}
+      </Link>
     ) : next?.action === 'review_nominations' ? (
       <Link href={`/admin/elections/${id}?tab=nominations`} className={buttonVariants()}>
         {next.label}
@@ -94,7 +115,10 @@ export default async function AdminElectionPage(props: {
         actions={primary}
       />
       <nav aria-label="Election sections" className="flex max-w-full items-end gap-5 overflow-x-auto border-b border-border">
-        {TABS.filter((t) => t.key !== 'nominations' || positions.length > 0).map((t) => (
+        {TABS.filter(
+          (t) =>
+            (t.key !== 'nominations' || positions.length > 0) && (t.key !== 'voting' || election.status !== 'draft')
+        ).map((t) => (
           <Link
             key={t.key}
             href={`/admin/elections/${id}${t.key === 'overview' ? '' : `?tab=${t.key}`}`}
@@ -110,6 +134,8 @@ export default async function AdminElectionPage(props: {
       </nav>
       {tab === 'overview' && <Overview data={data} />}
       {tab === 'nominations' && <Nominations data={data} />}
+      {tab === 'ballot' && <BallotTab data={data} />}
+      {tab === 'voting' && <VotingTab data={data} />}
       {tab === 'activity' && <Activity electionId={id} />}
       {tab === 'settings' && (
         <Panel title="Settings" subtitle="Changes here are recorded in the activity log.">
@@ -351,6 +377,227 @@ async function Nominations({ data }: { data: AdminElection }) {
             positions={positions.map((p) => ({ id: p.id, title: p.title }))}
             members={eligible ?? []}
           />
+        </Panel>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The ballot (plan §5): each position's candidates and, before the lock, the
+ * decisions it needs (vacant, uncontested), extending nominations, what
+ * members will vote on, and Lock ballot. After the lock, a candidate can be
+ * marked withdrawn (B13).
+ */
+async function BallotTab({ data }: { data: AdminElection }) {
+  const { election, positions, initiatives, candidates, ctx, actions } = data;
+  const id = election.id;
+  const open = election.status === 'scheduled' || election.status === 'draft';
+  const canAct = !ctx.adminIsStanding;
+  const electByDefault =
+    election.show_unopposed_status ?? ELECTION_TYPE_CONFIGS[(election.type ?? 'leadership') as ElectionType].defaultShowUnopposedStatus;
+  const standing = (p: (typeof positions)[number]) => candidates.filter((c) => c.ballot_position_id === p.id);
+  // What the lock will record: a missing decision takes the election's default.
+  const decided = positions.map((p) => {
+    const count = standing(p).length;
+    const decision = p.unopposed_decision ?? (count > 0 && count <= p.seats ? (electByDefault ? 'elect' : 'keep_on_ballot') : null);
+    return { ...p, count, decision };
+  });
+  const asPosition = (p: (typeof decided)[number]) => ({
+    position: p.title,
+    description: p.description,
+    display_order: p.display_order,
+    seats: p.seats,
+    vacant: p.vacant,
+    unopposed_decision: p.decision
+  });
+  const named = candidates.map((c) => ({ position: positions.find((p) => p.id === c.ballot_position_id)?.title ?? '' }));
+  const onBallot = decided.filter((p) => positionOnBallot(asPosition(p), named));
+  const unopposed = decided.filter((p) => !p.vacant && p.count > 0 && !onBallot.includes(p));
+  const vacant = decided.filter((p) => p.vacant);
+
+  let eligible: number | null = null;
+  if (open && actions.lock_ballot === true) {
+    const { data: roll } = await (await createClient()).rpc('election_nominees', { p_election: id });
+    eligible = roll?.length ?? 0;
+  }
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const lockSummary = [
+    `${plural(onBallot.length, 'position')} and ${plural(initiatives.length, 'initiative')} will be on the ballot.`,
+    unopposed.length ? `Elected unopposed: ${unopposed.map((p) => p.title).join(', ')}.` : '',
+    vacant.length ? `Vacant: ${vacant.map((p) => p.title).join(', ')}.` : '',
+    eligible !== null ? `${plural(eligible, 'member')} will be on the voter roll.` : '',
+    `Voting opens ${formatDeadline(election.start_date)}.`
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    <div className="flex flex-col gap-6">
+      {election.status === 'scheduled' && actions.lock_ballot !== true && (
+        <Banner tone="attention" title="Not ready to lock">
+          {actions.lock_ballot}
+        </Banner>
+      )}
+      {!open && (
+        <Banner tone="info" title="The ballot is locked">
+          Positions, candidates and initiatives can’t change. You can fix a typo in a candidate’s details on the Nominations tab, or mark a candidate withdrawn.
+        </Banner>
+      )}
+
+      <Panel title="Positions" subtitle="Uncontested means no more candidates than seats.">
+        <ul className="divide-y">
+          {decided.map((p) => {
+            const people = standing(p);
+            const state = p.vacant ? 'Vacant' : p.count === 0 ? 'No candidates' : p.count <= p.seats ? 'Uncontested' : 'Contested';
+            return (
+              <li key={p.id} className="flex flex-col gap-2 px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium">
+                    {p.title} <span className="font-normal text-muted-foreground">· {plural(p.seats, 'seat')}</span>
+                  </span>
+                  <Badge tone={state === 'Contested' ? 'green' : state === 'Uncontested' ? 'blue' : 'orange'}>{state}</Badge>
+                </div>
+                {people.length > 0 && (
+                  <ul className="m-0 flex list-none flex-col gap-1 p-0">
+                    {people.map((c) => (
+                      <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                        <span>
+                          {c.full_name}
+                          {c.withdrawn_at && <span className="text-muted-foreground"> (withdrawn)</span>}
+                        </span>
+                        {election.status === 'ballot_locked' && !data.phase.votingOver && !c.withdrawn_at && canAct && (
+                          <WithdrawCandidateButton run={withdrawCandidate.bind(null, id, c.id)} name={c.full_name} />
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {state === 'Uncontested' && (
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">
+                      {open ? 'On the ballot?' : p.decision === 'elect' ? 'Elected unopposed' : 'Kept on the ballot'}
+                    </span>
+                    {open && canAct && (
+                      <>
+                        <DecisionButton pressed={p.decision === 'elect'} run={decidePosition.bind(null, id, p.id, 'elect')}>
+                          Elect unopposed
+                        </DecisionButton>
+                        <DecisionButton pressed={p.decision === 'keep_on_ballot'} run={decidePosition.bind(null, id, p.id, 'keep_on_ballot')}>
+                          Keep on the ballot
+                        </DecisionButton>
+                      </>
+                    )}
+                  </div>
+                )}
+                {(state === 'No candidates' || state === 'Vacant') && open && canAct && (
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">
+                      {p.vacant ? 'The Board fills it later (Art. VI §4 for officers).' : 'Mark it vacant, or extend nominations below.'}
+                    </span>
+                    <DecisionButton run={decidePosition.bind(null, id, p.id, p.vacant ? 'not_vacant' : 'vacant')}>
+                      {p.vacant ? 'Not vacant' : 'Mark vacant'}
+                    </DecisionButton>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+          {positions.length === 0 && <li className="px-4 py-3 text-sm text-muted-foreground">No positions: this election has initiatives only.</li>}
+        </ul>
+      </Panel>
+
+      {election.status === 'scheduled' && actions.extend_nominations === true && election.nomination_end && (
+        <Panel title="Extend nominations" subtitle="For positions with too few candidates. Members can nominate until the new time.">
+          <div className="p-4">
+            <ExtendForm
+              action={extendDeadline.bind(null, id, 'nomination_end')}
+              label="Nominations close"
+              current={toLocalInput(election.nomination_end)}
+              idPrefix="extend-nominations"
+            />
+          </div>
+        </Panel>
+      )}
+
+      <Panel title="What members will vote on" subtitle={open ? 'As the ballot stands now.' : undefined}>
+        <ul className="divide-y">
+          {onBallot.map((p) => (
+            <li key={p.id} className="flex flex-col gap-1 px-4 py-3 text-sm">
+              <span className="font-medium">
+                {p.title}
+                {p.seats > 1 && <span className="font-normal text-muted-foreground"> · choose up to {p.seats}</span>}
+              </span>
+              <span className="text-muted-foreground">{standing(p).map((c) => c.full_name + (c.withdrawn_at ? ' (withdrawn)' : '')).join(', ')}</span>
+            </li>
+          ))}
+          {initiatives.map((t) => (
+            <li key={t.id} className="flex flex-col gap-1 px-4 py-3 text-sm">
+              <span className="font-medium">{t.title}</span>
+              <span className="text-muted-foreground">
+                Yes / No / Abstain · {t.pass_threshold === 'two_thirds' ? 'passes with two-thirds of Yes and No' : 'passes with more Yes than No'}
+              </span>
+            </li>
+          ))}
+          {onBallot.length + initiatives.length === 0 && (
+            <li className="px-4 py-3 text-sm text-muted-foreground">Nothing yet.</li>
+          )}
+        </ul>
+      </Panel>
+
+      {election.status === 'scheduled' && actions.lock_ballot === true && (
+        <div>
+          <LockBallotButton run={lockBallot.bind(null, id)} summary={lockSummary} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Turnout (counts only, never who voted for what) and extending voting. */
+async function VotingTab({ data }: { data: AdminElection }) {
+  const { election, actions, phase } = data;
+  const id = election.id;
+  if (election.status === 'scheduled') {
+    return (
+      <Banner tone="info" title="Voting starts after the ballot is locked">
+        Voting opens {formatDeadline(election.start_date)} once you lock the ballot.
+      </Banner>
+    );
+  }
+  const { data: rows } = await (await createClient()).rpc('election_turnout', { p_election: id });
+  const t = rows?.[0];
+  const percent = (n: number) => (t && t.eligible > 0 ? `${Math.round((n / t.eligible) * 100)}%` : '–');
+  const separate = separatePeriods(election);
+  return (
+    <div className="flex flex-col gap-6">
+      <Panel title="Turnout" subtitle="Counts only. Nobody, admins included, can see how anyone voted.">
+        <div className="grid gap-4 p-4 sm:grid-cols-3">
+          <StatTile label="On the voter roll" value={t?.eligible ?? 0} />
+          <StatTile label="Voted for candidates" value={`${t?.voted_candidates ?? 0} (${percent(t?.voted_candidates ?? 0)})`} />
+          <StatTile label="Voted on initiatives" value={`${t?.voted_initiatives ?? 0} (${percent(t?.voted_initiatives ?? 0)})`} />
+        </div>
+      </Panel>
+      {actions.extend_voting === true && election.status === 'ballot_locked' && (
+        <Panel title="Extend voting" subtitle={`Voting ${phase.votingOpen ? 'closes' : 'runs to'} ${formatDeadline(election.end_date)}.`}>
+          <div className="flex flex-col gap-6 p-4">
+            {!phase.votingOver && Date.now() <= Date.parse(election.end_date) && (
+              <ExtendForm
+                action={extendDeadline.bind(null, id, 'end_date')}
+                label={separate ? 'Initiative voting closes' : 'Voting closes'}
+                current={toLocalInput(election.end_date)}
+                idPrefix="extend-voting"
+              />
+            )}
+            {separate && election.candidate_voting_end && Date.now() <= Date.parse(election.candidate_voting_end) && (
+              <ExtendForm
+                action={extendDeadline.bind(null, id, 'candidate_voting_end')}
+                label="Candidate voting closes"
+                current={toLocalInput(election.candidate_voting_end)}
+                idPrefix="extend-candidate-voting"
+              />
+            )}
+          </div>
         </Panel>
       )}
     </div>

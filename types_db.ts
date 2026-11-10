@@ -1794,6 +1794,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      election_withdraw_candidate: {
+        Args: { p_candidate: string; p_reason: string }
+        Returns: undefined
+      }
       find_duplicate_votes: {
         Args: Record<PropertyKey, never>
         Returns: {
