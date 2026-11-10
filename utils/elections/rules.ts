@@ -312,6 +312,8 @@ export type AdminContext = {
   positionCount: number;
   /** Ties without a certified run-off (Phase 5). */
   unresolvedTies?: number;
+  /** A run-off: it has positions but no nominations window. */
+  isRunoff?: boolean;
 };
 
 /**
@@ -323,7 +325,7 @@ export function adminActions(e: PhaseInput, ctx: AdminContext, now = Date.now())
   const standing = ctx.adminIsStanding ? 'You’re standing in this election, so another admin has to do this.' : null;
   const guard = (ok: boolean, reason: string): true | string => (standing ?? (ok ? true : reason)) as true | string;
   const scheduledOrLocked = e.status === 'scheduled' || e.status === 'ballot_locked';
-  const timeline = validateTimeline(e, { hasPositions: ctx.positionCount > 0, now });
+  const timeline = validateTimeline(e, { hasPositions: ctx.positionCount > 0 && !ctx.isRunoff, now });
   const firstError = Object.values(timeline.errors)[0];
 
   return {
@@ -536,7 +538,7 @@ export type NextAction =
 /** The one primary action an election's phase calls for (plan §5), or null when there's nothing left to do. */
 export function nextAction(
   phase: ElectionPhase,
-  { canPublish, nominationsToReview }: { canPublish: boolean; nominationsToReview: number }
+  { canPublish, nominationsToReview, ties = 0 }: { canPublish: boolean; nominationsToReview: number; ties?: number }
 ): { action: NextAction; label: string } | null {
   const review = { action: 'review_nominations' as const, label: `Review ${nominationsToReview} nomination${nominationsToReview === 1 ? '' : 's'}` };
   switch (phase) {
@@ -553,7 +555,7 @@ export function nextAction(
     case 'voting_open':
       return { action: 'turnout', label: 'View turnout' };
     case 'voting_closed':
-      return { action: 'certify', label: 'Certify results' };
+      return ties > 0 ? { action: 'certify', label: 'Settle the tie' } : { action: 'certify', label: 'Certify results' };
     case 'certified':
       return { action: 'publish_results', label: 'Publish results' };
     case 'results_published':

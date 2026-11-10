@@ -46,13 +46,21 @@ export async function loadAdminElection(id: string) {
       .map((p) => p.title),
     candidateCount: candidates?.length ?? 0,
     initiativeCount: initiatives?.length ?? 0,
-    positionCount: positions?.length ?? 0
+    positionCount: positions?.length ?? 0,
+    isRunoff: !!election.runoff_of
   };
   const phase = electionPhase(election);
+  // The count is open to admins once voting has closed; ties block certification.
+  const outcomes =
+    election.status === 'ballot_locked' && phase.votingOver
+      ? ((await supabase.rpc('election_outcomes', { p_election: id })).data ?? [])
+      : [];
+  ctx.unresolvedTies = new Set(outcomes.filter((o) => o.outcome === 'runoff').map((o) => o.ballot_position_id)).size;
   const actions = adminActions(election, ctx);
   const next = nextAction(phase.phase, {
     canPublish: actions.publish === true,
-    nominationsToReview: (nominations ?? []).filter((n) => n.status === 'submitted').length
+    nominationsToReview: (nominations ?? []).filter((n) => n.status === 'submitted').length,
+    ties: ctx.unresolvedTies
   });
 
   return {
@@ -62,6 +70,7 @@ export async function loadAdminElection(id: string) {
     candidates: candidates ?? [],
     nominations: nominations ?? [],
     ctx,
+    outcomes,
     phase,
     actions,
     next

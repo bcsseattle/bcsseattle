@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/server';
 import { checkFeatureFlag } from '@/utils/server-feature-flags';
 import { getStatusRedirect } from '@/utils/helpers';
 import { dbMessage, photoFrom, uploadCandidatePhoto } from '@/utils/elections/photos';
+import { notifyNominated } from '@/utils/elections/notify';
 
 /**
  * Member nomination actions (docs/election-management-plan.md Phase 3). Each
@@ -64,7 +65,7 @@ export async function nominate(electionId: string, _: NominationState, formData:
 
   const own = self ? await details(supabase, userId, formData) : null;
   if (own && 'error' in own) return { error: own.error, values };
-  const { error } = await supabase.rpc('nomination_create', {
+  const { data: created, error } = await supabase.rpc('nomination_create', {
     p_election: electionId,
     p_position: values.position,
     p_nominee: nominee,
@@ -72,6 +73,7 @@ export async function nominate(electionId: string, _: NominationState, formData:
     ...own
   });
   if (error) return { error: dbMessage(error), values };
+  if (!self && created) await notifyNominated(created);
 
   revalidatePath(`/elections/${electionId}`);
   redirect(

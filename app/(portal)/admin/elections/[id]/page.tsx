@@ -224,7 +224,7 @@ function Overview({ data }: { data: AdminElection }) {
 
       <Panel title="Key dates" subtitle="Pacific time. Each window includes its start and end.">
         <dl className="m-0 divide-y">
-          {positions.length > 0 && row('Nominations', `${date(election.nomination_start)} to ${date(election.nomination_end)}`)}
+          {positions.length > 0 && !election.runoff_of && row('Nominations', `${date(election.nomination_start)} to ${date(election.nomination_end)}`)}
           {row(separate ? 'Initiative voting' : 'Voting', `${date(election.start_date)} to ${date(election.end_date)}`)}
           {separate &&
             row(

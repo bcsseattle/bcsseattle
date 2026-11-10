@@ -58,7 +58,8 @@ export default async function EditElectionPage(props: {
     redirect(`/admin/elections/${id}`);
 
   const type = (election.type ?? 'leadership') as ElectionType;
-  const hasPositions = positions.length > 0;
+  // A run-off has positions but no nominations (its candidates are the tied ones).
+  const hasPositions = positions.length > 0 && !election.runoff_of;
 
   let body: React.ReactNode;
   if (step === 'basics') {
@@ -189,7 +190,7 @@ function Review({
 }) {
   const { election, positions, initiatives, actions } = data;
   const timeline = validateTimeline(election, {
-    hasPositions: positions.length > 0
+    hasPositions: positions.length > 0 && !election.runoff_of
   });
   const separate = separatePeriods(election);
   const row = (label: string, value: React.ReactNode, step: StepKey) => (
@@ -257,7 +258,7 @@ function Review({
               : 'None',
             'ballot'
           )}
-          {positions.length > 0 &&
+          {positions.length > 0 && !election.runoff_of &&
             row(
               'Nominations',
               `${at(election.nomination_start)} to ${at(election.nomination_end)}`,
