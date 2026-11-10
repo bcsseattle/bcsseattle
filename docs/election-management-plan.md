@@ -1,6 +1,6 @@
 # Election management plan
 
-Status: **Phases 1–3 built** (plan approved 10 Nov 2026). Every question was answered on 10 Nov 2026 (§10), and the plan below includes those answers.
+Status: **Phases 1–4 built** (plan approved 10 Nov 2026). Every question was answered on 10 Nov 2026 (§10), and the plan below includes those answers.
 
 This plan covers the full election lifecycle under **Admin › Elections**: create, nominate, review, lock the ballot, vote, certify, publish, and archive or cancel. Today most of these steps need SQL.
 
@@ -484,7 +484,10 @@ Each phase is one PR into `develop`, branched from the previous phase. Following
 3. **Nominations:** the member nominate, accept, decline and withdraw flow, plus My nominations (website and app); admin review and manual add. *As built, it differs from the plan in two ways:*
    - The app nominates yourself only, and accepts, declines and withdraws. Nominating someone else, editing details and a full My nominations list are on the website.
    - Being on the ballot already (a candidate row from older elections, or one an admin added) counts as an accepted nomination, so nobody can stand twice.
-4. **Ballot and voting:** lock and preview; seats on the ballot (handlers, website, app); turnout; extend and cancel; member pages reading the new state.
+4. **Ballot and voting:** lock and preview; seats on the ballot (handlers, website, app); turnout; extend and cancel; member pages reading the new state. *As built, it differs from the plan in three ways:*
+   - Initiatives can still be edited only in a draft, not up to the lock.
+   - The older `/vote` and `/vote/candidates` pages take one choice per position, so multi-seat elections send members to the election page’s ballot.
+   - Marking a candidate withdrawn after the lock is a database function, `election_withdraw_candidate`, so it records a reason.
 5. **Results and notifications:** tally, run-offs, certify, publish, CSV and print; notifications, built and tested against Mailpit and the push stubs. Nothing real is sent before you approve it.
 
 **Things only you can do:**

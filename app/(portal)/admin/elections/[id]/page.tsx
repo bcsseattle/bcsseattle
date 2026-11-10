@@ -83,8 +83,10 @@ export default async function AdminElectionPage(props: {
   const publishSummary = `${positions.length} position${positions.length === 1 ? '' : 's'} and ${initiatives.length} initiative${initiatives.length === 1 ? '' : 's'}. Voting opens ${formatDeadline(election.start_date)}.`;
   // The next action as a button, where this phase's screen exists. Later
   // phases add review, lock, turnout, certify, publish results and archive.
+  // Actions done on another tab are links to it; on that tab the tab itself is the action.
+  const actionTab = { review_nominations: 'nominations', lock_ballot: 'ballot', turnout: 'voting' }[next?.action as string];
   const primary =
-    next?.action === 'publish' ? (
+    actionTab && actionTab === tab ? null : next?.action === 'publish' ? (
       <PublishButton run={publishElection.bind(null, id)} summary={publishSummary} />
     ) : next?.action === 'finish_setup' ? (
       <Link href={`/admin/elections/${id}/edit?step=review`} className={buttonVariants()}>

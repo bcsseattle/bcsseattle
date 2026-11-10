@@ -161,7 +161,8 @@ export async function getMember(userId: string) {
 
 // ---------------------------------------------------------------- elections
 
-export type ElectionWindow = 'open' | 'closed' | 'upcoming' | 'nominations';
+/** review: nominations have closed and the ballot isn't locked yet. */
+export type ElectionWindow = 'open' | 'closed' | 'upcoming' | 'nominations' | 'review';
 
 export async function createElection(
   cleanup: Cleanup,
@@ -170,6 +171,8 @@ export async function createElection(
     title?: string;
     candidates?: { full_name: string; position: string; user_id?: string }[];
     initiatives?: string[];
+    /** Seats per position (1 unless given). */
+    seats?: Record<string, number>;
   }
 ) {
   // Status holds what an admin decided; the dates decide what is open. The ballot
@@ -185,6 +188,13 @@ export async function createElection(
       nomination_end: hoursFromNow(24),
       status: 'scheduled',
     },
+    review: {
+      start_date: hoursFromNow(48),
+      end_date: hoursFromNow(72),
+      nomination_start: hoursFromNow(-48),
+      nomination_end: hoursFromNow(-1),
+      status: 'scheduled',
+    },
   }[opts.window] as { status: 'ballot_locked' | 'completed' | 'scheduled'; start_date: string; end_date: string };
   const title = opts.title ?? `E2E Election ${randomUUID().slice(0, 6)}`;
   const election = must(
@@ -198,6 +208,20 @@ export async function createElection(
   cleanup.push(async () => {
     await admin.from('elections').delete().eq('id', election.id); // takes its ballot and votes with it
   });
+
+  // The seeded type template has President, Secretary and Treasurer; any other
+  // position a scenario uses is added to this election's ballot.
+  const titles = Array.from(new Set([...(opts.candidates ?? []).map((c) => c.position), ...Object.keys(opts.seats ?? {})]));
+  for (const title of titles) {
+    const seats = opts.seats?.[title] ?? 1;
+    const { data: existing } = await admin.from('ballot_positions').select('id').eq('election_id', election.id).eq('title', title).maybeSingle();
+    must(
+      existing
+        ? await admin.from('ballot_positions').update({ seats }).eq('id', existing.id).select('id').single()
+        : await admin.from('ballot_positions').insert({ election_id: election.id, title, seats, display_order: 10 }).select('id').single(),
+      'ballot position'
+    );
+  }
 
   const candidates = opts.candidates?.length
     ? must(
