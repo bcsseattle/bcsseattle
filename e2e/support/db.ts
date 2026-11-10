@@ -161,8 +161,11 @@ export async function getMember(userId: string) {
 
 // ---------------------------------------------------------------- elections
 
-/** review: nominations have closed and the ballot isn't locked yet. */
-export type ElectionWindow = 'open' | 'closed' | 'upcoming' | 'nominations' | 'review';
+/**
+ * review: nominations have closed and the ballot isn't locked yet.
+ * counting: the ballot is locked and voting has just closed, not yet certified.
+ */
+export type ElectionWindow = 'open' | 'closed' | 'upcoming' | 'nominations' | 'review' | 'counting';
 
 export async function createElection(
   cleanup: Cleanup,
@@ -188,6 +191,7 @@ export async function createElection(
       nomination_end: hoursFromNow(24),
       status: 'scheduled',
     },
+    counting: { start_date: hoursFromNow(-48), end_date: hoursFromNow(-1), status: 'ballot_locked' },
     review: {
       start_date: hoursFromNow(48),
       end_date: hoursFromNow(72),

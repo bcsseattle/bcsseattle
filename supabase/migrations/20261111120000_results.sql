@@ -90,7 +90,8 @@ BEGIN
 
     -- Votes per active candidate; the cutoff is the votes of the last seat.
     CREATE TEMP TABLE IF NOT EXISTS pg_temp.tally (id uuid, name text, user_id uuid, withdrawn boolean, votes integer) ON COMMIT DROP;
-    DELETE FROM pg_temp.tally;
+    -- WHERE true: Supabase's safeupdate refuses a DELETE without a WHERE on API calls.
+    DELETE FROM pg_temp.tally WHERE true;
     INSERT INTO pg_temp.tally
       SELECT cd.id, cd.full_name, cd.user_id, cd.withdrawn_at IS NOT NULL,
              (SELECT count(*)::integer FROM public.votes v WHERE v.candidate_id = cd.id)
