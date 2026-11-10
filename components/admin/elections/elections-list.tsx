@@ -7,7 +7,7 @@ import { Vote } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { StatePanel } from '@/components/ui/state-panel';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { AdminTab } from '@/utils/elections/rules';
 
 export type ElectionListRow = {
@@ -40,7 +40,6 @@ const TYPE_WORD: Record<string, string> = { leadership: 'Leadership', board: 'Bo
 export function ElectionsList({ rows }: { rows: ElectionListRow[] }) {
   const firstBusy = TABS.find((t) => t.value !== 'archived' && rows.some((r) => r.tab === t.value))?.value ?? 'drafts';
   const [tab, setTab] = React.useState<AdminTab>(firstBusy);
-  const shown = rows.filter((r) => r.tab === tab);
 
   return (
     <div className="flex flex-col gap-4">
@@ -52,37 +51,48 @@ export function ElectionsList({ rows }: { rows: ElectionListRow[] }) {
             </TabsTrigger>
           ))}
         </TabsList>
+        {/* A panel per tab (inactive ones hidden), so every tab's aria-controls points at one. */}
+        {TABS.map((t) => (
+          <TabsContent key={t.value} value={t.value} forceMount className="mt-4 data-[state=inactive]:hidden">
+            <Rows rows={rows.filter((r) => r.tab === t.value)} empty={t.empty} />
+          </TabsContent>
+        ))}
       </Tabs>
-      <div className="overflow-hidden rounded-lg border bg-card">
-        {shown.length === 0 ? (
-          <StatePanel icon={Vote} title={TABS.find((t) => t.value === tab)!.empty} />
-        ) : (
-          <ul className="divide-y">
-            {shown.map((r) => (
-              <li key={r.id} className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:gap-4">
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <Link href={`/admin/elections/${r.id}`} className="truncate font-medium text-foreground underline-offset-2 hover:underline">
-                    {r.title}
+    </div>
+  );
+}
+
+function Rows({ rows, empty }: { rows: ElectionListRow[]; empty: string }) {
+  return (
+    <div className="overflow-hidden rounded-lg border bg-card">
+      {rows.length === 0 ? (
+        <StatePanel icon={Vote} title={empty} />
+      ) : (
+        <ul className="divide-y">
+          {rows.map((r) => (
+            <li key={r.id} className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:gap-4">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <Link href={`/admin/elections/${r.id}`} className="truncate font-medium text-foreground underline-offset-2 hover:underline">
+                  {r.title}
+                </Link>
+                <span className="text-caption text-muted-foreground">{TYPE_WORD[r.type] ?? r.type}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 md:w-[22rem] md:shrink-0">
+                <Badge tone={r.phase.tone}>{r.phase.label}</Badge>
+                {r.keyDate && <span className="text-sm text-muted-foreground">{r.keyDate}</span>}
+              </div>
+              <div className="md:w-44 md:shrink-0 md:text-right">
+                {r.next && (
+                  <Link href={r.next.href} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                    {r.next.label}
+                    <span className="sr-only">: {r.title}</span>
                   </Link>
-                  <span className="text-caption text-muted-foreground">{TYPE_WORD[r.type] ?? r.type}</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 md:w-[22rem] md:shrink-0">
-                  <Badge tone={r.phase.tone}>{r.phase.label}</Badge>
-                  {r.keyDate && <span className="text-sm text-muted-foreground">{r.keyDate}</span>}
-                </div>
-                <div className="md:w-44 md:shrink-0 md:text-right">
-                  {r.next && (
-                    <Link href={r.next.href} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                      {r.next.label}
-                      <span className="sr-only">: {r.title}</span>
-                    </Link>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

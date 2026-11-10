@@ -9,14 +9,7 @@ import { Button } from '@/components/ui/button';
 import { TransactionStep, TransactionSteps } from '@/components/ui/transaction-step';
 import { cn } from '@/utils/cn';
 
-export const STEPS = [
-  { key: 'basics', label: 'Basics' },
-  { key: 'ballot', label: 'Positions & initiatives' },
-  { key: 'timeline', label: 'Timeline' },
-  { key: 'settings', label: 'Eligibility & settings' },
-  { key: 'review', label: 'Review' }
-] as const;
-export type StepKey = (typeof STEPS)[number]['key'];
+import { STEPS, type StepKey } from './step-list';
 
 /**
  * The create/edit steps as a TransactionStep row: steps before the current one

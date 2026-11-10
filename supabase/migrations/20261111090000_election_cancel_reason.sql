@@ -14,3 +14,7 @@ BEGIN
   UPDATE public.elections SET status = 'cancelled', cancel_reason = btrim(p_reason), updated_at = now() WHERE id = p_election;
   PERFORM public.election_action_done();
 END $$;
+
+-- Triggers of the same kind fire in name order: log a new election before its
+-- default positions are added, so the activity log reads in order.
+ALTER TRIGGER elections_default_positions ON public.elections RENAME TO elections_with_default_positions;

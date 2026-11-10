@@ -1,6 +1,6 @@
 # Election management plan
 
-Status: **Phase 1 built** (plan approved 10 Nov 2026). Every question was answered on 10 Nov 2026 (§10), and the plan below includes those answers.
+Status: **Phases 1 and 2 built** (plan approved 10 Nov 2026). Every question was answered on 10 Nov 2026 (§10), and the plan below includes those answers.
 
 This plan covers the full election lifecycle under **Admin › Elections**: create, nominate, review, lock the ballot, vote, certify, publish, and archive or cancel. Today most of these steps need SQL.
 
@@ -475,7 +475,12 @@ Each phase is one PR into `develop`, branched from the previous phase. Following
    - `election_certify` moves to Phase 5, with the tally it freezes.
    - The `/admin/election-types` test page was deleted here, because it failed lint.
    - Self-nomination, still the old flow until Phase 3, now requires an approved, active member. Before, anyone signed in could nominate themselves.
-2. **Create and edit:** the flag; the list, the step-by-step form, the overview, Activity and preview; delete the dead `election-admin.ts` helpers and the test pages.
+2. **Create and edit:** the flag; the list, the step-by-step form, the overview, Activity and preview; delete the dead `election-admin.ts` helpers and the test pages. *As built, it differs from the plan in five ways:*
+   - The overview has only the Overview, Activity and Settings tabs. Nominations, Ballot, Voting and Results come with their phases.
+   - The preview is the member page itself, with a Preview banner on a draft (RLS lets admins read drafts), not a separate route.
+   - Positions and initiatives are edited only in a draft. Edits up to the lock come with the Ballot tab in Phase 4.
+   - `elections.cancel_reason` is added, so members can see why an election was cancelled. The activity log is admin-only.
+   - A new draft starts from a default timeline 45 days out, because the voting dates are required columns.
 3. **Nominations:** the member nominate, accept, decline and withdraw flow, plus My nominations (website and app); admin review and manual add.
 4. **Ballot and voting:** lock and preview; seats on the ballot (handlers, website, app); turnout; extend and cancel; member pages reading the new state.
 5. **Results and notifications:** tally, run-offs, certify, publish, CSV and print; notifications, built and tested against Mailpit and the push stubs. Nothing real is sent before you approve it.
