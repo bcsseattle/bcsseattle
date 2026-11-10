@@ -14,11 +14,14 @@ import { compressImage } from '@/utils/image-compression';
  */
 export function NomineeFields({
   defaults,
-  photoUrl
+  photoUrl,
+  idPrefix = ''
 }: {
   defaults: { full_name?: string; bio?: string; manifesto?: string };
   /** The current photo, when editing. */
   photoUrl?: string | null;
+  /** For pages with more than one of these forms: keeps element ids unique. */
+  idPrefix?: string;
 }) {
   const [preview, setPreview] = React.useState(photoUrl ?? null);
   const [photoError, setPhotoError] = React.useState<string>();
@@ -46,21 +49,21 @@ export function NomineeFields({
 
   return (
     <div className="flex flex-col gap-5">
-      <Field id="full_name" label="Name on the ballot">
+      <Field id={`${idPrefix}full_name`} label="Name on the ballot">
         {(p) => <Input {...p} name="full_name" defaultValue={defaults.full_name} maxLength={120} required autoComplete="name" />}
       </Field>
-      <Field id="bio" label="Statement" helper="Who you are and why you’re standing. Members read this before they vote.">
+      <Field id={`${idPrefix}bio`} label="Statement" helper="Who you are and why you’re standing. Members read this before they vote.">
         {(p) => <Textarea {...p} name="bio" defaultValue={defaults.bio} rows={4} maxLength={2000} />}
       </Field>
-      <Field id="manifesto" label="Platform" helper="Optional. What you’ll do if elected, 10 to 1,000 characters.">
+      <Field id={`${idPrefix}manifesto`} label="Platform" helper="Optional. What you’ll do if elected, 10 to 1,000 characters.">
         {(p) => <Textarea {...p} name="manifesto" defaultValue={defaults.manifesto} rows={4} maxLength={1000} />}
       </Field>
-      <Field id="photo" label="Photo" helper="Optional. A clear photo of your face." error={photoError}>
+      <Field id={`${idPrefix}photo`} label="Photo" helper="Optional. A clear photo of your face." error={photoError}>
         {(p) => (
           <div className="flex items-center gap-4">
             {preview && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview} alt="Your photo" className="size-16 shrink-0 rounded-full border object-cover" />
+              <img src={preview} alt="Current photo" className="size-16 shrink-0 rounded-full border object-cover" />
             )}
             <input
               {...p}

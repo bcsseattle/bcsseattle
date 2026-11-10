@@ -11,14 +11,30 @@ import { CancelElectionButton, DeleteDraftButton, PublishButton } from '@/compon
 import { createClient } from '@/utils/supabase/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { formatDeadline } from '@/utils/format';
-import { separatePeriods, validateTimeline, type ElectionPhase } from '@/utils/elections/rules';
+import {
+  NOMINATION_LABEL,
+  separatePeriods,
+  validateTimeline,
+  type ElectionPhase,
+  type NominationStatus
+} from '@/utils/elections/rules';
 import { cn } from '@/utils/cn';
-import { cancelElection, deleteDraft, publishElection } from '../actions';
+import {
+  addCandidate,
+  approveNomination,
+  cancelElection,
+  deleteDraft,
+  editCandidate,
+  publishElection,
+  rejectNomination
+} from '../actions';
+import { AddCandidateForm, EditCandidate, ReviewButtons } from '@/components/admin/elections/nomination-review';
 import { loadAdminElection, requireElectionManagement, type AdminElection } from '../data';
 
-// Later phases add Nominations, Ballot, Voting and Results.
+// Later phases add Ballot, Voting and Results.
 const TABS = [
   { key: 'overview', label: 'Overview' },
+  { key: 'nominations', label: 'Nominations' },
   { key: 'activity', label: 'Activity' },
   { key: 'settings', label: 'Settings' }
 ] as const;
@@ -57,6 +73,10 @@ export default async function AdminElectionPage(props: {
       <Link href={`/admin/elections/${id}/edit?step=review`} className={buttonVariants()}>
         Finish setup
       </Link>
+    ) : next?.action === 'review_nominations' ? (
+      <Link href={`/admin/elections/${id}?tab=nominations`} className={buttonVariants()}>
+        {next.label}
+      </Link>
     ) : next?.action === 'preview' ? (
       <Link href={`/elections/${id}`} className={buttonVariants({ variant: 'outline' })}>
         {next.label}
@@ -74,7 +94,7 @@ export default async function AdminElectionPage(props: {
         actions={primary}
       />
       <nav aria-label="Election sections" className="flex max-w-full items-end gap-5 overflow-x-auto border-b border-border">
-        {TABS.map((t) => (
+        {TABS.filter((t) => t.key !== 'nominations' || positions.length > 0).map((t) => (
           <Link
             key={t.key}
             href={`/admin/elections/${id}${t.key === 'overview' ? '' : `?tab=${t.key}`}`}
@@ -89,6 +109,7 @@ export default async function AdminElectionPage(props: {
         ))}
       </nav>
       {tab === 'overview' && <Overview data={data} />}
+      {tab === 'nominations' && <Nominations data={data} />}
       {tab === 'activity' && <Activity electionId={id} />}
       {tab === 'settings' && (
         <Panel title="Settings" subtitle="Changes here are recorded in the activity log.">
@@ -224,5 +245,114 @@ async function Activity({ electionId }: { electionId: string }) {
     <Panel title="Activity" subtitle="Every change to this election, its ballot and nominations, newest first. It can’t be edited.">
       <ActivityList events={events ?? []} names={names} />
     </Panel>
+  );
+}
+
+/**
+ * Nominations by position (plan §5): approve or reject each one the nominee
+ * has accepted, see the ones still waiting for an answer, fix a candidate's
+ * details and add a candidate directly. Review is open until the ballot is locked.
+ */
+async function Nominations({ data }: { data: AdminElection }) {
+  const { election, positions, ctx } = data;
+  const supabase = await createClient();
+  const [{ data: nominations }, { data: candidates }, { data: eligible }] = await Promise.all([
+    supabase.from('nominations').select('*').eq('election_id', election.id).order('created_at'),
+    supabase.from('candidates').select('*').eq('election_id', election.id).order('created_at'),
+    supabase.rpc('election_nominees', { p_election: election.id })
+  ]);
+  const people = Array.from(
+    new Set((nominations ?? []).flatMap((n) => [n.nominee_user_id, n.nominated_by]).filter(Boolean))
+  ) as string[];
+  const { data: members } = people.length
+    ? await supabase.from('members').select('user_id, fullName').in('user_id', people)
+    : { data: [] };
+  const name = (u: string | null) => members?.find((m) => m.user_id === u)?.fullName ?? 'A member';
+  const reviewing = election.status === 'scheduled';
+  const editable = ['draft', 'scheduled', 'ballot_locked'].includes(election.status);
+
+  return (
+    <div className="flex flex-col gap-6">
+      {!reviewing && (
+        <Banner tone="info" title={election.status === 'draft' ? 'Not published yet' : 'Review is closed'}>
+          {election.status === 'draft'
+            ? 'Members can nominate once the election is published and nominations open.'
+            : 'The ballot is locked. Candidates’ names, statements and photos can still be corrected.'}
+        </Banner>
+      )}
+      {ctx.adminIsStanding && (
+        <Banner tone="info" title="You’re standing in this election">
+          Another admin has to review its nominations.
+        </Banner>
+      )}
+      {positions.map((p) => {
+        const here = (nominations ?? []).filter((n) => n.ballot_position_id === p.id && n.status !== 'approved');
+        const onBallot = (candidates ?? []).filter((c) => c.ballot_position_id === p.id);
+        const waiting = here.filter((n) => n.status === 'submitted').length;
+        return (
+          <Panel
+            key={p.id}
+            title={p.title}
+            subtitle={`${p.seats} seat${p.seats === 1 ? '' : 's'} · ${onBallot.length} on the ballot${waiting ? ` · ${waiting} to review` : ''}`}
+          >
+            <ul className="divide-y">
+              {onBallot.map((c) => (
+                <li key={c.id} className="flex flex-col gap-2 px-4 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-medium">{c.full_name}</span>
+                    <Badge tone={c.withdrawn_at ? 'neutral' : 'green'}>{c.withdrawn_at ? 'Withdrawn' : 'On the ballot'}</Badge>
+                  </div>
+                  {c.bio && <p className="mt-0 line-clamp-2 text-sm text-muted-foreground">{c.bio}</p>}
+                  {editable && (
+                    <EditCandidate action={editCandidate.bind(null, election.id, c.id)} candidate={c} />
+                  )}
+                </li>
+              ))}
+              {here.map((n) => {
+                const status = NOMINATION_LABEL[n.status as NominationStatus];
+                const who = n.full_name ?? name(n.nominee_user_id);
+                return (
+                  <li key={n.id} className="flex flex-col gap-2 px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{who}</span>
+                        <span className="text-caption text-muted-foreground">
+                          {n.nominated_by === n.nominee_user_id ? 'Nominated themselves' : `Nominated by ${name(n.nominated_by)}`}
+                        </span>
+                      </div>
+                      <Badge tone={status.tone}>{status.label}</Badge>
+                    </div>
+                    {n.bio && <p className="mt-0 text-sm">{n.bio}</p>}
+                    {n.manifesto && <p className="mt-0 text-sm text-muted-foreground">Platform: {n.manifesto}</p>}
+                    {n.status === 'rejected' && n.rejection_reason && <p className="mt-0 text-sm">Reason: {n.rejection_reason}</p>}
+                    {reviewing && !ctx.adminIsStanding && ['awaiting_acceptance', 'submitted'].includes(n.status) && (
+                      <ReviewButtons
+                        approve={approveNomination.bind(null, election.id, n.id)}
+                        reject={rejectNomination.bind(null, election.id, n.id)}
+                        nominee={who}
+                        position={p.title}
+                        canApprove={n.status === 'submitted'}
+                      />
+                    )}
+                  </li>
+                );
+              })}
+              {onBallot.length + here.length === 0 && (
+                <li className="px-4 py-3 text-sm text-muted-foreground">No nominations yet.</li>
+              )}
+            </ul>
+          </Panel>
+        );
+      })}
+      {['draft', 'scheduled'].includes(election.status) && !ctx.adminIsStanding && (
+        <Panel title="Add a candidate" subtitle="For a nomination made on paper or at a meeting. It’s recorded in the activity log.">
+          <AddCandidateForm
+            action={addCandidate.bind(null, election.id)}
+            positions={positions.map((p) => ({ id: p.id, title: p.title }))}
+            members={eligible ?? []}
+          />
+        </Panel>
+      )}
+    </div>
   );
 }

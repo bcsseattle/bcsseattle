@@ -17,13 +17,15 @@ export default async function AdminElectionsPage() {
   return (await electionManagementEnabled()) ? <ManageElections /> : <LegacyElections />;
 }
 
-/** Where each next action is done. Later phases add the nominations, ballot, voting and results tabs. */
+/** Where each next action is done. Later phases add the ballot, voting and results tabs. */
 const actionHref = (id: string, action: NextAction) =>
   action === 'finish_setup'
     ? `/admin/elections/${id}/edit?step=review`
     : action === 'preview'
       ? `/elections/${id}`
-      : `/admin/elections/${id}`;
+      : action === 'review_nominations'
+        ? `/admin/elections/${id}?tab=nominations`
+        : `/admin/elections/${id}`;
 
 async function ManageElections() {
   const supabase = await createClient();

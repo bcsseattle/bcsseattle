@@ -14,7 +14,7 @@ import { Field } from './field';
  * runs a server action. A refusal from the server (or the database) shows in
  * the sheet; success redirects.
  */
-function ConfirmAction({
+export function ConfirmAction({
   trigger,
   title,
   description,
@@ -22,6 +22,7 @@ function ConfirmAction({
   run,
   tone = 'default',
   variant = 'default',
+  size = 'default',
   reason
 }: {
   trigger: React.ReactNode;
@@ -31,6 +32,7 @@ function ConfirmAction({
   run: (reason: string) => Promise<FormState | void>;
   tone?: 'default' | 'destructive';
   variant?: 'default' | 'outline' | 'destructive';
+  size?: 'default' | 'sm';
   /** Asks for a reason, recorded in the activity log. */
   reason?: { label: string; helper: string };
 }) {
@@ -51,7 +53,7 @@ function ConfirmAction({
 
   return (
     <>
-      <Button type="button" variant={variant} onClick={() => (setError(undefined), setOpen(true))}>
+      <Button type="button" variant={variant} size={size} onClick={() => (setError(undefined), setOpen(true))}>
         {trigger}
       </Button>
       <ConfirmSheet
