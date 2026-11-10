@@ -588,3 +588,19 @@ export function defaultTimeline(type: ElectionType, now = Date.now()) {
     results_date: at(shiftDay(endDay, 1), '12:00')
   };
 }
+
+// ---------------------------------------------------------------------------
+// Nominations
+// ---------------------------------------------------------------------------
+
+export type NominationStatus = 'awaiting_acceptance' | 'submitted' | 'approved' | 'rejected' | 'declined' | 'withdrawn';
+
+/** Nomination statuses in words, for the nominee, the nominator and admins. */
+export const NOMINATION_LABEL: Record<NominationStatus, { label: string; tone: Tone }> = {
+  awaiting_acceptance: { label: 'Waiting for an answer', tone: 'orange' },
+  submitted: { label: 'Waiting for review', tone: 'blue' },
+  approved: { label: 'On the ballot', tone: 'green' },
+  rejected: { label: 'Not approved', tone: 'red' },
+  declined: { label: 'Declined', tone: 'neutral' },
+  withdrawn: { label: 'Withdrawn', tone: 'neutral' }
+};

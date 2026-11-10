@@ -40,6 +40,7 @@ const TITLES: Record<string, string> = {
   mission: 'Mission',
   new: 'New',
   nominate: 'Nominate',
+  nominations: 'My nominations',
   pending: 'Pending approval',
   privacy: 'Privacy policy',
   register: 'Register',

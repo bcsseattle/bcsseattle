@@ -17,6 +17,7 @@ import {
   loadElection,
   type ElectionData
 } from '~/components/elections/election';
+import { MyNominations } from '~/components/elections/my-nominations';
 import { useMember } from '~/lib/member';
 import { useSession } from '~/lib/session';
 import { useData } from '~/lib/use-data';
@@ -33,17 +34,17 @@ export default function ElectionDetail() {
       back={{ label: 'Elections', href: '/elections/' }}
     >
       <Loaded state={state}>
-        {(d) => <Detail d={d} isActive={me.data?.isActive} />}
+        {(d) => <Detail d={d} isActive={me.data?.isActive} reload={state.reload} />}
       </Loaded>
     </Screen>
   );
 }
 
-function Detail({ d, isActive }: { d: ElectionData; isActive?: boolean }) {
+function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; reload: () => Promise<void> }) {
   const { election: e, phase: p } = d;
   const canBallot =
     p.votingOpen && !!isActive && (d.offerCandidates || d.offerInitiatives);
-  const canNominate = p.nominationsOpen && !d.myCandidacy;
+  const canNominate = p.nominationsOpen && !d.myCandidacy && !d.myAcceptedNomination;
   const results = `/elections/results/?id=${e.id}`;
 
   // One primary action: vote, else nominate, else results once closed.
@@ -75,15 +76,7 @@ function Detail({ d, isActive }: { d: ElectionData; isActive?: boolean }) {
         className="rounded-lg border bg-card p-4"
       />
 
-      {d.myCandidacy && (
-        <Banner
-          tone="success"
-          title={`You’re nominated for ${d.myCandidacy.position}`}
-        >
-          To change or withdraw your nomination, contact the election
-          administrator.
-        </Banner>
-      )}
+      <MyNominations d={d} reload={reload} />
       {d.electedUnopposed && (
         <Banner tone="success" title="Candidates elected unopposed">
           Every position had one candidate, so they are elected without a vote.

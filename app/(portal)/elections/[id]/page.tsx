@@ -14,6 +14,7 @@ import { supportsUnopposedCandidates } from '@/utils/election-types';
 import { ElectionType } from '@/types';
 import { formatDeadline } from '@/utils/format';
 import { currentUserIsActiveMember } from '@/utils/election-config';
+import { checkFeatureFlag } from '@/utils/server-feature-flags';
 import {
   ballotOffer,
   ballotQuestions,
@@ -133,6 +134,22 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
   // Edges included, as the server accepts nominations (W15).
   const isNominationOpen = windows.nominationsOpen;
 
+  // The nomination flow with review (Phase 3) is behind the flag; it shows the
+  // member what's waiting for them in this election.
+  const managed = await checkFeatureFlag('enableElectionManagement');
+  const { data: myNominationRows } =
+    managed && user
+      ? await supabase
+          .from('nominations')
+          .select('id, position, status, rejection_reason')
+          .eq('election_id', id)
+          .eq('nominee_user_id', user.id)
+          .in('status', ['awaiting_acceptance', 'submitted', 'rejected'])
+      : { data: [] };
+  const myNominations = (['draft', 'scheduled'].includes(election.status) ? (myNominationRows ?? []) : []).filter(
+    (n) => n.status !== 'awaiting_acceptance' || isNominationOpen
+  );
+
   const supportsUnopposed = supportsUnopposedCandidates(election.type as ElectionType);
 
   // The ballot is offered only to approved, active members (BUG-007), the same
@@ -216,13 +233,35 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           title="Nominations are open"
           action={
             <Link href={`/elections/${election.id}/nominate`} className={buttonVariants({ size: 'sm' })}>
-              Nominate yourself
+              {managed ? 'Nominate' : 'Nominate yourself'}
             </Link>
           }
         >
-          Submit your nomination for this election.
+          {managed
+            ? `Nominate yourself or another approved member by ${formatDeadline(election.nomination_end!)}.`
+            : 'Submit your nomination for this election.'}
         </Banner>
       )}
+      {myNominations.map((n) => (
+        <Banner
+          key={n.id}
+          tone={n.status === 'awaiting_acceptance' ? 'attention' : 'info'}
+          title={
+            n.status === 'awaiting_acceptance'
+              ? `You’ve been nominated for ${n.position}`
+              : n.status === 'submitted'
+                ? `Your nomination for ${n.position} is waiting for review`
+                : `Your nomination for ${n.position} wasn’t approved`
+          }
+          action={
+            <Link href={`/elections/${election.id}/nominations/${n.id}`} className={buttonVariants({ size: 'sm', variant: 'outline' })}>
+              {n.status === 'awaiting_acceptance' ? 'Accept or decline' : 'View'}
+            </Link>
+          }
+        >
+          {n.status === 'rejected' ? n.rejection_reason : n.status === 'awaiting_acceptance' ? 'Answer before nominations close.' : 'You can change your details until the ballot is locked.'}
+        </Banner>
+      ))}
 
       {isVotingOpen && !user && (
         <Banner
