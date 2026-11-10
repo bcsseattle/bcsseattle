@@ -33,8 +33,56 @@ export type Database = {
         }
         Relationships: []
       }
+      ballot_positions: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          election_id: string
+          id: string
+          seats: number
+          title: string
+          unopposed_decision: string | null
+          updated_at: string
+          vacant: boolean
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          election_id: string
+          id?: string
+          seats?: number
+          title: string
+          unopposed_decision?: string | null
+          updated_at?: string
+          vacant?: boolean
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          election_id?: string
+          id?: string
+          seats?: number
+          title?: string
+          unopposed_decision?: string | null
+          updated_at?: string
+          vacant?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ballot_positions_election_id_fkey"
+            columns: ["election_id"]
+            isOneToOne: false
+            referencedRelation: "elections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidates: {
         Row: {
+          ballot_position_id: string | null
           bio: string | null
           created_at: string | null
           election_id: string | null
@@ -44,8 +92,10 @@ export type Database = {
           photo_url: string | null
           position: string
           user_id: string | null
+          withdrawn_at: string | null
         }
         Insert: {
+          ballot_position_id?: string | null
           bio?: string | null
           created_at?: string | null
           election_id?: string | null
@@ -55,8 +105,10 @@ export type Database = {
           photo_url?: string | null
           position: string
           user_id?: string | null
+          withdrawn_at?: string | null
         }
         Update: {
+          ballot_position_id?: string | null
           bio?: string | null
           created_at?: string | null
           election_id?: string | null
@@ -66,8 +118,23 @@ export type Database = {
           photo_url?: string | null
           position?: string
           user_id?: string | null
+          withdrawn_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "candidates_ballot_position_id_fkey"
+            columns: ["ballot_position_id"]
+            isOneToOne: false
+            referencedRelation: "ballot_positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidates_election_id_fkey"
+            columns: ["election_id"]
+            isOneToOne: false
+            referencedRelation: "elections"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "candidates_user_id_fkey"
             columns: ["user_id"]
@@ -264,6 +331,77 @@ export type Database = {
           },
         ]
       }
+      election_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          after: Json | null
+          before: Json | null
+          created_at: string
+          election_id: string
+          id: number
+          reason: string | null
+          subject: string
+          subject_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          election_id: string
+          id?: never
+          reason?: string | null
+          subject: string
+          subject_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          election_id?: string
+          id?: never
+          reason?: string | null
+          subject?: string
+          subject_id?: string | null
+        }
+        Relationships: []
+      }
+      election_notifications: {
+        Row: {
+          election_id: string
+          id: number
+          kind: string
+          sent_at: string
+          user_id: string | null
+        }
+        Insert: {
+          election_id: string
+          id?: never
+          kind: string
+          sent_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          election_id?: string
+          id?: never
+          kind?: string
+          sent_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "election_notifications_election_id_fkey"
+            columns: ["election_id"]
+            isOneToOne: false
+            referencedRelation: "elections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       election_positions: {
         Row: {
           created_at: string | null
@@ -291,6 +429,109 @@ export type Database = {
         }
         Relationships: []
       }
+      election_results: {
+        Row: {
+          abstain: number | null
+          ballot_position_id: string | null
+          candidate_id: string | null
+          certified_at: string
+          certified_by: string | null
+          election_id: string
+          id: string
+          initiative_id: string | null
+          no: number | null
+          note: string | null
+          outcome: string
+          rank: number | null
+          votes: number | null
+          yes: number | null
+        }
+        Insert: {
+          abstain?: number | null
+          ballot_position_id?: string | null
+          candidate_id?: string | null
+          certified_at?: string
+          certified_by?: string | null
+          election_id: string
+          id?: string
+          initiative_id?: string | null
+          no?: number | null
+          note?: string | null
+          outcome: string
+          rank?: number | null
+          votes?: number | null
+          yes?: number | null
+        }
+        Update: {
+          abstain?: number | null
+          ballot_position_id?: string | null
+          candidate_id?: string | null
+          certified_at?: string
+          certified_by?: string | null
+          election_id?: string
+          id?: string
+          initiative_id?: string | null
+          no?: number | null
+          note?: string | null
+          outcome?: string
+          rank?: number | null
+          votes?: number | null
+          yes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "election_results_ballot_position_id_fkey"
+            columns: ["ballot_position_id"]
+            isOneToOne: false
+            referencedRelation: "ballot_positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "election_results_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "election_results_election_id_fkey"
+            columns: ["election_id"]
+            isOneToOne: false
+            referencedRelation: "elections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "election_results_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      election_voters: {
+        Row: {
+          election_id: string
+          user_id: string
+        }
+        Insert: {
+          election_id: string
+          user_id: string
+        }
+        Update: {
+          election_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "election_voters_election_id_fkey"
+            columns: ["election_id"]
+            isOneToOne: false
+            referencedRelation: "elections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       elections: {
         Row: {
           candidate_voting_end: string | null
@@ -298,16 +539,20 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           description: string | null
+          eligibility_cutoff: string | null
           enable_separate_voting_periods: boolean | null
           end_date: string
           id: string
           is_active: boolean | null
           nomination_end: string | null
           nomination_start: string | null
+          results_date: string | null
+          results_published_at: string | null
+          runoff_of: string | null
           settings: Json | null
           show_unopposed_status: boolean | null
           start_date: string
-          status: Database["public"]["Enums"]["election_status"] | null
+          status: Database["public"]["Enums"]["election_status"]
           title: string
           type: Database["public"]["Enums"]["election_type"] | null
           updated_at: string | null
@@ -318,16 +563,20 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          eligibility_cutoff?: string | null
           enable_separate_voting_periods?: boolean | null
           end_date: string
           id?: string
           is_active?: boolean | null
           nomination_end?: string | null
           nomination_start?: string | null
+          results_date?: string | null
+          results_published_at?: string | null
+          runoff_of?: string | null
           settings?: Json | null
           show_unopposed_status?: boolean | null
           start_date: string
-          status?: Database["public"]["Enums"]["election_status"] | null
+          status?: Database["public"]["Enums"]["election_status"]
           title: string
           type?: Database["public"]["Enums"]["election_type"] | null
           updated_at?: string | null
@@ -338,21 +587,33 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          eligibility_cutoff?: string | null
           enable_separate_voting_periods?: boolean | null
           end_date?: string
           id?: string
           is_active?: boolean | null
           nomination_end?: string | null
           nomination_start?: string | null
+          results_date?: string | null
+          results_published_at?: string | null
+          runoff_of?: string | null
           settings?: Json | null
           show_unopposed_status?: boolean | null
           start_date?: string
-          status?: Database["public"]["Enums"]["election_status"] | null
+          status?: Database["public"]["Enums"]["election_status"]
           title?: string
           type?: Database["public"]["Enums"]["election_type"] | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "elections_runoff_of_fkey"
+            columns: ["runoff_of"]
+            isOneToOne: false
+            referencedRelation: "elections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_logs: {
         Row: {
@@ -586,6 +847,7 @@ export type Database = {
           created_by: string | null
           current_amount: number | null
           description: string | null
+          enable_recurring: boolean | null
           ends_at: string | null
           goal_amount: number
           id: string
@@ -602,6 +864,7 @@ export type Database = {
           created_by?: string | null
           current_amount?: number | null
           description?: string | null
+          enable_recurring?: boolean | null
           ends_at?: string | null
           goal_amount: number
           id?: string
@@ -618,6 +881,7 @@ export type Database = {
           created_by?: string | null
           current_amount?: number | null
           description?: string | null
+          enable_recurring?: boolean | null
           ends_at?: string | null
           goal_amount?: number
           id?: string
@@ -733,6 +997,7 @@ export type Database = {
           description: string | null
           election_id: string | null
           id: string
+          pass_threshold: string
           title: string
           updated_at: string | null
         }
@@ -743,6 +1008,7 @@ export type Database = {
           description?: string | null
           election_id?: string | null
           id?: string
+          pass_threshold?: string
           title: string
           updated_at?: string | null
         }
@@ -753,6 +1019,7 @@ export type Database = {
           description?: string | null
           election_id?: string | null
           id?: string
+          pass_threshold?: string
           title?: string
           updated_at?: string | null
         }
@@ -876,30 +1143,88 @@ export type Database = {
       }
       nominations: {
         Row: {
+          ballot_position_id: string | null
+          bio: string | null
+          candidate_id: string | null
           created_at: string | null
+          decided_at: string | null
+          decided_by: string | null
           election_id: string
+          full_name: string | null
           id: string
+          manifesto: string | null
           message: string | null
+          nominated_by: string | null
           nominee_user_id: string
+          photo_url: string | null
           position: string
+          rejection_reason: string | null
+          status: string
+          updated_at: string
         }
         Insert: {
+          ballot_position_id?: string | null
+          bio?: string | null
+          candidate_id?: string | null
           created_at?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
           election_id: string
+          full_name?: string | null
           id?: string
+          manifesto?: string | null
           message?: string | null
+          nominated_by?: string | null
           nominee_user_id: string
+          photo_url?: string | null
           position: string
+          rejection_reason?: string | null
+          status: string
+          updated_at?: string
         }
         Update: {
+          ballot_position_id?: string | null
+          bio?: string | null
+          candidate_id?: string | null
           created_at?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
           election_id?: string
+          full_name?: string | null
           id?: string
+          manifesto?: string | null
           message?: string | null
+          nominated_by?: string | null
           nominee_user_id?: string
+          photo_url?: string | null
           position?: string
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "nominations_ballot_position_id_fkey"
+            columns: ["ballot_position_id"]
+            isOneToOne: false
+            referencedRelation: "ballot_positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nominations_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nominations_election_id_fkey"
+            columns: ["election_id"]
+            isOneToOne: false
+            referencedRelation: "elections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organization: {
         Row: {
@@ -1330,6 +1655,114 @@ export type Database = {
           columns: string[]
         }[]
       }
+      current_user_is_active_member: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      current_user_is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      donor_is_public: {
+        Args: { p_donor_id: string }
+        Returns: boolean
+      }
+      election_action_done: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      election_archive: {
+        Args: { p_election: string }
+        Returns: undefined
+      }
+      election_ballot_frozen: {
+        Args: { p_election: string }
+        Returns: boolean
+      }
+      election_cancel: {
+        Args: { p_election: string; p_reason: string }
+        Returns: undefined
+      }
+      election_extend: {
+        Args: {
+          p_election: string
+          p_field: string
+          p_reason: string
+          p_until: string
+        }
+        Returns: undefined
+      }
+      election_for_admin_action: {
+        Args: { p_action: string; p_election: string; p_reason?: string }
+        Returns: {
+          candidate_voting_end: string | null
+          candidate_voting_start: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          eligibility_cutoff: string | null
+          enable_separate_voting_periods: boolean | null
+          end_date: string
+          id: string
+          is_active: boolean | null
+          nomination_end: string | null
+          nomination_start: string | null
+          results_date: string | null
+          results_published_at: string | null
+          runoff_of: string | null
+          settings: Json | null
+          show_unopposed_status: boolean | null
+          start_date: string
+          status: Database["public"]["Enums"]["election_status"]
+          title: string
+          type: Database["public"]["Enums"]["election_type"] | null
+          updated_at: string | null
+        }
+      }
+      election_lock_ballot: {
+        Args: { p_election: string }
+        Returns: undefined
+      }
+      election_publish: {
+        Args: { p_election: string }
+        Returns: undefined
+      }
+      election_publish_results: {
+        Args: { p_election: string }
+        Returns: undefined
+      }
+      election_reopen_certification: {
+        Args: { p_election: string; p_reason: string }
+        Returns: undefined
+      }
+      election_require_reason: {
+        Args: { p_reason: string }
+        Returns: undefined
+      }
+      election_snapshot_voters: {
+        Args: { p_election: string }
+        Returns: undefined
+      }
+      election_turnout: {
+        Args: { p_election: string }
+        Returns: {
+          eligible: number
+          voted_candidates: number
+          voted_initiatives: number
+        }[]
+      }
+      election_voter_eligible: {
+        Args: { p_election: string; p_user: string }
+        Returns: boolean
+      }
+      election_voting_open: {
+        Args: {
+          p_at?: string
+          p_election: string
+          p_kind: Database["public"]["Enums"]["vote_session_type"]
+        }
+        Returns: boolean
+      }
       find_duplicate_votes: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1407,7 +1840,7 @@ export type Database = {
         }[]
       }
       register_device: {
-        Args: { p_token: string; p_platform: string }
+        Args: { p_platform: string; p_token: string }
         Returns: undefined
       }
       user_can_vote_in_session: {
@@ -1446,6 +1879,10 @@ export type Database = {
         | "voting_closed"
         | "completed"
         | "cancelled"
+        | "scheduled"
+        | "ballot_locked"
+        | "certified"
+        | "archived"
       election_type: "leadership" | "initiative" | "board"
       fundraiser_category:
         | "general"
@@ -1470,7 +1907,6 @@ export type Database = {
         | "cash"
         | "us_bank_account"
         | "external"
-      position_enum: "President" | "Vice President" | "Secretary" | "Treasurer"
       pricing_plan_interval: "day" | "week" | "month" | "year"
       pricing_type: "one_time" | "recurring"
       purpose_enum:
@@ -1627,6 +2063,10 @@ export const Constants = {
         "voting_closed",
         "completed",
         "cancelled",
+        "scheduled",
+        "ballot_locked",
+        "certified",
+        "archived",
       ],
       election_type: ["leadership", "initiative", "board"],
       fundraiser_category: [
@@ -1655,7 +2095,6 @@ export const Constants = {
         "us_bank_account",
         "external",
       ],
-      position_enum: ["President", "Vice President", "Secretary", "Treasurer"],
       pricing_plan_interval: ["day", "week", "month", "year"],
       pricing_type: ["one_time", "recurring"],
       purpose_enum: [
