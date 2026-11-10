@@ -9,7 +9,7 @@ import {
 import { getRedirectMethod } from '@/utils/auth-helpers/settings';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { useServerFeatureFlag } from '@/utils/server-feature-flags';
+import { getServerFeatureFlag } from '@/utils/server-feature-flags';
 import { FEATURE_FLAGS, createFeatureFlagArray } from '@/utils/feature-flag-constants';
 interface Props {
   searchParams: Promise<{ configoverride?: string }>;
@@ -25,7 +25,7 @@ export default async function Register(props: Props) {
     FEATURE_FLAGS.SKIP_MEMBERSHIP_CHECK,
     FEATURE_FLAGS.ENABLE_DEBUG_MODE
   );
-  const featureFlags = await useServerFeatureFlag(requiredFlags, searchParams.configoverride);
+  const featureFlags = await getServerFeatureFlag(requiredFlags, searchParams.configoverride);
 
   const {
     data: { user },

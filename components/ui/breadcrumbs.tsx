@@ -26,7 +26,6 @@ const TITLES: Record<string, string> = {
   donate: 'Donate',
   donations: 'Donations',
   edit: 'Edit',
-  'election-types': 'Election types',
   elections: 'Elections',
   expenses: 'Expenses',
   fundraisers: 'Fundraisers',

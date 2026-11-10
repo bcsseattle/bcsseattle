@@ -47,7 +47,6 @@ Feature: The site works on phones and with assistive technology
       | /admin/expenses         |
       | /admin/elections        |
       | /admin/voting-config    |
-      | /admin/election-types   |
       | /fundraisers/admin/new  |
 
   @P2 @mobile

@@ -21,7 +21,9 @@ export default function OTPVerify({
   disableButton,
   redirectTo
 }: OTPVerifyProps) {
-  const router = redirectMethod === 'client' ? useRouter() : null;
+  // useRouter is a hook, so it runs every render; only client redirects use it.
+  const clientRouter = useRouter();
+  const router = redirectMethod === 'client' ? clientRouter : null;
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState('');
 

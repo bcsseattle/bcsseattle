@@ -31,11 +31,11 @@ export const FEATURE_FLAGS = {
 ### Single Feature Flag
 
 ```typescript
-import { useServerFeatureFlagSingle } from '@/utils/server-feature-flags';
+import { getServerFeatureFlagSingle } from '@/utils/server-feature-flags';
 import { FEATURE_FLAGS } from '@/utils/feature-flag-constants';
 
 export default async function MyPage({ searchParams }: { searchParams: { configoverride?: string } }) {
-  const skipChecks = await useServerFeatureFlagSingle(
+  const skipChecks = await getServerFeatureFlagSingle(
     FEATURE_FLAGS.SKIP_MEMBERSHIP_CHECK,
     searchParams.configoverride
   );
@@ -49,7 +49,7 @@ export default async function MyPage({ searchParams }: { searchParams: { configo
 ### Multiple Feature Flags (Recommended)
 
 ```typescript
-import { useServerFeatureFlag } from '@/utils/server-feature-flags';
+import { getServerFeatureFlag } from '@/utils/server-feature-flags';
 import { FEATURE_FLAGS, createFeatureFlagArray } from '@/utils/feature-flag-constants';
 
 export default async function MyPage({ searchParams }: { searchParams: { configoverride?: string } }) {
@@ -61,7 +61,7 @@ export default async function MyPage({ searchParams }: { searchParams: { configo
   );
   
   // Get all flags in one call (efficient!)
-  const flags = await useServerFeatureFlag(requiredFlags, searchParams.configoverride);
+  const flags = await getServerFeatureFlag(requiredFlags, searchParams.configoverride);
   
   // Use the flags with full type safety
   if (flags[FEATURE_FLAGS.SKIP_MEMBERSHIP_CHECK]) {
@@ -119,7 +119,7 @@ INSERT INTO feature_flags (feature_name, environment, enabled) VALUES
 ## Best Practices
 
 1. **Use Constants**: Always use `FEATURE_FLAGS` constants to prevent typos
-2. **Batch Calls**: Use `useServerFeatureFlag([...])` for multiple flags
+2. **Batch Calls**: Use `getServerFeatureFlag([...])` for multiple flags
 3. **Type Safety**: Use `createFeatureFlagArray()` for full TypeScript support
 4. **Graceful Degradation**: Features should work even if flags fail to load
 5. **Clear Naming**: Feature flag names should be descriptive and action-oriented

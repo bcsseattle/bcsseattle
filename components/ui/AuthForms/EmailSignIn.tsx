@@ -23,7 +23,9 @@ export default function EmailSignIn({
   disableButton,
   redirectTo
 }: EmailSignInProps) {
-  const router = redirectMethod === 'client' ? useRouter() : null;
+  // useRouter is a hook, so it runs every render; only client redirects use it.
+  const clientRouter = useRouter();
+  const router = redirectMethod === 'client' ? clientRouter : null;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -80,7 +82,7 @@ export default function EmailSignIn({
               href={`/signin/signup${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`} 
               className="text-sm text-accent underline-offset-4 hover:underline"
             >
-              Don't have an account? Sign up
+              Don&apos;t have an account? Sign up
             </Link>
           </p>
         </>

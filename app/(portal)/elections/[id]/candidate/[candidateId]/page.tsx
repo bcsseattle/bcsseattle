@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { CalendarDays, Mail, User, Vote, ArrowLeft, Award } from 'lucide-react';
 import Link from 'next/link';
 import { BackLink } from '@/components/ui/breadcrumb';
-import { useServerFeatureFlag } from '@/utils/server-feature-flags';
+import { getServerFeatureFlag } from '@/utils/server-feature-flags';
 import {
   FEATURE_FLAGS,
   createFeatureFlagArray
@@ -32,7 +32,7 @@ export default async function CandidatePage2(props: Props) {
     FEATURE_FLAGS.SKIP_MEMBERSHIP_CHECK,
     FEATURE_FLAGS.ENABLE_DEBUG_MODE
   );
-  const featureFlags = await useServerFeatureFlag(
+  const featureFlags = await getServerFeatureFlag(
     requiredFlags,
     searchParams.configoverride
   );
@@ -78,7 +78,7 @@ export default async function CandidatePage2(props: Props) {
   const { data: election, error: electionError } = await supabase
     .from('elections')
     .select('title, description, start_date, end_date, status')
-    .eq('id', candidate.election_id!!)
+    .eq('id', candidate.election_id!)
     .single();
 
   // Combine the data

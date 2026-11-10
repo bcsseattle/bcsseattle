@@ -7,7 +7,7 @@ import { ElectionCard } from '@/components/elections/election-card';
 import { PageHeader } from '@/components/portal/page-header';
 import { StatePanel } from '@/components/ui/state-panel';
 import { formatDate } from '@/utils/format';
-import { useServerFeatureFlag } from '@/utils/server-feature-flags';
+import { getServerFeatureFlag } from '@/utils/server-feature-flags';
 import {
   FEATURE_FLAGS,
   createFeatureFlagArray
@@ -66,7 +66,7 @@ export default async function ElectionsPage(props: Props) {
   );
 
   // Check multiple feature flags in one call with full type safety
-  const featureFlags = await useServerFeatureFlag(
+  const featureFlags = await getServerFeatureFlag(
     requiredFlags,
     searchParams.configoverride
   );
