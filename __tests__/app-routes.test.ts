@@ -178,6 +178,24 @@ describe('POST /api/app/donations', () => {
       { id: 'd1' }
     );
   });
+
+  it.each([
+    ['month', 'monthly'],
+    ['year', 'yearly'],
+    ['one_time', 'once']
+  ])('charges a %s gift at the matching price, whatever order the prices come in', async (frequency, priceId) => {
+    mocked(submitDonation).mockResolvedValue({ donation: { id: 'd1' }, donor: {} });
+    mocked(stripe.checkoutWithStripeForDonation).mockResolvedValue({ url: 'https://checkout.stripe.com/d1' });
+    mockDb.rows.products = {
+      prices: [
+        { id: 'once', interval: null, type: 'one_time' },
+        { id: 'yearly', interval: 'year', type: 'recurring' },
+        { id: 'monthly', interval: 'month', type: 'recurring' }
+      ]
+    };
+    await donate(json('/x', gift({ frequency })));
+    expect(mocked(stripe.checkoutWithStripeForDonation).mock.calls[0][0].id).toBe(priceId);
+  });
 });
 
 describe('POST /api/app/fundraisers/[id]/donations', () => {
