@@ -1,6 +1,6 @@
 # BCS Seattle mobile app: plan (Phase 0)
 
-Status: **draft, waiting for go-ahead.** Nothing here has been built yet.
+Status: **approved; being built.** Phases 1 and 2 merged (#19, #20). The decisions are recorded in §9.
 Branch: `mobile/phase-0-plan` (from `develop`). Date: 9 Nov 2026.
 
 This plan covers the iOS and Android apps for signed-in BCS Seattle members, built with Capacitor. It compares architectures, proposes the repo layout and IDs, and works through auth, payments and store policy, store requirements, native features, and a mapping from each feature to its screen. Each decision you need to make is marked **Decide**, and §9 collects them.
@@ -346,16 +346,19 @@ Every phase runs `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm test`, `pnpm build
 
 ---
 
-## 9. Decisions I need from you
-1. Architecture **C** with a static Next.js app in `apps/mobile` (§1).
-2. The domain (`bcsseattle.org`?), app name "BCS Seattle", and IDs `org.bcsseattle.app` (§2).
-3. Account deletion, option (a) migration or (b) manual requests, and the new `/account-deletion` web page (§5.1).
-4. Which native features to build, and the `device_tokens` table if push is approved (§6).
-5. Where the member directory goes (§7).
-6. Will BCS seek a Candid Seal (for in-app Apple Pay donations later)? It doesn't block v1.
-7. Square icon master art (§5.3).
-8. How the App Review test account becomes an active member without a real charge (§5.4).
-9. Approval for the plugin list above.
+## 9. Decisions
+
+| # | Decision | Answer (9 Nov 2026) |
+|---|---|---|
+| 1 | Architecture | **C**, a static Next.js app in `apps/mobile`. |
+| 2 | Domain, name, IDs | `bcsseattle.org`, "BCS Seattle", `org.bcsseattle.app`. |
+| 3 | Account deletion | **(a) migration** (`20261109120000_account_deletion.sql`), `POST /api/app/account/delete`, and the public `/account-deletion` page. |
+| 4 | Native features | The necessary ones: **push notifications** (with the `device_tokens` table), offline screen, saving and sharing receipt PDFs. Not biometrics or haptics. |
+| 5 | Member directory | A **More** tab replaces Account as the fifth tab. It holds **Account**, **Members** (the directory) and **Resources**. |
+| 6 | Candid Seal | Open; doesn't block v1. |
+| 7 | Icon master art | Open (Phase 5). |
+| 8 | Review test account | Open (Phase 5). |
+| 9 | Plugins | Approved: core, cli, ios, android, app, app-launcher, browser, filesystem, share, secure storage. Push and network come with Phase 4. |
 
 ## 10. What you need to do outside the code
 
