@@ -53,10 +53,11 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | # | Decision | Notes |
 |---|---|---|
 | D1 | Candid Seal (in-app Apple Pay donations later) | Doesn't block v1 (plan §4). |
-| D2 | Square icon master art | Phase 5. |
+| D2 | Square icon master art | Phase 5 ships a **draft** set made from the website's seal (`apps/mobile/scripts/make-app-assets.sh`). Its ring text is unreadable at small sizes; send a square master (1024+, no transparency) and re-run the script. |
 | D3 | How the App Review test account becomes an active member without a real charge | Phase 5. |
 | D4 | iPhone only, or iPad too | The template allows iPad. App Review tests on iPad if it's allowed. |
 | D5 | Hide draft elections (W2) | |
+| D6 | Apple's **Sensitive Info** privacy category ("political opinion", "racial or ethnic data"): votes are listed as Other Data | `docs/app-store-listing.md` explains; add Sensitive Info there and in `PrivacyInfo.xcprivacy` if BCS reads it more broadly. |
 
 ## Design (Figma) updates
 
