@@ -24,12 +24,25 @@ import { sendEmail } from '@/utils/auth-helpers/server';
 // h1 on /contact-us, h2 as a section of the home page (BUG-051). `compact` is the
 // home page's form card (Figma 4:216): the section supplies the heading, and
 // Send message is Secondary because the header's Donate is that page's primary.
-export default function ContactForm({ heading = 'h2', compact = false }: { heading?: 'h1' | 'h2'; compact?: boolean }) {
+// title, description and defaultMessage let other pages reuse the form (/account-deletion).
+export default function ContactForm({
+  heading = 'h2',
+  compact = false,
+  title = 'Contact us',
+  description = 'Send us a message and we\'ll get back to you shortly.',
+  defaultMessage = ''
+}: {
+  heading?: 'h1' | 'h2';
+  compact?: boolean;
+  title?: string;
+  description?: string;
+  defaultMessage?: string;
+}) {
   const router = useRouter();
   const form = useForm<z.infer<typeof ContactFormSchema>>({
     resolver: zodResolver(ContactFormSchema),
     // Empty strings, not undefined, so zod reports "Name is required" rather than "Required" (BUG-075).
-    defaultValues: { name: '', email: '', message: '' }
+    defaultValues: { name: '', email: '', message: defaultMessage }
   });
 
   async function onSubmit(values: z.infer<typeof ContactFormSchema>) {
@@ -43,8 +56,8 @@ export default function ContactForm({ heading = 'h2', compact = false }: { headi
         <Card className={compact ? 'p-6' : 'mt-4'}>
           {!compact && (
             <CardHeader>
-              <CardTitle as={heading}>Contact us</CardTitle>
-              <CardDescription>Send us a message and we&apos;ll get back to you shortly.</CardDescription>
+              <CardTitle as={heading}>{title}</CardTitle>
+              <CardDescription>{description}</CardDescription>
             </CardHeader>
           )}
           <CardContent className={compact ? 'flex flex-col gap-4 p-0' : 'flex flex-col gap-4'}>
