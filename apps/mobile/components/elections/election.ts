@@ -77,7 +77,7 @@ export async function loadElection(id: string, userId: string) {
       rows(
         supabase
           .from('ballot_positions')
-          .select('position:title, description, display_order')
+          .select('position:title, description, display_order, seats, vacant, unopposed_decision')
           .eq('election_id', id)
           .order('display_order')
       ),
@@ -128,11 +128,13 @@ export async function loadElection(id: string, userId: string) {
   const votedInitiatives =
     !!session('initiatives') || votes.some((v) => v.initiative_id);
 
-  // Elected only once candidate voting has closed. The website's rule also
-  // says so before voting opens (during nominations); the app doesn't.
+  // Decided at lock, position by position (then it holds during voting too);
+  // otherwise only once candidate voting has closed. The website's old rule
+  // also said so before voting opened (during nominations); the app doesn't.
+  const decided = positions.some((x) => x.unopposed_decision || x.vacant);
   const electedUnopposed =
-    unopposed(election, candidates, p.candidateVotingOpen) &&
-    p.now > Date.parse(p.candidateWindow.end);
+    unopposed(election, candidates, p.candidateVotingOpen, positions) &&
+    (decided || p.now > Date.parse(p.candidateWindow.end));
   const { offerCandidates, offerInitiatives } = ballotOffer({
     windows: p,
     votedCandidates,

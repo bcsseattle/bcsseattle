@@ -9,6 +9,7 @@ import { CalendarDays, Mail, User, Vote, ArrowLeft, Award } from 'lucide-react';
 import Link from 'next/link';
 import { BackLink } from '@/components/ui/breadcrumb';
 import { getServerFeatureFlag } from '@/utils/server-feature-flags';
+import { electionPhase } from '@/utils/elections/rules';
 import {
   FEATURE_FLAGS,
   createFeatureFlagArray
@@ -77,7 +78,7 @@ export default async function CandidatePage2(props: Props) {
   // Fetch election details separately
   const { data: election, error: electionError } = await supabase
     .from('elections')
-    .select('title, description, start_date, end_date, status')
+    .select('title, description, start_date, end_date, status, type, nomination_start, nomination_end, enable_separate_voting_periods, candidate_voting_start, candidate_voting_end')
     .eq('id', candidate.election_id!)
     .single();
 
@@ -104,18 +105,14 @@ export default async function CandidatePage2(props: Props) {
     userVoteSession = voteSession;
   }
 
-  // Check if candidate voting has ended
-  const isCandidateVotingEnded = () => {
-    if (!election) return false;
-    
-    const now = new Date();
-    const generalEndDate = new Date(election.end_date);
-    
-    // Use general election end date for candidate voting
-    return now > generalEndDate;
-  };
-
-  const candidateVotingEnded = isCandidateVotingEnded();
+  // The shared phase (W18): the candidate window when separate periods are
+  // on, and the status an admin set (a cancelled or certified election is over).
+  const phase = election ? electionPhase(election) : null;
+  const candidateVotingEnded =
+    !!phase &&
+    (phase.now > Date.parse(phase.candidateWindow.end) ||
+      ['certified', 'results_published', 'archived', 'cancelled'].includes(phase.phase));
+  const candidateVotingOpen = !!phase?.candidateVotingOpen;
 
   // Get candidate's initials for avatar fallback
   const getInitials = (name: string) => {
@@ -286,10 +283,7 @@ export default async function CandidatePage2(props: Props) {
                             : 'border-badge-green-border text-badge-green-text'
                         }`}
                       >
-                        {candidateVotingEnded 
-                          ? 'Candidate Voting Closed' 
-                          : candidateWithElection.elections.status.replace('_', ' ')
-                        }
+                        {candidateVotingEnded ? 'Candidate Voting Closed' : phase?.label.member}
                       </Badge>
                     </div>
                   )}
@@ -341,6 +335,10 @@ export default async function CandidatePage2(props: Props) {
                               View Election Results
                             </Link></Button>
                         </div>
+                      </div>
+                    ) : !candidateVotingOpen ? (
+                      <div className="p-4 bg-muted border border-border rounded-lg text-center text-sm text-muted-foreground">
+                        Candidate voting isn’t open yet.
                       </div>
                     ) : (
                       <div className="p-4 bg-accent-100 border border-accent-200 rounded-lg">

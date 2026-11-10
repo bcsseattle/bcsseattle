@@ -118,7 +118,7 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
   // This election's own positions (ballot_positions); the shared rules fall back to defaults.
   const { data: dbPositions } = await supabase
     .from('ballot_positions')
-    .select('position:title, description, display_order')
+    .select('position:title, description, display_order, seats, vacant, unopposed_decision')
     .eq('election_id', id)
     .order('display_order');
   const positionOrder = orderPositions(election.type, dbPositions, candidates || []);
@@ -129,7 +129,12 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
   const { candidateVotingOpen, votingOpen: isVotingOpen, votingOver: isClosed } = windows;
 
   // Determine if candidates were elected unopposed
-  const candidatesElectedUnopposed = electedUnopposed(election, candidates ?? [], candidateVotingOpen);
+  // Decided at lock position by position; for elections locked before that,
+  // only once candidate voting has closed (not during nominations), as the app does.
+  const decided = positionOrder.some((p) => p.unopposed_decision || p.vacant);
+  const candidatesElectedUnopposed =
+    electedUnopposed(election, candidates ?? [], candidateVotingOpen, positionOrder) &&
+    (decided || Date.now() > Date.parse(windows.candidateWindow.end));
 
   // Edges included, as the server accepts nominations (W15).
   const isNominationOpen = windows.nominationsOpen;
@@ -207,8 +212,8 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         election={election}
         windows={windows}
         nominationsOpen={!!isNominationOpen}
-        // W16: shows whenever candidate_voting_end is set.
-        candidateVotingEnd={election.candidate_voting_end}
+        // Only when separate periods are on, so candidate_voting_end applies (W16).
+        candidateVotingEnd={windows.separate ? election.candidate_voting_end : null}
       />
 
       {supportsUnopposed && candidatesElectedUnopposed && (
