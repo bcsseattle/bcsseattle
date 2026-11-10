@@ -17,7 +17,7 @@ import { Suspense } from 'react';
 import { PageHeader } from '@/components/portal/page-header';
 import { Panel } from '@/components/portal/panel';
 import { StatTile } from '@/components/ui/stat-tile';
-import Loading from '../loading';
+import { Loading, SkeletonRows } from '@/components/ui/skeleton';
 
 type SearchParams = Promise<{ [key: string]: string | undefined }>;
 
@@ -140,13 +140,13 @@ export default async function CommunityFunds(props: {
       </div>
       <Panel title="Recent contributions" subtitle="Member contributions">
         <div className="px-4 pb-2">
-          <Suspense fallback={<Loading />}>
+          <Suspense fallback={<Loading><SkeletonRows className="px-0" /></Loading>}>
             <RecentFunds members={members as any} columns={columns} month={month} year={year} showTitle={false} />
           </Suspense>
         </div>
       </Panel>
       <Panel title="Recent donations" subtitle="Completed gifts from members and the public">
-        <Suspense fallback={<Loading />}>
+        <Suspense fallback={<Loading><SkeletonRows /></Loading>}>
           <RecentDonations donations={donations || []} showTitle={false} />
         </Suspense>
       </Panel>

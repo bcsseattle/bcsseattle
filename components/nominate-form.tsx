@@ -37,6 +37,7 @@ import { nominateCandidate } from '@/utils/elections/handlers';
 import { Upload, X, User, CheckCircle } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { compressImage } from '@/utils/image-compression';
+import { Loading, Skeleton } from '@/components/ui/skeleton';
 
 type NominateFormInputs = z.infer<typeof NominateFormSchema>;
 
@@ -215,9 +216,15 @@ export default function NominateForm({
     return (
       <section className="my-4 max-w-lg">
         <Card>
-          <CardContent className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Checking nomination status...</p>
+          <CardContent className="p-6">
+            <Loading label="Checking nomination status…" className="flex flex-col gap-5">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex flex-col gap-2">
+                  <Skeleton className="h-3 w-28" />
+                  <Skeleton className="h-9 w-full rounded-md" />
+                </div>
+              ))}
+            </Loading>
           </CardContent>
         </Card>
       </section>

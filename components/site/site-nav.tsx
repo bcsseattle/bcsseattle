@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Menu } from 'lucide-react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/utils/cn';
 
 // The flat public nav (BCS/Site header 2:205). "Programs" is the Home
@@ -87,16 +87,19 @@ function SiteMenu({ account, pathname }: { account: Account; pathname: string })
               const current = isCurrent(pathname, link.href);
               return (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    aria-current={current ? 'page' : undefined}
-                    className={cn(
-                      'flex h-11 items-center rounded-md px-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                      current && 'bg-accent-100 text-accent'
-                    )}
-                  >
-                    {link.label}
-                  </Link>
+                  {/* Closes on tap, so the next page (or its skeleton) shows at once. */}
+                  <SheetClose asChild>
+                    <Link
+                      href={link.href}
+                      aria-current={current ? 'page' : undefined}
+                      className={cn(
+                        'flex h-11 items-center rounded-md px-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        current && 'bg-accent-100 text-accent'
+                      )}
+                    >
+                      {link.label}
+                    </Link>
+                  </SheetClose>
                 </li>
               );
             })}

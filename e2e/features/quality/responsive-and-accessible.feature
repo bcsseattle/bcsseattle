@@ -75,6 +75,7 @@ Feature: The site works on phones and with assistive technology
     When I go to "/"
     And I open the phone menu and choose "Fundraisers"
     Then I should be on the fundraisers page
+    And the phone menu should be closed
 
   @P2 @a11y
   Scenario Outline: <path> has no critical accessibility problems

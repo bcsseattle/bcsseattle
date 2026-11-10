@@ -1,4 +1,5 @@
 'use client';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { signInWithOAuth } from '@/utils/auth-helpers/client';
@@ -44,14 +45,13 @@ export default function OauthSignIn() {
           onSubmit={(e) => handleSubmit(e)}
         >
           <Input type="hidden" name="provider" value={provider.name} />
-          {isSubmitting ? (
-            <h1>Loading...</h1>
-          ) : (
-            <Button variant="outline" type="submit" className="w-full">
-              <span className="mr-2">{provider.icon}</span>
-              <span>{provider.displayName}</span>
-            </Button>
-          )}
+          {/* Stays in place while redirecting: no layout jump, no stray heading. */}
+          <Button variant="outline" type="submit" className="w-full" disabled={isSubmitting} aria-busy={isSubmitting}>
+            <span className="mr-2">
+              {isSubmitting ? <Loader2 aria-hidden className="motion-safe:animate-spin" /> : provider.icon}
+            </span>
+            <span>{provider.displayName}</span>
+          </Button>
         </form>
       ))}
     </div>

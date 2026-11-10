@@ -12,6 +12,7 @@ import {
 import { createClient } from '@/utils/supabase/client';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDistanceToNow } from 'date-fns';
+import { Loading, SkeletonRows } from '@/components/ui/skeleton';
 
 interface FundraiserUpdatesProps {
   fundraiserId: string;
@@ -105,7 +106,9 @@ export function FundraiserUpdates({
           </form>
         )}
         {isLoading ? (
-          <p className="text-center text-muted-foreground">Loading updates...</p>
+          <Loading label="Loading updates…">
+            <SkeletonRows count={2} className="px-0" />
+          </Loading>
         ) : updates.length === 0 ? (
           <p className="text-center text-muted-foreground">No updates yet.</p>
         ) : (
