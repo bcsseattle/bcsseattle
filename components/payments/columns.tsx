@@ -1,5 +1,6 @@
 'use client';
 
+import { formatMoney } from '@/utils/format';
 import { Member } from '@/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown } from 'lucide-react';
@@ -38,7 +39,7 @@ export const columns: ColumnDef<Data>[] = [
       return (
         <Link
           href={`/members/${member?.id}`}
-          className="text-blue-500 hover:text-blue-700 focus:text-blue-700 active:text-blue-800"
+          className="text-accent hover:text-foreground focus:text-foreground active:text-foreground"
         >
           {member?.fullName}
         </Link>
@@ -60,11 +61,7 @@ export const columns: ColumnDef<Data>[] = [
     },
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('amount'));
-      const formatted = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0
-      }).format(amount / 100);
+      const formatted = formatMoney(amount);
 
       return <div className="text-center font-medium">{formatted}</div>;
     }
@@ -159,11 +156,7 @@ export const individualColumns: ColumnDef<Data>[] = [
     },
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('amount'));
-      const formatted = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0
-      }).format(amount / 100);
+      const formatted = formatMoney(amount);
 
       return <div className="text-center font-medium">{formatted}</div>;
     }

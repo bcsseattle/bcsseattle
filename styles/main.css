@@ -3,31 +3,72 @@
 @tailwind utilities;
 
 
+/*
+  Art Gallery design system tokens (Figma 5bthU3bcIj93tjdz5OQjZs, Color 18:2,
+  Light mode). shadcn variable names are kept so components follow; the value
+  each one takes is listed in docs/ui-overhaul-plan.md. HSL triplets keep
+  Tailwind opacity modifiers (border-primary/30) working.
+*/
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    /* Darkened from 67.3% lightness: white on orange and orange on white were
-       ~2:1; now 4.8:1, WCAG AA (BUG-025). */
-    --primary: 24.6 76% 40%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 194.3 89.8% 33%; /* 4.8:1 on white (was 4.4) */
-    --secondary-foreground: 222.2 47.4% 100%;
-    --tertiary: 200.4 44.6% 22%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.75rem;
+    --background: 210 11.1% 96.5%; /* background #F5F6F7 */
+    --foreground: 210 12.5% 9.4%; /* ink #15181B */
+    --card: 0 0% 100%; /* card */
+    --card-foreground: 210 12.5% 9.4%;
+    --popover: 0 0% 100%; /* popover */
+    --popover-foreground: 210 12.5% 9.4%;
+    /* ink-fill: the one primary action per view. White on ink is 17.8:1, well
+       past the WCAG AA contrast BUG-025 restored to the old copper. */
+    --primary: 210 12.5% 9.4%; /* ink-fill #15181B */
+    --primary-foreground: 0 0% 100%; /* on-ink-fill */
+    --secondary: 210 13.3% 94.1%; /* surface-muted #EEF0F2 */
+    --secondary-foreground: 210 12.5% 9.4%;
+    --muted: 210 13.3% 94.1%; /* surface-muted #EEF0F2 */
+    --muted-foreground: 212 7.8% 37.8%; /* text-muted #596068, 6.4:1 on white */
+    /* Prussian blue, for interaction only: links, current nav item, selected
+       controls, focus ring, Info banners. Hover fills use --accent-100. */
+    --accent: 203.2 58.7% 29.4%; /* accent #1F5577 */
+    --accent-foreground: 0 0% 100%; /* on-accent */
+    --accent-100: 205.7 41.2% 93.3%; /* #E7EFF5 */
+    --accent-200: 207 39.2% 80%; /* #B8CEE0 */
+    --destructive: 2.6 71.6% 37.3%; /* danger #A3211B, 7.5:1 on white */
+    --destructive-foreground: 0 0% 100%; /* on-danger */
+    --border: 210 11.5% 89.8%; /* border #E2E5E8 */
+    --border-strong: 212 6.1% 52%; /* border-strong #7D848C */
+    /* Field borders need 3:1 (WCAG 1.4.11): border-strong is 3.8:1. */
+    --input: 212 6.1% 52%;
+    --ring: 203.2 58.7% 29.4%; /* Focus/Ring: accent band outside a card-coloured gap */
+    --mat: 210 9.5% 91.8%; /* mat #E8EAEC */
+    --radius: 0.5rem; /* radius-lg 8px; md 6px, sm 4px */
+
+    /* Status tones (Badge, Banner). Each text colour is AA on its own fill. */
+    --badge-green-bg: 126 27.8% 92.9%;
+    --badge-green-border: 125 27.9% 83.1%;
+    --badge-green-text: 124.5 55.4% 23.7%;
+    --badge-orange-bg: 30 88.2% 93.3%;
+    --badge-orange-border: 31.9 77.5% 84.3%;
+    --badge-orange-text: 23.8 100% 35.1%;
+    --badge-blue-bg: 211.8 51.5% 93.5%;
+    --badge-blue-border: 213 51.3% 84.7%;
+    --badge-blue-text: 211.8 66.2% 30.2%;
+    --badge-purple-bg: 284 48.4% 93.9%;
+    --badge-purple-border: 280 49.3% 86.9%;
+    --badge-purple-text: 267 75% 31.4%;
+    --badge-red-bg: 0 65.5% 94.3%;
+    --badge-red-border: 0 63.9% 85.9%;
+    --badge-red-text: 0 71.6% 37.3%;
+    --badge-neutral-bg: 210 13.3% 94.1%;
+    --badge-neutral-border: 213.3 12% 85.3%;
+    --badge-neutral-text: 212.3 8.6% 29.6%;
+    --money-negative-bg: 21 71.4% 94.5%;
+    --money-negative-border: 25.4 63.4% 83.9%;
+    --money-negative-text: 16.1 65.1% 37.1%;
+
+    /* Generated documents (receipts): fixed in both themes. */
+    --paper: 0 0% 100%;
+    --paper-ink: 210 12.5% 9.4%;
+    --paper-muted: 212.3 6.7% 38.2%;
+    --paper-rule: 210 8.6% 86.3%;
   }
 }
 
@@ -107,7 +148,7 @@ p {
 }
 
 .notion-text-href {
-  @apply text-primary underline;
+  @apply text-accent underline;
 }
 
 .notion-heading_3 {
@@ -124,7 +165,7 @@ p {
 }
 
 .notion-text-code {
-  @apply px-2 inline-block bg-gray-200 dark:bg-gray-700 rounded text-secondary dark:text-secondary-foreground;
+  @apply px-2 inline-block bg-gray-200 dark:bg-gray-700 rounded text-foreground;
 }
 
 .notion-heading_1 {

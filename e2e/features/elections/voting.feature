@@ -9,8 +9,8 @@ Feature: Voting in member elections
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
     And I am signed in as an approved member
     When I open the election
-    Then I should see the election status "Voting Open"
-    And I should see a "Vote for Candidates" button
+    Then I should see the election status "Voting open"
+    And I should see a "Review votes" button
 
   @P0 @smoke @critical
   Scenario: An approved member votes for a candidate and gets a confirmation code
@@ -50,7 +50,7 @@ Feature: Voting in member elections
     And I am signed in as an approved member
     When I open the election
     Then I should see the election status "<status>"
-    And I should not see a "Vote for Candidates" button
+    And I should not see a "Review votes" button
 
     Examples:
       | window   | status    |

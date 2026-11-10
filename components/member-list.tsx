@@ -1,3 +1,4 @@
+import { formatMoney } from '@/utils/format';
 import {
   Table,
   TableBody,
@@ -14,7 +15,7 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { MemberStatusBadge } from '@/components/portal/member-row';
 
 import { Member, Price, Subscription } from '@/types';
 import Link from 'next/link';
@@ -60,13 +61,8 @@ export default function MemberList({
                 (price) => price.id === subscription?.price_id
               );
 
-              const priceString = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 0
-              }).format(
-                ((price?.unit_amount || 0) * (member.totalMembersInFamily ?? 0) || 0) /
-                  100
+              const priceString = formatMoney(
+                (price?.unit_amount || 0) * (member.totalMembersInFamily ?? 0) || 0
               );
 
               return (
@@ -75,20 +71,14 @@ export default function MemberList({
                   <TableCell className="font-medium">
                     <Link
                       href={`/members/${member.id}`}
-                      className="text-blue-500 hover:text-blue-700 focus:text-blue-700 active:text-blue-800"
+                      className="text-accent hover:text-foreground focus:text-foreground active:text-foreground"
                     >
                       {member.fullName}
                     </Link>
                   </TableCell>
                   <TableCell>{member.city}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={
-                        member?.status === 'active' ? 'default' : 'destructive'
-                      }
-                    >
-                      {member.status}
-                    </Badge>
+                    <MemberStatusBadge status={member.status} />
                   </TableCell>
                   <TableCell>{member.membershipType}</TableCell>
                   <TableCell>{member.totalMembersInFamily}</TableCell>
@@ -96,7 +86,7 @@ export default function MemberList({
                     {subscription?.status === 'active' ? (
                       `${priceString} / ${price?.interval}`
                     ) : (
-                      <span className="text-red-700">
+                      <span className="text-badge-red-text">
                         Yet to choose contribution plan
                       </span>
                     )}

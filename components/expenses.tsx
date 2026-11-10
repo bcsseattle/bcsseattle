@@ -1,23 +1,36 @@
-import { getPriceString } from '@/utils/helpers';
+import { ExpenseRow } from '@/components/portal/expense-row';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { formatDate, formatMoney } from '@/utils/format';
 
+/** Expenses as a table of ExpenseRows (Figma 9:1426). */
 export function Expenses({ expenses = [] }: { expenses: any[] }) {
+  if (!expenses?.length) {
+    return <p className="mt-0 px-4 py-6 text-sm text-muted-foreground">No expenses recorded yet.</p>;
+  }
   return (
-    <div className="space-y-8">
-      {expenses?.map((expense) => {
-        const amountString = getPriceString(expense?.amount || 0);
-        return (
-          <div className="flex items-center" key={expense.id}>
-            {expense.date}
-            <div className="ml-4 space-y-1">
-              <p className="text-sm font-medium leading-none">
-                {expense?.description}
-              </p>
-              <p className="text-sm text-muted-foreground">{expense?.payee}</p>
-            </div>
-            <div className="ml-auto font-medium">{amountString}</div>
-          </div>
-        );
-      })}
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Date</TableHead>
+          <TableHead>Category</TableHead>
+          <TableHead>Payee</TableHead>
+          <TableHead>Description</TableHead>
+          <TableHead className="text-right">Amount</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {expenses.map((expense) => (
+          <ExpenseRow
+            key={expense.id}
+            date={expense.date ? formatDate(expense.date) : ''}
+            category={expense.category}
+            isPrivate={expense.is_private}
+            payee={expense.payee}
+            description={expense.description}
+            amount={formatMoney(expense?.amount || 0)}
+          />
+        ))}
+      </TableBody>
+    </Table>
   );
 }

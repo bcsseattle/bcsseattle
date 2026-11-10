@@ -250,7 +250,7 @@ export default function RegisterForm({
                   <FormLabel>Accept terms and conditions</FormLabel>
                   <FormDescription className="flex">
                     You agree to our {'   '}
-                    <Link href="/terms" className="text-primary ml-1">
+                    <Link href="/terms" className="text-accent underline ml-1">
                       terms of Service and Privacy Policy.
                     </Link>
                   </FormDescription>

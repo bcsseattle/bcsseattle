@@ -240,8 +240,10 @@ Then('the estimated bank balance should count only money received outside Stripe
   await expect
     .poll(async () => {
       await this.page.reload();
-      const shown = await this.page.locator('div.rounded-lg, div.rounded-xl').filter({ hasText: /^Bank Balance/ }).locator('.text-2xl').first().innerText();
-      const cents = Math.round(Number(shown.replace(/[^0-9.-]/g, '')) * 100);
+      // The Bank balance StatTile; its value is the Figure line.
+      const shown = await this.page.locator('div.rounded-lg').filter({ hasText: /^Bank balance/i }).locator('.text-figure').first().innerText();
+      // Negative amounts use a true minus sign (U+2212).
+      const cents = Math.round(Number(shown.replace('\u2212', '-').replace(/[^0-9.-]/g, '')) * 100);
       return cents === (await expectedBankEstimateCents());
     }, { timeout: 30_000 })
     .toBe(true);

@@ -8,7 +8,7 @@ Feature: Member account and community funds
   Scenario: A member sees their account settings
     Given I am signed in as an approved member
     When I go to "/account"
-    Then I should see the heading "Account Settings"
+    Then I should see the heading "My account"
     And I should see "Contributions Receipt"
 
   @P1
@@ -30,7 +30,7 @@ Feature: Member account and community funds
     Given I am signed in as a pending applicant
     When I go to "/membership-fee"
     Then I should see "Membership Fee"
-    And I should see a "Pay $20" button
+    And I should see a "Pay USD 20.00" button
 
   @P1
   Scenario: An approved member sees the community's finances

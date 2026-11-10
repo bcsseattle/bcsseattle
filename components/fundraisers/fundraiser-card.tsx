@@ -1,57 +1,76 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { formatCurrency } from '@/utils/helpers';
-import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Badge } from '../ui/badge';
+import { ImageIcon } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { buttonVariants } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { Fundraiser } from '@/types';
+import { formatDate, formatMoney } from '@/utils/format';
 
 interface FundraiserCardProps {
   fundraiser: Fundraiser;
 }
 
+/**
+ * BCS/Fundraiser card (Figma 3:290). The image sits on the mat and is never
+ * cropped; the category is a neutral badge; progress is ink. The title link
+ * covers the card, and Donate is its own link above it, so no control is
+ * nested inside another (BUG-066).
+ */
 export function FundraiserCard({ fundraiser }: FundraiserCardProps) {
-  const progress = ((fundraiser.current_amount ?? 0) / fundraiser.goal_amount) * 100;
-  const timeLeft = fundraiser.ends_at 
-    ? formatDistanceToNow(new Date(fundraiser.ends_at), { addSuffix: true })
-    : 'No end date';
+  const raised = fundraiser.current_amount ?? 0;
+  const progress = Math.min(100, (raised / fundraiser.goal_amount) * 100);
+  const category = fundraiser.category
+    ? fundraiser.category.charAt(0).toUpperCase() + fundraiser.category.slice(1)
+    : null;
 
   return (
-    <Card className="overflow-hidden">
-      <Link href={`/fundraisers/${fundraiser.id}`}>
-        {fundraiser.image_url && (
-          <div className="relative h-48 w-full">
-            <Image
-              src={fundraiser.image_url}
-              alt={fundraiser.title}
-              fill
-              className="object-cover"
-            />
-          </div>
+    <article className="relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm">
+      <div className="relative flex h-[216px] flex-col items-center justify-center gap-1 bg-mat">
+        {fundraiser.image_url ? (
+          <Image src={fundraiser.image_url} alt="" fill className="object-contain" />
+        ) : (
+          <>
+            <ImageIcon aria-hidden className="size-8 text-muted-foreground" />
+            <span className="text-caption text-muted-foreground">No image</span>
+          </>
         )}
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="line-clamp-1">{fundraiser.title}</CardTitle>
-            <Badge variant="outline">{fundraiser.category}</Badge>
-          </div>
-          <CardDescription className="line-clamp-2">
-            {fundraiser.description}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Progress value={progress} className="mb-2" />
-          <div className="flex justify-between text-sm">
-            <span>{formatCurrency(fundraiser.current_amount)} raised</span>
-            <span>{formatCurrency(fundraiser.goal_amount)} goal</span>
-          </div>
-        </CardContent>
-        <CardFooter className="text-sm text-muted-foreground">
-          Ends {timeLeft}
-        </CardFooter>
-      </Link>
-    </Card>
+      </div>
+      <div className="flex flex-1 flex-col items-start gap-3 p-4">
+        {category && <Badge tone="neutral">{category}</Badge>}
+        <h3 className="text-item text-foreground">
+          <Link
+            href={`/fundraisers/${fundraiser.id}`}
+            className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring"
+          >
+            {fundraiser.title}
+          </Link>
+        </h3>
+        {fundraiser.description && (
+          <p className="mt-0 line-clamp-2 text-sm text-muted-foreground">{fundraiser.description}</p>
+        )}
+        <Progress value={progress} aria-label={`${Math.round(progress)}% of the goal raised`} />
+        <div className="flex w-full items-center justify-between gap-2">
+          <span className="text-sm font-semibold text-foreground">
+            {formatMoney(raised * 100, { whole: true })} raised
+          </span>
+          <span className="text-caption text-muted-foreground">
+            of {formatMoney(fundraiser.goal_amount * 100, { whole: true })}
+          </span>
+        </div>
+        {fundraiser.ends_at && (
+          <span className="text-caption text-muted-foreground">Ends {formatDate(fundraiser.ends_at)}</span>
+        )}
+        <Link
+          href={`/fundraisers/${fundraiser.id}/donate`}
+          className={buttonVariants({ variant: 'outline', className: 'relative z-10 mt-auto w-full' })}
+        >
+          Donate<span className="sr-only"> to {fundraiser.title}</span>
+        </Link>
+      </div>
+    </article>
   );
 }

@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Image
 } from '@react-pdf/renderer';
-import { getPriceString } from '@/utils/helpers';
+import { formatDate, formatMoney } from '@/utils/format';
 
 const styles = StyleSheet.create({
   page: {
@@ -154,13 +154,13 @@ export default function InvoicePDF({
             <Text>Invoice Number: {donation?.id}</Text>
             <Text>
               Date of Donation:{' '}
-              {new Date(donation?.donation_date).toLocaleDateString()}
+              {formatDate(donation?.donation_date)}
             </Text>
             <Text>
               Description of Donation: {donation?.goods_services_description}
             </Text>
             <Text>
-              Donation Amount: {getPriceString(donation?.donation_amount)}
+              Donation Amount: {formatMoney(donation?.donation_amount)}
             </Text>
           </View>
         </View>
@@ -184,14 +184,14 @@ export default function InvoicePDF({
                   Donation
                 </Text>
                 <Text style={styles.tableCel}>
-                  {getPriceString(item.donation_amount)}
+                  {formatMoney(item.donation_amount)}
                 </Text>
                 <Text style={styles.tableCel}>
-                  {getPriceString(item.donation_amount)}
+                  {formatMoney(item.donation_amount)}
                 </Text>
                 <Text style={styles.tableCel}>{1}</Text>
                 <Text style={{ ...styles.tableCel, textAlign: 'right' }}>
-                  {getPriceString(item.donation_amount)}
+                  {formatMoney(item.donation_amount)}
                 </Text>
               </View>
             ))}
@@ -224,7 +224,7 @@ export default function InvoicePDF({
               <Text>Subtotal</Text>
             </View>
             <View>
-              <Text>{getPriceString(donation.donation_amount)}</Text>
+              <Text>{formatMoney(donation.donation_amount)}</Text>
             </View>
           </View>
           <View
@@ -240,7 +240,7 @@ export default function InvoicePDF({
               <Text>Deductible</Text>
             </View>
             <View>
-              <Text>{getPriceString(donation.donation_amount)}</Text>
+              <Text>{formatMoney(donation.donation_amount)}</Text>
             </View>
           </View>
           <View
@@ -256,7 +256,7 @@ export default function InvoicePDF({
               <Text>Total</Text>
             </View>
             <View>
-              <Text>{getPriceString(donation.donation_amount)}</Text>
+              <Text>{formatMoney(donation.donation_amount)}</Text>
             </View>
           </View>
           <View
@@ -287,7 +287,7 @@ export default function InvoicePDF({
                   marginTop: 5
                 }}
               >
-                {getPriceString(donation.donation_amount)}
+                {formatMoney(donation.donation_amount)}
               </Text>
             </View>
           </View>

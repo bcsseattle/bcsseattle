@@ -1,7 +1,7 @@
 'use client';
 
 import { Progress } from '@/components/ui/progress';
-import { formatCurrency } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 
 interface FundraiserProgressProps {
   currentAmount: number;
@@ -19,8 +19,8 @@ export function FundraiserProgress({
       <Progress value={progress} className="h-2" />
       <div className="flex justify-between text-sm">
         <div>
-          <p className="font-medium">{formatCurrency(currentAmount)}</p>
-          <p className="text-muted-foreground">raised of {formatCurrency(goalAmount)}</p>
+          <p className="font-medium">{formatMoney(currentAmount * 100, { whole: true })}</p>
+          <p className="text-muted-foreground">raised of {formatMoney(goalAmount * 100, { whole: true })}</p>
         </div>
         <div className="text-right">
           <p className="font-medium">{Math.round(progress)}%</p>

@@ -18,7 +18,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { useRouter, usePathname } from 'next/navigation';
-import { formatCurrency, getErrorRedirect } from '@/utils/helpers';
+import { getErrorRedirect } from '@/utils/helpers';
+import { formatMoney } from '@/utils/format';
 import { Database } from '@/types_db';
 import { FundraiserDonation } from '@/types/fundraisers';
 import { submitDonation } from '@/utils/fundraisers/handlers';
@@ -90,7 +91,7 @@ export function DonationForm({ fundraiser }: DonationFormProps) {
     if (fundraiser.minimum_donation && data.amount < fundraiser.minimum_donation) {
       form.setError('amount', {
         type: 'manual',
-        message: `Minimum donation amount is ${formatCurrency(fundraiser.minimum_donation)}`
+        message: `Minimum donation amount is ${formatMoney((fundraiser.minimum_donation ?? 0) * 100)}`
       });
       return;
     }
@@ -213,7 +214,7 @@ export function DonationForm({ fundraiser }: DonationFormProps) {
               </FormControl>
               <FormDescription>
                 {fundraiser.minimum_donation 
-                  ? `Minimum donation amount is ${formatCurrency(fundraiser.minimum_donation)}`
+                  ? `Minimum donation amount is ${formatMoney((fundraiser.minimum_donation ?? 0) * 100)}`
                   : 'Enter the amount you would like to donate'}
               </FormDescription>
               <FormMessage />
