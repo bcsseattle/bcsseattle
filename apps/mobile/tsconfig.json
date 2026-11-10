@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    // @/ is the website root, so the shared components' own imports resolve; ~/ is this app.
+    "paths": { "@/*": ["../../*"], "~/*": ["./*"] },
+    "allowImportingTsExtensions": true,
+    "incremental": false
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", "out", "ios", "android"]
+}
