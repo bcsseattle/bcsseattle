@@ -4,35 +4,15 @@ import { createClient } from '@/utils/supabase/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { redirect } from 'next/navigation';
 
+import { ReceiptRows } from '@/components/donations/gift-rows';
 import { ActionBar } from '@/components/ui/action-bar';
 import { buttonVariants } from '@/components/ui/button';
 import { ResultHeader } from '@/components/ui/result-header';
 import { formatDate, formatMoney } from '@/utils/format';
+import { paidWith } from '@/utils/giving';
 import { purposeTitleMap } from '@/utils/helpers';
 
-const PAID_WITH: Record<string, string> = {
-  card: 'Card',
-  us_bank_account: 'Bank transfer',
-  zelle: 'Zelle',
-  check: 'Check',
-  cash: 'Cash'
-};
-
 const sentenceCase = (text: string) => text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
-
-/** Receipt rows (BCS/List row 13:2112 in a card-filled group). */
-function Rows({ rows }: { rows: [string, React.ReactNode][] }) {
-  return (
-    <dl className="overflow-hidden rounded-lg border bg-card text-sm">
-      {rows.map(([term, value]) => (
-        <div key={term} className="flex h-13 items-center gap-3 border-b pl-4 pr-3 last:border-b-0">
-          <dt className="min-w-0 flex-1 text-foreground">{term}</dt>
-          <dd className="shrink-0 text-muted-foreground">{value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
 
 export default async function DonationConfirmation(props: {
   params: Promise<{ donationId: string }>;
@@ -71,7 +51,6 @@ export default async function DonationConfirmation(props: {
 
   const amount = formatMoney(donation.donation_amount);
   const purpose = sentenceCase(purposeTitleMap[donation.purpose ?? ''] ?? 'General purpose');
-  const paidWith = PAID_WITH[donation.payment_method ?? ''] ?? 'Other';
   const firstName = donor.full_name?.trim().split(/\s+/)[0];
 
   // A receipt is only issued for money received (BUG-042). Donors land here
@@ -94,11 +73,11 @@ export default async function DonationConfirmation(props: {
           {firstName ? `Thank you, ${firstName}. ` : 'Thank you. '}
           Bank transfers can take a few days; we’ll email your receipt as soon as the money arrives.
         </ResultHeader>
-        <Rows
+        <ReceiptRows
           rows={[
             ['Amount', amount],
             ['Purpose', purpose],
-            ['Paid with', paidWith],
+            ['Paid with', paidWith(donation.payment_method)],
             ['Status', 'Confirming']
           ]}
         />
@@ -122,11 +101,11 @@ export default async function DonationConfirmation(props: {
         Your gift of {amount} to {purpose} is complete.
       </ResultHeader>
       <div className="flex flex-col gap-3">
-        <Rows
+        <ReceiptRows
           rows={[
             ['Amount', amount],
             ['Purpose', purpose],
-            ['Paid with', paidWith],
+            ['Paid with', paidWith(donation.payment_method)],
             ['Date', formatDate(donation.donation_date)]
           ]}
         />

@@ -2,13 +2,12 @@
 
 import { useSearchParams } from 'next/navigation';
 import { UserX } from 'lucide-react';
-import { MemberStatusBadge } from '@/components/portal/member-row';
 import { PersonRow } from '@/components/ui/person-row';
 import { StatePanel } from '@/components/ui/state-panel';
 import { StatTile } from '@/components/ui/stat-tile';
 import { formatDate, formatMoney } from '@/utils/format';
 import { Loaded, Screen, Section } from '~/components/screen';
-import { MembersOnly } from '~/components/home/membership';
+import { MemberBadge, MembersOnly } from '~/components/home/membership';
 import { MonthPayments } from '~/components/home/month-payments';
 import { api, must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
@@ -59,7 +58,7 @@ function Profile({ id }: { id: string }) {
           <>
             <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3">
               <PersonRow className="flex-1" name={name} secondary={m.city} />
-              <MemberStatusBadge status={m.status} />
+              <MemberBadge member={m} />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <StatTile label="Member since" value={formatDate(m.created_at)} />

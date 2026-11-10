@@ -40,12 +40,21 @@ import { OptionCard } from '@/components/ui/option-card';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { GiftSummary } from '@/components/donations/gift-summary';
+import { GiftSummaryRow } from '@/components/donations/gift-rows';
 import { ArrowLeft } from 'lucide-react';
 import { US_STATES } from '@/utils/constants';
 import { submitDonation } from '@/utils/donation/handlers';
 import { checkoutWithStripeForDonation } from '@/utils/stripe/server';
 import { getErrorRedirect, getStatusRedirect } from '@/utils/helpers';
 import { formatMoney } from '@/utils/format';
+import {
+  FREQUENCIES,
+  PAYMENT_METHODS,
+  PRESET_AMOUNTS,
+  dollars,
+  frequencyLabel as frequencyLabelOf,
+  viaStripe as paysViaStripe
+} from '@/utils/giving';
 import { getStripe } from '@/utils/stripe/client';
 import Image from 'next/image';
 
@@ -194,28 +203,14 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
   // Donate (Figma 5:252) for step 1; Your information (24:2596) and Payment
   // (24:2699) for steps 2 and 3. The logic above is unchanged.
 
-  const FREQUENCIES = [
-    { value: 'one_time', label: 'One-time' },
-    { value: 'month', label: 'Monthly' },
-    { value: 'year', label: 'Yearly' }
-  ];
-  const PRESET_AMOUNTS = ['100', '200', '250', '500'];
   const OTHER = 'other';
-  const PAYMENT_METHODS = [
-    { value: 'card', label: 'Card', detail: 'Credit or debit card, processed securely by Stripe' },
-    { value: 'us_bank_account', label: 'Bank transfer', detail: 'US bank account through Stripe; can take a few days to clear' },
-    { value: 'zelle', label: 'Zelle', detail: 'Send to billing@bcsseattle.org and add your purpose in the memo' },
-    { value: 'check', label: 'Check', detail: 'Mail to 16224 Meadow Rd #502, Lynnwood, WA 98087' },
-    { value: 'cash', label: 'Cash', detail: 'Contact us to arrange a cash gift' }
-  ];
 
   const values = form.watch();
-  const amountCents = Math.round(Number(values.amount) * 100);
-  const amountText = Number.isFinite(amountCents) && amountCents > 0 ? formatMoney(amountCents) : '—';
-  const frequencyLabel = FREQUENCIES.find((f) => f.value === values.frequency)?.label ?? 'One-time';
+  const amountText = dollars(values.amount);
+  const frequencyLabel = frequencyLabelOf(values.frequency);
   const purposeLabel =
     programs?.find((program) => program.key === values.purpose)?.value ?? 'General purpose';
-  const viaStripe = values.paymentMethod === 'card' || values.paymentMethod === 'us_bank_account';
+  const viaStripe = paysViaStripe(values.paymentMethod);
   const goBack = () => setWizardStep(wizardStep - 1);
 
   const setFrequency = (frequency: string) => {
@@ -224,17 +219,16 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
   };
 
   const giftSummaryRow = (
-    <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3 lg:hidden">
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-caption text-muted-foreground">
+    <GiftSummaryRow
+      caption={
+        <>
           {frequencyLabel} gift · {purposeLabel}
-        </span>
-        <span className="text-sm font-semibold text-foreground">{amountText}</span>
-      </div>
-      <Button type="button" variant="link" size="sm" onClick={() => setWizardStep(0)}>
-        Edit<span className="sr-only"> your gift</span>
-      </Button>
-    </div>
+        </>
+      }
+      amount={amountText}
+      onEdit={() => setWizardStep(0)}
+      className="lg:hidden"
+    />
   );
 
   const backButton = (

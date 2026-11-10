@@ -3,21 +3,14 @@
 import { useEffect, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
+import { ReceiptRows } from '@/components/donations/gift-rows';
 import { ActionBar } from '@/components/ui/action-bar';
 import { Button } from '@/components/ui/button';
 import { ResultHeader } from '@/components/ui/result-header';
 import { formatDate, formatMoney } from '@/utils/format';
+import { CHECK_ADDRESS, ZELLE_EMAIL, paidWith, viaStripe } from '@/utils/giving';
 import { Loaded } from '~/components/screen';
-import {
-  CHECK_ADDRESS,
-  FlowScreen,
-  Rows,
-  ZELLE_EMAIL,
-  giftQuery,
-  paidWith,
-  purposeLabel,
-  viaStripe
-} from '~/components/give/gift';
+import { FlowScreen, giftQuery, purposeLabel } from '~/components/give/gift';
 import { SITE_URL, must } from '~/lib/api';
 import { openInApp } from '~/lib/open';
 import { supabase } from '~/lib/supabase';
@@ -166,7 +159,7 @@ function Outcome({
           Your gift of {amount} to {gift.forValue} is complete.
         </ResultHeader>
         <div className="flex flex-col gap-3">
-          <Rows rows={rows()} />
+          <ReceiptRows rows={rows()} truncate />
           {kind === 'donation' && (
             <Button
               variant="outline"
@@ -194,7 +187,7 @@ function Outcome({
         <NotCompleted title={canceled ? 'Payment not completed' : 'Your payment did not go through'}>
           {canceled ? 'You left Stripe before paying, so no money was taken.' : 'No money was taken.'} You can try again.
         </NotCompleted>
-        <Rows rows={rows(canceled ? 'Not paid' : 'Failed')} />
+        <ReceiptRows rows={rows(canceled ? 'Not paid' : 'Failed')} truncate />
       </>
     );
   }
@@ -209,7 +202,7 @@ function Outcome({
           ? 'Bank transfers can take a few days; your receipt is ready as soon as the money arrives.'
           : 'This usually takes a moment; your receipt is ready as soon as the payment is confirmed.'}
       </ResultHeader>
-      <Rows rows={rows('Confirming')} />
+      <ReceiptRows rows={rows('Confirming')} truncate />
       <p className="mt-0 text-caption text-muted-foreground">
         No receipt is issued until the payment is received. If the payment fails, no money is taken.
       </p>
@@ -254,7 +247,7 @@ function Pledge({ method, gift, rows }: { method: string; gift?: Gift; rows?: [s
           </>
         )}
       </div>
-      {rows && <Rows rows={rows} />}
+      {rows && <ReceiptRows rows={rows} truncate />}
     </>
   );
 }

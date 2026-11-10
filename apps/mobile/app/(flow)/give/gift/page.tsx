@@ -3,6 +3,7 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { z } from 'zod';
+import { GiftSummaryRow } from '@/components/donations/gift-rows';
 import { ActionBar } from '@/components/ui/action-bar';
 import { Banner } from '@/components/ui/banner';
 import { Button } from '@/components/ui/button';
@@ -12,22 +13,9 @@ import { RadioGroup } from '@/components/ui/radio-group';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { DonationFormSchema } from '@/types';
 import { US_STATES } from '@/utils/constants';
+import { PAYMENT_METHODS, dollars, frequencyLabel, paidWith, viaStripe, type PaymentMethod } from '@/utils/giving';
 import { Loaded } from '~/components/screen';
-import {
-  CheckRow,
-  FieldRow,
-  FlowScreen,
-  GiftSummaryRow,
-  NativeSelect,
-  PAYMENT_METHODS,
-  dollars,
-  frequencyLabel,
-  giftQuery,
-  paidWith,
-  purposeLabel,
-  viaStripe,
-  type PaymentMethod
-} from '~/components/give/gift';
+import { CheckRow, FieldRow, FlowScreen, NativeSelect, giftQuery, purposeLabel } from '~/components/give/gift';
 import { api, must } from '~/lib/api';
 import { openOutside } from '~/lib/open';
 import { useSession } from '~/lib/session';
@@ -133,6 +121,7 @@ function GiftForm({
       caption={`${frequencyLabel(gift.frequency)} gift · ${purposeLabel(gift.purpose)}`}
       amount={amountText}
       onEdit={() => router.replace(`/give/?${giftQuery(gift)}`)}
+      touch
     />
   );
 

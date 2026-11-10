@@ -12,10 +12,11 @@ import { Skeleton, Loading } from '@/components/ui/skeleton';
 import { DONATION_PURPOSES, type Fundraiser, type Price } from '@/types';
 import type { Tables } from '@/types_db';
 import { formatMoney } from '@/utils/format';
+import { FREQUENCIES, PRESET_AMOUNTS, dollars, type Frequency } from '@/utils/giving';
 import { AppHeader } from '~/components/app-header';
 import { Loaded } from '~/components/screen';
-import { FieldRow, FREQUENCIES, NativeSelect, PRESET_AMOUNTS, dollars, giftQuery, type Frequency } from '~/components/give/gift';
-import { FundraiserCard } from '~/components/give/fundraiser-card';
+import { FieldRow, NativeSelect, giftQuery } from '~/components/give/gift';
+import { AppFundraiserCard } from '~/components/give/fundraiser-card';
 import { must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
 import { useData } from '~/lib/use-data';
@@ -83,7 +84,7 @@ export default function GiveTab() {
                   </Link>
                 </div>
                 {data.featured ? (
-                  <FundraiserCard fundraiser={data.featured} />
+                  <AppFundraiserCard fundraiser={data.featured} />
                 ) : (
                   <p className="mt-0 text-sm text-muted-foreground">No fundraisers are open right now.</p>
                 )}

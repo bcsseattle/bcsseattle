@@ -16,6 +16,7 @@ import { ResultHeader } from '@/components/ui/result-header';
 import { StatePanel } from '@/components/ui/state-panel';
 import { MemberRegistrationFormSchema } from '@/types';
 import type { Tables } from '@/types_db';
+import { membershipOf } from '~/components/account/labels';
 import { Loaded } from '~/components/screen';
 import { FlowScreen } from '~/components/account/flow-screen';
 import { api } from '~/lib/api';
@@ -51,7 +52,8 @@ function ApplicationState({ member }: { member: Tables<'members'> }) {
     </Link>
   );
 
-  if (member.isApproved && member.status === 'active') {
+  const membership = membershipOf(member);
+  if (membership === 'active') {
     return (
       <FlowScreen title="Membership" back={back} actions={home}>
         <ResultHeader tone="success" title="You’re a member" className="pt-8">
@@ -60,7 +62,7 @@ function ApplicationState({ member }: { member: Tables<'members'> }) {
       </FlowScreen>
     );
   }
-  if (member.status === 'pending') {
+  if (membership === 'pending') {
     return (
       <FlowScreen
         title="Membership"
@@ -85,10 +87,10 @@ function ApplicationState({ member }: { member: Tables<'members'> }) {
     <FlowScreen title="Membership" back={back} actions={home}>
       <StatePanel
         icon={CircleSlash}
-        title={member.status === 'rejected' ? 'Application not approved' : 'Membership inactive'}
+        title={membership === 'rejected' ? 'Application not approved' : 'Membership inactive'}
         headingLevel="h2"
       >
-        {member.status === 'rejected'
+        {membership === 'rejected'
           ? 'Your membership application was not approved. Please contact us if you have any questions.'
           : 'Your membership is inactive. Please contact us to reactivate it.'}
       </StatePanel>
