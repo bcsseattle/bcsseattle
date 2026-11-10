@@ -7,10 +7,10 @@ import { Loading, Skeleton, SkeletonRows } from '@/components/ui/skeleton';
 export function SitePageSkeleton() {
   return (
     <Loading className="flex max-w-3xl flex-col gap-3 pb-8 pt-8 lg:pt-16">
-      <Skeleton className="h-9 w-2/3 bg-mat" />
-      <Skeleton className="mt-2 h-4 w-full bg-mat" />
-      <Skeleton className="h-4 w-full bg-mat" />
-      <Skeleton className="h-4 w-4/5 bg-mat" />
+      <Skeleton className="h-9 w-2/3 bg-border" />
+      <Skeleton className="mt-2 h-4 w-full bg-border" />
+      <Skeleton className="h-4 w-full bg-border" />
+      <Skeleton className="h-4 w-4/5 bg-border" />
     </Loading>
   );
 }
@@ -41,8 +41,8 @@ export function PortalPageSkeleton() {
 function PageHeaderSkeleton() {
   return (
     <div className="flex flex-col gap-2">
-      <Skeleton className="h-7 w-56 bg-mat" />
-      <Skeleton className="h-4 w-full max-w-sm bg-mat" />
+      <Skeleton className="h-7 w-56 bg-border" />
+      <Skeleton className="h-4 w-full max-w-sm bg-border" />
     </div>
   );
 }

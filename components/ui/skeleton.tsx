@@ -6,14 +6,14 @@ import { cn } from '@/utils/cn';
  * A loading bar (Art Gallery SkeletonRow): surface-muted with a 1.2s shimmer
  * that stops under prefers-reduced-motion. Hidden from assistive technology:
  * wrap a screen of them in <Loading>, which announces the wait once.
- * On the page background (not a card), pass `bg-mat` so the bar shows.
+ * On the page background (not a card), pass `bg-border` so the bar shows.
  */
 function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       aria-hidden
       className={cn(
-        'rounded-sm bg-muted bg-gradient-to-r from-transparent via-card/70 to-transparent bg-[length:200%_100%] bg-no-repeat motion-safe:animate-shimmer',
+        'rounded-sm bg-muted bg-gradient-to-r from-transparent from-35% via-card/50 via-50% to-transparent to-65% bg-[length:250%_100%] bg-no-repeat motion-safe:animate-shimmer',
         className
       )}
       {...props}

@@ -127,8 +127,8 @@ module.exports = {
         },
         // Skeleton shimmer (Art Gallery SkeletonRow): a highlight sweeps left to right.
         shimmer: {
-          from: { backgroundPosition: "150% 0" },
-          to: { backgroundPosition: "-50% 0" },
+          from: { backgroundPosition: "120% 0" },
+          to: { backgroundPosition: "-20% 0" },
         },
       },
       animation: {

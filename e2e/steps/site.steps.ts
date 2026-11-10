@@ -228,6 +228,10 @@ When('I open the phone menu and choose {string}', async function (this: E2EWorld
   await this.page.getByRole('navigation', { name: 'Mobile' }).getByRole('link', { name: link, exact: true }).click();
 });
 
+Then('the phone menu should be closed', async function (this: E2EWorld) {
+  await expect(this.page.getByRole('navigation', { name: 'Mobile' })).toBeHidden();
+});
+
 Then('an accessibility scan should find no nested controls or broken lists', async function (this: E2EWorld) {
   // Links inside buttons (or the reverse) and lists nested without <li> (BUG-066).
   await this.page.waitForLoadState('networkidle');
