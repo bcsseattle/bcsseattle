@@ -46,8 +46,12 @@ export async function POST() {
         }
       }
     } catch (error) {
-      console.error('Account deletion: Stripe', error);
-      return fail('We couldn’t stop your contribution plan, so nothing was deleted. Please try again.', 502);
+      // A customer that no longer exists in Stripe has no billing to stop.
+      const missing = (error as { code?: string })?.code === 'resource_missing';
+      if (!missing) {
+        console.error('Account deletion: Stripe', error);
+        return fail('We couldn’t stop your contribution plan, so nothing was deleted. Please try again.', 502);
+      }
     }
   }
 

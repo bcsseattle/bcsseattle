@@ -33,6 +33,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | W24 | **Plan amounts ignore the family quantity.** Checkout sets the subscription quantity to the family size, capped at 1–5. The website's plan card shows the unit price only (understated), and its directory multiplies by `totalMembersInFamily` with no cap (overstated for families over 5). | `components/ui/AccountForms/CustomerPortalForm.tsx:40-42, 65`; `components/member-list.tsx:64-66, 87` | Wrong amounts shown to members. | Unit price × subscription quantity (capped 1–5). |
 | W25 | **Member status wording and rules differ:** the website badge uses `status` only ("Active", "Pending", "Rejected"), while the app also requires `isApproved` for active. The directory says "Yet to choose contribution plan" in red. `/register` shows the form again to people who already applied. | `components/portal/member-row.tsx:9-21`, `components/member-list.tsx`, `app/(site)/register` | Inconsistent states across website and app. | One shared member-state rule, and show the application's state on `/register`. |
 | W26 | **"Elected unopposed" shows before voting has started.** `shouldShowUnopposedStatus` only checks that candidate voting isn't open, so during nominations the website shows the "Candidates elected unopposed" banner and "Unopposed" badges for any single-candidate position. | `utils/election-config.ts` (`shouldShowUnopposedStatus`), `app/(portal)/elections/[id]` | Candidates are announced as elected while nominations are still open. | Require candidate voting to have closed, as the app does (`utils/elections/rules.ts`, `electedUnopposed`). |
+| W27 | **Anonymous fundraiser gifts are readable by anyone.** `fundraiser_donations` has a "Donations are viewable by everyone" policy (`SELECT … true`) beside "View non-anonymous donations". Policies are OR-ed, so the narrower one has no effect: any visitor can read every gift, including the donor name and message of anonymous gifts, by querying the table. | Supabase RLS on `fundraiser_donations` | **Privacy leak** of anonymous donors (found while testing the app's gift result screen). | Drop the `true` policy; keep public reads to non-anonymous gifts (plus the donor's own); serve anonymous gifts' totals through a view or the server. *RLS change: needs approval.* **High priority.** |
 
 ## Production settings and accounts (yours to do)
 
@@ -62,7 +63,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 |---|---|---|
 | F1 | The tab bar's fifth tab is now **More** (Account, Members, Resources). The mocks still show Account. | Decided 9 Nov 2026. |
 | F2 | The Ballot mock says votes are "saved as you go". They aren't: nothing counts until the member submits. The app says so. | Mock copy. |
-| F3 | The Account mock's footer has a placeholder EIN ("99-2495973"). The app leaves it out. | Provide the real line if wanted. |
 | F4 | The Payment mock (24:2699) shows an in-app payment sheet. On iOS, Stripe opens in Safari instead (plan §4). | Intentional until D1. |
 
 ## Known app limitations

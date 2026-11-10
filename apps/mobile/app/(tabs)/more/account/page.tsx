@@ -131,6 +131,10 @@ export default function Account() {
             onClick={() => router.push('/more/account/delete/')}
           />
         </ListGroup>
+        {/* The website footer's line (components/site/site-footer.tsx), as in the Account mock. */}
+        <p className="text-center text-caption text-muted-foreground">
+          BCS Seattle · 501(c)(3) nonprofit · EIN 99-2495973
+        </p>
       </div>
     </>
   );

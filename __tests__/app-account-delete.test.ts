@@ -8,7 +8,7 @@ const state = {
   user: { id: 'u1', email: 'member@example.com' } as { id: string; email: string } | null,
   customer: { stripe_customer_id: 'cus_1' } as { stripe_customer_id: string } | null,
   subscriptions: [] as { id: string; status: string }[],
-  stripeFails: false,
+  stripeFails: false as boolean | 'missing',
   memberError: null as { message: string } | null
 };
 
@@ -42,6 +42,7 @@ jest.mock('@/utils/stripe/config', () => ({
   stripe: {
     customers: {
       update: async (id: string, body: { metadata: Record<string, string> }) => {
+        if (state.stripeFails === 'missing') throw Object.assign(new Error('No such customer'), { code: 'resource_missing' });
         if (state.stripeFails) throw new Error('stripe down');
         calls.push(`tag ${id} ${Object.keys(body.metadata)}`);
       }
@@ -125,6 +126,12 @@ it('deletes nothing when Stripe fails', async () => {
   const response = await POST();
   expect(response.status).toBe(502);
   expect(calls).toEqual([]);
+});
+
+it('goes ahead when the Stripe customer no longer exists (nothing to bill)', async () => {
+  state.stripeFails = 'missing';
+  expect((await POST()).status).toBe(200);
+  expect(calls).toEqual(['update members user_id=u1 status=deleted fullName=null', 'deleteUser u1']);
 });
 
 it('does not delete the user when the member row could not be anonymised', async () => {
