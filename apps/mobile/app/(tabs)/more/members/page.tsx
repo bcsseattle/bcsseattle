@@ -7,7 +7,8 @@ import { PersonRow } from '@/components/ui/person-row';
 import { StatePanel } from '@/components/ui/state-panel';
 import { StatTile } from '@/components/ui/stat-tile';
 import { Loaded, Screen } from '~/components/screen';
-import { familyQuantity, membershipOf, priceLabel } from '~/components/account/labels';
+import { membershipOf } from '~/components/account/labels';
+import { currentPlan, PLAN_SUBSCRIPTION_SELECT, priceLabel } from '@/utils/membership/plan';
 import { MemberBadge, MembersOnly } from '~/components/home/membership';
 import { must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
@@ -24,34 +25,29 @@ export default function Members() {
 
 function Directory() {
   const state = useData(async () => {
-    const [members, subscriptions, prices] = await Promise.all([
+    const [members, subscriptions] = await Promise.all([
       must(
         supabase
           .from('members')
           .select('*')
           .order('fullName', { ascending: true })
       ),
-      must(supabase.from('subscriptions').select('id, status, price_id')),
-      must(supabase.from('prices').select('id, unit_amount, interval, interval_count'))
+      must(supabase.from('subscriptions').select(PLAN_SUBSCRIPTION_SELECT))
     ]);
     return {
       members: members ?? [],
-      subscriptions: subscriptions ?? [],
-      prices: prices ?? []
+      subscriptions: subscriptions ?? []
     };
   });
 
   return (
     <Loaded state={state}>
-      {({ members, subscriptions, prices }) => {
+      {({ members, subscriptions }) => {
         const active = members.filter((m) => membershipOf(m) === 'active');
-        // The website's plan column: the plan's price times the family size, capped at 5 as Checkout caps it.
+        // The same plan the website's directory shows (utils/membership/plan.ts).
         const plan = (m: (typeof members)[number]) => {
-          const sub = subscriptions.find((s) => s.id === m.subscription_id);
-          const price = prices.find((p) => p.id === sub?.price_id);
-          return sub?.status === 'active'
-            ? priceLabel(price, familyQuantity(m.totalMembersInFamily))
-            : 'No contribution plan yet';
+          const current = currentPlan(m.user_id, subscriptions);
+          return current ? priceLabel(current.price, current.quantity) : 'No contribution plan yet';
         };
         return (
           <>

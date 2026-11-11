@@ -44,6 +44,15 @@ Feature: Membership status
     When Stripe reports my contribution plan as cancelled
     Then my membership should be inactive
 
+  @P1 @payments @BUG-082
+  Scenario: The member directory shows a member's plan without a plan link on their member row
+    Given I am signed in as an approved member
+    And I have an active contribution plan
+    And Stripe reports my contribution plan as active
+    And my member row doesn't point at my plan
+    When I go to "/members"
+    Then the member directory should show my contribution plan as "USD 5.00 / month"
+
   @P1 @payments @BUG-024
   Scenario: A cancelled recurring donation doesn't end an active membership
     Given I am signed in as an approved member
