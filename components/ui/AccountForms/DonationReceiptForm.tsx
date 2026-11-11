@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '../card';
-import { Donation, Member } from '@/types';
+import { Donation } from '@/types';
 import { formatMoney } from '@/utils/format';
 import { Button } from '../button';
 import {
@@ -31,7 +31,7 @@ import {
 import { MoreHorizontal } from 'lucide-react';
 import Link from 'next/link';
 
-export const columns: ColumnDef<any>[] = [
+export const columns: ColumnDef<Donation>[] = [
   {
     accessorKey: 'donation_description', // Email address of the donor
     header: 'Description',

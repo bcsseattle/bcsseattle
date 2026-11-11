@@ -88,7 +88,7 @@ export function FundraiserForm() {
       const fundraiser = await response.json();
       toast.success('Your fundraiser has been created.');
       router.push(`/fundraisers/${fundraiser.id}`);
-    } catch (error) {
+    } catch {
       toast.error('Failed to create fundraiser. Please try again.');
     }
   }

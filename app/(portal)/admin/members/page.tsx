@@ -4,19 +4,6 @@ import { redirect } from 'next/navigation';
 import { MembersTable } from '@/components/admin/members-table';
 import { PageHeader } from '@/components/portal/page-header';
 
-type Member = {
-  id: string;
-  user_id: string | null;
-  status: string | null;
-  created_at: string;
-  fullName: string | null;
-  phone: string | null;
-  address: string | null;
-  isApproved: boolean;
-  membershipType: string | null;
-  email?: string; // Added from auth data
-};
-
 export default async function AdminMembersPage() {
   const supabase = await createClient();
   

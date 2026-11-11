@@ -2,12 +2,13 @@
 
 import { SortableTableHead } from '@/components/ui/sortable-table-head';
 import { useTableSort } from '@/components/ui/use-table-sort';
+import type { Tables } from '@/types_db';
 import { ExpenseRow } from '@/components/portal/expense-row';
 import { Table, TableBody, TableHeader, TableRow } from '@/components/ui/table';
 import { formatDate, formatMoney } from '@/utils/format';
 
 /** Expenses as a table of ExpenseRows (Figma 9:1426). */
-export function Expenses({ expenses = [] }: { expenses: any[] }) {
+export function Expenses({ expenses = [] }: { expenses: Tables<'expenses'>[] }) {
   const { sortedRows, sortProps } = useTableSort(expenses, {
     date: (e) => e.date,
     category: (e) => e.category,

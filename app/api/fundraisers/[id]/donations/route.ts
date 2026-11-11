@@ -2,7 +2,6 @@ import { createClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { DonationFormSchema } from '@/types';
-import type { Database } from '@/types_db';
 import { getSession } from '@/utils/auth-helpers/server';
 
 export async function GET(
@@ -158,7 +157,7 @@ export async function POST(
     }
 
     // Create donation record
-    const { data: donation, error: donationError } = await supabase
+    const { error: donationError } = await supabase
       .from('donations')
       .insert({
         donation_amount: amount,

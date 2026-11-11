@@ -9,13 +9,9 @@ import { ballotRefusal, PHASE_COLUMNS } from '@/utils/elections/access';
 import { currentUserIsActiveMember } from '@/utils/election-config';
 import { electionPhase, positionOnBallot, type Position } from '@/utils/elections/rules';
 import {
-  Candidate,
   NominateFormSchema,
   VoteInsert,
-  VoteSessionInsert,
   VoteConfirmationInsert,
-  Election,
-  Initiative,
   VoteOption,
   VoteSessionType
 } from '@/types';
@@ -601,7 +597,7 @@ function validatePhotoFile(file: File): {
 async function uploadPhotoFile(
   photoFile: File,
   userId: string,
-  supabase: any
+  supabase: Awaited<ReturnType<typeof createClient>>
 ): Promise<{ photoUrl: string; filePath: string } | { error: string }> {
   try {
     // Validate file
@@ -657,8 +653,7 @@ async function uploadPhotoFile(
 
 export async function nominateCandidate(
   formValue: z.infer<typeof NominateFormSchema>,
-  electionId: string,
-  userId?: string
+  electionId: string
 ) {
   try {
     // debugger;
@@ -725,7 +720,7 @@ export async function nominateCandidate(
       photoUrl = result.photoUrl;
     }
 
-    const candidateDetails: Partial<Candidate> = {
+    const candidateDetails = {
       bio,
       election_id: electionId,
       full_name: fullName,
@@ -735,7 +730,7 @@ export async function nominateCandidate(
       manifesto
     };
 
-    const { data, error } = await createCandidate(candidateDetails);
+    const { error } = await createCandidate(candidateDetails);
 
     if (error) {
       console.error('Error creating candidate:', error);

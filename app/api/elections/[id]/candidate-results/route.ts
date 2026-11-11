@@ -1,7 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { currentUserIsActiveMember, isCandidateVotingOpen } from '@/utils/election-config';
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface CandidateResult {
@@ -104,7 +103,7 @@ export async function GET(
 
     // Calculate results for each position
     Object.entries(candidatesByPosition).forEach(
-      ([position, positionCandidates]) => {
+      ([, positionCandidates]) => {
         // Get vote counts for candidates in this position
         const candidateVotes = positionCandidates.map((candidate) => ({
           ...candidate,

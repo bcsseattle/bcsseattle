@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,10 +20,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { CheckCircle, XCircle, MoreHorizontal, Eye, Mail } from 'lucide-react';
+import { CheckCircle, XCircle, MoreHorizontal, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { approveMember, rejectMember, reactivateMember } from '@/utils/membership/handlers';
+import { approveMember, rejectMember } from '@/utils/membership/handlers';
 
 type Member = {
   id: string;

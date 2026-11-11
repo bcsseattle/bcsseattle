@@ -44,7 +44,7 @@ export async function GET(
       return NextResponse.redirect(`${requestUrl.origin}/donate/confirmation/${donation.id}`);
     }
 
-    const { data: donor, error } = await supabaseAdmin
+    const { data: donor } = await supabaseAdmin
       .from('donors')
       .select('*')
       .eq('id', donation.donor_id)

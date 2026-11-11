@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/utils/supabase/admin';
 import { validateVotingSystemSecurity, generateSecurityReport } from '@/utils/elections/security-validator';
 
 // GET - Run security validation tests
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // The report exposes voter IDs and confirmation codes: admins only (BUG-033).
     if (!(await isCurrentUserAdmin())) {

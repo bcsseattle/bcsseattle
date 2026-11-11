@@ -7,11 +7,7 @@ import dayjs from '@/libs/dayjs';
 import { createClient } from '@/utils/supabase/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { ElectionType } from '@/types';
-import { 
-  ELECTION_TYPE_CONFIGS, 
-  getElectionTypeDefaults, 
-  ElectionVotingConfig 
-} from './election-types';
+import { ELECTION_TYPE_CONFIGS, ElectionVotingConfig } from './election-types';
 
 /**
  * Get election voting configuration from database with type-aware defaults

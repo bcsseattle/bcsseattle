@@ -10,7 +10,6 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
@@ -92,7 +91,7 @@ export default function InitiativeVotingForm({
   const getVoteSummary = () => {
     const values = form.getValues();
     const initiativeVoteSummary = Object.entries(values.initiativeVotes)
-      .filter(([_, vote]) => vote)
+      .filter(([, vote]) => vote)
       .map(([initiativeId, vote]) => {
         const initiative = initiatives.find((i) => i.id === initiativeId);
         return { initiative, vote };

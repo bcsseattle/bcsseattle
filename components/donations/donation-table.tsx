@@ -18,6 +18,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { donationColumns } from './donation-columns'; // Import column definitions
+ // Import column definitions
 import { Donation } from '@/types';
 
 type DonationTableProps = {

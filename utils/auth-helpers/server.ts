@@ -7,11 +7,10 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getURL, getErrorRedirect, getStatusRedirect, safeRedirectPath } from 'utils/helpers';
 import { getAuthTypes } from 'utils/auth-helpers/settings';
-import { createOrRetrieveCustomer } from '../supabase/admin';
 import { ContactFormSchema, FuneralFundFormSchema } from '@/types';
 
 function isValidEmail(email: string) {
-  var regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+  const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
   return regex.test(email);
 }
 
@@ -77,7 +76,7 @@ export async function signInWithEmail(formData: FormData) {
   }
 
   const supabase = await createClient();
-  let options = {
+  const options = {
     emailRedirectTo: callbackURL,
     shouldCreateUser: true
   };

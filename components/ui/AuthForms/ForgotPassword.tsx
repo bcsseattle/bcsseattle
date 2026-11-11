@@ -57,7 +57,7 @@ export default function ForgotPassword({
             type="submit"
             className="mt-1"
             // loading={isSubmitting}
-            disabled={disableButton}
+            disabled={disableButton || isSubmitting}
           >
             Send Email
           </Button>

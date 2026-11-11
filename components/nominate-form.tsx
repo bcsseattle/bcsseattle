@@ -3,8 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { ElectionPosition, Member, NominateFormSchema } from '@/types';
+import { useForm, type ControllerRenderProps } from 'react-hook-form';
+import {
+  Candidate,
+  ElectionPosition,
+  Member,
+  NominateFormSchema
+} from '@/types';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -58,7 +64,7 @@ export default function NominateForm({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [existingNomination, setExistingNomination] = useState<any>(null);
+  const [existingNomination, setExistingNomination] = useState<Candidate | null>(null);
   const [loading, setLoading] = useState(true);
 
   const form = useForm<NominateFormInputs>({
@@ -87,7 +93,7 @@ export default function NominateForm({
         if (data && !error) {
           setExistingNomination(data);
         }
-      } catch (err) {
+      } catch {
         console.log('No existing nomination found');
       } finally {
         setLoading(false);
@@ -104,8 +110,7 @@ export default function NominateForm({
   };
 
   const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-    field: any
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
 
@@ -175,7 +180,7 @@ export default function NominateForm({
     }
   };
 
-  const removeFile = (field: any) => {
+  const removeFile = (field: ControllerRenderProps<NominateFormInputs, 'photoFile'>) => {
     field.onChange(undefined);
     setPreviewUrl(null);
     // Reset file input
@@ -197,8 +202,7 @@ export default function NominateForm({
           manifesto: values.manifesto,
           photoFile: values.photoFile
         },
-        electionId,
-        userId
+        electionId
       );
 
       form.reset();
@@ -250,7 +254,7 @@ export default function NominateForm({
             <div className="p-4 bg-badge-green-bg rounded-lg border border-badge-green-border">
               <div className="flex items-center gap-4">
                 {existingNomination.photo_url ? (
-                  <img
+                  <Image unoptimized width={128} height={128}
                     src={existingNomination.photo_url}
                     alt={existingNomination.full_name}
                     className="w-16 h-16 rounded-full object-cover border-2 border-badge-green-border"
@@ -259,7 +263,7 @@ export default function NominateForm({
                   <div className="w-16 h-16 rounded-full bg-badge-green-bg flex items-center justify-center text-badge-green-text font-semibold">
                     {existingNomination.full_name
                       .split(' ')
-                      .map((n: any) => n[0])
+                      .map((n: string) => n[0])
                       .join('')
                       .toUpperCase()}
                   </div>
@@ -458,7 +462,7 @@ export default function NominateForm({
                         <div className="flex items-center justify-center">
                           {previewUrl ? (
                             <div className="relative">
-                              <img
+                              <Image unoptimized width={128} height={128}
                                 src={previewUrl}
                                 alt="Preview"
                                 className="w-32 h-32 rounded-full object-cover border-2 border-border"
@@ -495,7 +499,7 @@ export default function NominateForm({
                             id="photoFile"
                             type="file"
                             accept="image/*"
-                            onChange={(e) => handleFileChange(e, field)}
+                            onChange={(e) => handleFileChange(e)}
                             className="hidden"
                           />
                         </div>

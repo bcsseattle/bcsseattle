@@ -9,8 +9,8 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Candidate, Election, ElectionPosition, Position } from '@/types';
-import { Users, Crown, Trophy, Award } from 'lucide-react';
+import { Candidate, Election, Position } from '@/types';
+import { Users, Crown, Trophy } from 'lucide-react';
 import { getCandidateResults } from '@/utils/election-config';
 
 interface Props {
@@ -200,7 +200,7 @@ export default async function Candidates({
                                 {/* Avatar - Smaller on mobile */}
                                 <div className="h-12 w-12 sm:h-20 sm:w-20 border-2 sm:border-4 border-card bg-mat shadow-lg rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center">
                                   {candidate.photo_url ? (
-                                    <img
+                                    <Image unoptimized width={80} height={80}
                                       src={candidate.photo_url}
                                       alt={candidate.full_name}
                                       className="object-cover w-full h-full rounded-full"

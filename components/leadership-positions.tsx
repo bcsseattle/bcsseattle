@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { CheckCircle, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 
 interface Position {
   position: string;

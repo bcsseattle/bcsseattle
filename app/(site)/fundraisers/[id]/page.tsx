@@ -52,7 +52,7 @@ export default async function FundraiserPage({ params }: PageProps) {
 
     const { id } = await params;
 
-  const [isAdmin, fundraiser, session] = await Promise.all([
+  const [isAdmin, fundraiser] = await Promise.all([
     getAdmin(),
     getFundraiser(id),
     getSession()

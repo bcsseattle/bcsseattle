@@ -24,7 +24,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { Database, Fundraiser, FundraiserCategory, FundraiserStatus } from '@/types';
+import { Fundraiser, FundraiserCategory, FundraiserStatus } from '@/types';
 
 const fundraiserFormSchema = z.object({
   title: z.string().min(2, {
@@ -101,7 +101,7 @@ export function FundraiserUpdateForm({ fundraiser }: FundraiserUpdateFormProps) 
       toast.success('Your fundraiser has been updated.');
       router.push(`/fundraisers/${fundraiser.id}`);
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error('Failed to update fundraiser. Please try again.');
     }
   }

@@ -16,7 +16,7 @@ import {
 } from '@/utils/feature-flag-constants';
 
 // Helper function to determine election content types
-function getElectionContentTypes(election: any) {
+function getElectionContentTypes(election: { positionCount: number; initiativeCount: number }) {
   const hasPositions = election.positionCount > 0;
   const hasInitiatives = election.initiativeCount > 0;
   
@@ -28,7 +28,7 @@ function getElectionContentTypes(election: any) {
 }
 
 // Helper function to get a more descriptive election description
-function getElectionDescription(election: any, contentTypes: string[]) {
+function getElectionDescription(election: { description: string | null }, contentTypes: string[]) {
   if (contentTypes.length === 0) {
     return election.description;
   }

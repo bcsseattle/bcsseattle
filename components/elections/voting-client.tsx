@@ -3,13 +3,18 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import VotingForm from '@/components/elections/voting-form';
-import { VotingFormSchema } from '@/types';
+import {
+  VotingFormSchema,
+  type Election,
+  type Candidate,
+  type Initiative
+} from '@/types';
 import { z } from 'zod';
 
 interface VotingClientProps {
-  election: any;
-  candidates: any[];
-  initiatives: any[];
+  election: Election;
+  candidates: Candidate[];
+  initiatives: Initiative[];
   positionOrder: Array<{
     position: string;
     description?: string | null;
@@ -24,8 +29,7 @@ export default function VotingClient({
   candidates,
   initiatives,
   positionOrder,
-  hasVoted,
-  userId
+  hasVoted
 }: VotingClientProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,7 +42,7 @@ export default function VotingClient({
     try {
       // Prepare candidate votes
       const candidateVotes = Object.entries(values.candidateVotes)
-        .filter(([_, candidateId]) => candidateId && candidateId !== '')
+        .filter(([, candidateId]) => candidateId && candidateId !== '')
         .map(([position, candidateId]) => ({
           candidateId: candidateId!,
           position
@@ -46,7 +50,7 @@ export default function VotingClient({
 
       // Prepare initiative votes  
       const initiativeVotes = Object.entries(values.initiativeVotes)
-        .filter(([_, vote]) => vote && vote !== undefined)
+        .filter(([, vote]) => vote && vote !== undefined)
         .map(([initiativeId, vote]) => ({
           initiativeId,
           vote // 'yes' | 'no' | 'abstain', the vote_option values (BUG-052)
@@ -69,7 +73,7 @@ export default function VotingClient({
         throw new Error(error.message || 'Failed to submit vote');
       }
 
-      const result = await response.json();
+      await response.json();
       
       // Redirect to confirmation page
       router.push(`/elections/${election.id}/vote/confirmation`);

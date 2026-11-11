@@ -2,8 +2,7 @@
  * Feature Flag System
  * Supports multiple sources: environment variables, database, and URL overrides
  */
-
-import { FEATURE_FLAGS, FeatureFlagKey, FEATURE_FLAG_DEFAULTS } from './feature-flag-constants';
+import { FEATURE_FLAGS, FEATURE_FLAG_DEFAULTS } from './feature-flag-constants';
 
 export interface FeatureFlags {
   skipMembershipCheck: boolean;
@@ -142,6 +141,8 @@ function processFeatureFlagData(data: Array<{ feature_name: string; enabled: boo
  * Uses the get_user_feature_flags database function for efficient querying
  */
 async function getDatabaseFeatures(context: FeatureFlagContext): Promise<Partial<FeatureFlags>> {
+  // The RPC requires a user UUID; anonymous contexts use the default flags.
+  if (!context.userId) return {};
   try {
     // Import here to avoid circular dependencies
     const { createClient } = await import('@/utils/supabase/server');
@@ -149,10 +150,10 @@ async function getDatabaseFeatures(context: FeatureFlagContext): Promise<Partial
 
     // Use the database function for efficient feature flag retrieval
     const { data, error } = await supabase.rpc('get_user_feature_flags', {
-      p_user_id: context.userId as any, // Cast to any since DB types not updated yet
-      p_user_role: context.userRole as any,
-      p_environment: context.environment as any
-    } as any); // Cast the whole params object until types are regenerated
+      p_user_id: context.userId,
+      p_user_role: context.userRole,
+      p_environment: context.environment
+    });
 
     console.log('Database RPC call result:', {
       context,

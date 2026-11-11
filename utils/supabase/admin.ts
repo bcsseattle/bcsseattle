@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import {
-  Candidate,
   Donation,
   Donor,
   EmailLogs,
@@ -15,7 +14,7 @@ import { toDateTime } from '@/utils/helpers';
 import { stripe } from '@/utils/stripe/config';
 import { PostgrestError, User, createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
-import type { Database, Tables, TablesInsert } from 'types_db';
+import type { Database, TablesInsert } from 'types_db';
 
 // Change to control trial period length
 const TRIAL_PERIOD_DAYS = 0;
@@ -105,13 +104,13 @@ const upsertFundRecord = async (
   retryCount = 0,
   maxRetries = 3
 ) => {
-  const fundData: any = {
+  const fundData: TablesInsert<'funds'> = {
     id: payout.id,
     date: toDateTime(payout.arrival_date).toISOString(),
     amount: payout.amount,
     source: 'stripe',
     description: 'Stripe Payout',
-    payment_method: payout.destination,
+    payment_method: typeof payout.destination === 'string' ? payout.destination : payout.destination?.id ?? null,
     created_at: toDateTime(payout.created).toISOString(),
     currency: payout.currency,
     stripe_payout_id: payout.id,
@@ -319,14 +318,13 @@ const updateDonation = async (params: UpdateDonationParams) => {
 };
 
 const updateMember = async ({
-  user_id,
-  email
+  user_id
 }: {
   user_id: string;
   email: string;
 }) => {
   // Check if the member already exists in Supabase
-  const { data: existingMember, error: queryError } = await supabaseAdmin
+  const { error: queryError } = await supabaseAdmin
     .from('members')
     .select('*')
     .eq('user_id', user_id)
@@ -429,8 +427,10 @@ const copyBillingDetailsToCustomer = async (
   const customer = payment_method.customer as string;
   const { name, phone, address } = payment_method.billing_details;
   if (!name || !phone || !address) return;
-  //@ts-ignore
-  await stripe.customers.update(customer, { name, phone, address });
+  await stripe.customers.update(customer, { name, phone, address: {
+    city: address.city ?? '', country: address.country ?? '', line1: address.line1 ?? '',
+    line2: address.line2 ?? '', postal_code: address.postal_code ?? '', state: address.state ?? ''
+  } });
   const { error: updateError } = await supabaseAdmin
     .from('users')
     .update({
@@ -475,8 +475,7 @@ const manageSubscriptionStatusChange = async (
     status: subscription.status,
     price_id: subscription.items.data[0].price.id,
     //TODO check quantity on subscription
-    // @ts-ignore
-    quantity: subscription.quantity,
+    quantity: subscription.items.data[0]?.quantity ?? 1,
     cancel_at_period_end: subscription.cancel_at_period_end,
     cancel_at: subscription.cancel_at
       ? toDateTime(subscription.cancel_at).toISOString()
@@ -516,8 +515,7 @@ const manageSubscriptionStatusChange = async (
   // For a new subscription copy the billing details to the customer object.
   // NOTE: This is a costly operation and should happen at the very end.
   if (createAction && subscription.default_payment_method && uuid)
-    //@ts-ignore
-    await copyBillingDetailsToCustomer(
+      await copyBillingDetailsToCustomer(
       uuid,
       subscription.default_payment_method as Stripe.PaymentMethod
     );
@@ -539,9 +537,9 @@ const syncMemberStatus = async (userId: string) => {
   if (error) throw new Error(`Subscription lookup failed: ${error.message}`);
 
   const current = (subs ?? []).find(
-    (s: any) =>
+    (s) =>
       (s.status === 'active' || s.status === 'trialing') &&
-      s.prices?.products?.metadata?.type !== 'donation'
+      (s.prices?.products?.metadata as { type?: string } | null)?.type !== 'donation'
   );
   const { error: updateError } = await supabaseAdmin
     .from('members')
@@ -584,12 +582,12 @@ const getBankBalance = async () => {
 };
 
 const getStripeRecentTransactions = async () => {
-  let allTransactions: any[] = [];
+  let allTransactions: Stripe.BalanceTransaction[] = [];
   let hasMore = true;
   let startingAfter = null;
 
   while (hasMore) {
-    const params: any = {
+    const params: Stripe.BalanceTransactionListParams = {
       limit: 100,
       created: {
         gte: 1718491540 // 2024-06-15
@@ -724,7 +722,7 @@ const getDonations = async () => {
   }
 
   // Transform data to match the Donation type
-  const transformedData: any[] = data.map((donation) => ({
+  const transformedData = data.map((donation) => ({
     ...donation,
     donationId: donation.id,
     donorName: donation.is_anonymous
@@ -791,7 +789,7 @@ const getOrCreateUser = async ({
 export const createDonor = async (
   values: Donor
 ): Promise<{
-  data: Donor | null | any;
+  data: Donor | null;
   error: PostgrestError | null | string;
 }> => {
   const { data, error: upsertError } = await supabaseAdmin
@@ -871,7 +869,7 @@ export const getOrCreateDonor = async (
     const { data, error: donorError } = await supabaseAdmin
       .from('donors')
       .select('*')
-      .eq('email', donorDetails.email!!)
+      .eq('email', donorDetails.email!)
       .single();
 
     if (data) {
@@ -933,9 +931,9 @@ const upsertEmailLogs = async (emailLog: Partial<EmailLogs>) => {
 };
 
 const createCandidate = async (
-  candidateDetails: any
+  candidateDetails: TablesInsert<'candidates'>
 ): Promise<{
-  data: any | null;
+  data: Database['public']['Tables']['candidates']['Row'] | null;
   error: PostgrestError | null | string;
 }> => {
   try {
