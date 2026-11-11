@@ -997,3 +997,25 @@ export {
   updateSmsNotification,
   createCandidate
 };
+
+/**
+ * A Checkout session expired unpaid (W11): its gift, still pending, is closed
+ * as failed, so abandoned attempts don't sit as pending for ever. A gift that
+ * was paid (or already closed) is left alone.
+ */
+export const expireUnpaidGift = async (metadata: Record<string, string> | null | undefined) => {
+  if (!metadata?.donation_id) return;
+  if (metadata.type === 'donation') {
+    await supabaseAdmin
+      .from('donations')
+      .update({ donation_status: 'failed' })
+      .eq('id', metadata.donation_id)
+      .eq('donation_status', 'pending');
+  } else if (metadata.type === 'fundraiser_donation') {
+    await supabaseAdmin
+      .from('fundraiser_donations')
+      .update({ payment_status: 'failed' })
+      .eq('id', metadata.donation_id)
+      .eq('payment_status', 'pending');
+  }
+};

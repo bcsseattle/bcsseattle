@@ -277,3 +277,11 @@ Then('my donation should be filed under my own donor record', async function (th
   const { count: ours } = await admin.from('donations').select('id', { count: 'exact', head: true }).eq('donor_id', mine![0].id);
   expect(ours).toBe(1);
 });
+
+When('Stripe reports that checkout for the donation expired', async function (this: E2EWorld) {
+  const event = checkoutCompleted({ type: 'donation', donation_id: this.donation!.id }, 10_000);
+  event.type = 'checkout.session.expired';
+  (event.data.object as Record<string, unknown>).payment_status = 'unpaid';
+  const res = await postWebhook(event);
+  expect(res.status, res.body).toBe(200);
+});

@@ -39,6 +39,21 @@ Feature: General donations
     When I donate $100 once by card giving that donor's email
     Then my donation should be filed under my own donor record
 
+  @P1 @W11
+  Scenario: An abandoned checkout closes the pending donation
+    Given I am signed in as an approved member
+    And I have started a one-time $100 card donation
+    When Stripe reports that checkout for the donation expired
+    Then the donation should be failed
+
+  @P1 @W11
+  Scenario: An expired checkout leaves a paid donation alone
+    Given I am signed in as an approved member
+    And I have started a one-time $100 card donation
+    And Stripe confirms the payment for my donation
+    When Stripe reports that checkout for the donation expired
+    Then the donation should be completed
+
   @P1
   Scenario: A monthly donation is set up as a subscription
     Given I am signed in as an approved member
