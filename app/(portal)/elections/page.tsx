@@ -9,7 +9,7 @@ import { StatePanel } from '@/components/ui/state-panel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDate } from '@/utils/format';
 import { getServerFeatureFlag } from '@/utils/server-feature-flags';
-import { electionPhase } from '@/utils/elections/rules';
+import { electionPhase, isPastElection } from '@/utils/elections/rules';
 import {
   FEATURE_FLAGS,
   createFeatureFlagArray
@@ -121,11 +121,10 @@ export default async function ElectionsPage(props: Props) {
     initiativeCount: (initiatives ?? []).filter((i) => i.election_id === election.id).length
   }));
 
-  // Elections (Figma 11:860), with the mock's Past tab as in the app: closed
-  // elections, newest first, link to their results once published.
-  const now = Date.now();
-  const current = electionsWithCounts.filter((e) => Date.parse(e.end_date) > now);
-  const past = electionsWithCounts.filter((e) => Date.parse(e.end_date) <= now).reverse();
+  // Elections (Figma 11:860), with the mock's Past tab as in the app: elections
+  // whose results are out (or that were cancelled), newest first.
+  const current = electionsWithCounts.filter((e) => !isPastElection(e));
+  const past = electionsWithCounts.filter(isPastElection).reverse();
   const firstOpenId = current.find((e) => electionPhase(e).votingOpen)?.id;
 
   const list = (rows: typeof electionsWithCounts) => (

@@ -237,6 +237,15 @@ type PhaseInput = Pick<
   | 'candidate_voting_end'
 >;
 
+/**
+ * Listed under Past (website and app): results published, archived or
+ * cancelled. An election stays current after voting closes, while its votes
+ * are counted, until its results are out.
+ */
+export function isPastElection(e: { status: string | null }): boolean {
+  return e.status === 'completed' || e.status === 'archived' || e.status === 'cancelled';
+}
+
 const within = (now: number, start: string | null, end: string | null) =>
   !!start && !!end && now >= Date.parse(start) && now <= Date.parse(end);
 

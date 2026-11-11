@@ -10,6 +10,7 @@ import {
   defaultTimeline,
   electionPhase,
   fromLocalInput,
+  isPastElection,
   keyDate,
   nextAction,
   toLocalInput,
@@ -414,5 +415,12 @@ describe('dateChanges', () => {
     expect(dateChanges({ results_date: null }, { results_date: '2026-12-21T20:00:00Z' }).map((c) => c.label)).toEqual(['Results expected']);
     expect(dateChanges({ candidate_voting_end: '2026-12-12T08:00:00Z' }, { candidate_voting_end: null })[0].to).toBeNull();
     expect(dateChanges({ end_date: '2026-12-20T08:00:00Z' }, {})).toEqual([]);
+  });
+});
+
+describe('isPastElection', () => {
+  it('keeps an election current until its results are out or it is cancelled', () => {
+    for (const status of ['draft', 'scheduled', 'ballot_locked', 'certified'] as const) expect(isPastElection({ status })).toBe(false);
+    for (const status of ['completed', 'archived', 'cancelled'] as const) expect(isPastElection({ status })).toBe(true);
   });
 });
