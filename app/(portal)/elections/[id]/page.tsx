@@ -18,7 +18,7 @@ import { checkFeatureFlag } from '@/utils/server-feature-flags';
 import {
   ballotOffer,
   ballotQuestions,
-  electedUnopposed,
+  electedUnopposedNow,
   electionPhase,
   positionOrder as orderPositions
 } from '@/utils/elections/rules';
@@ -128,13 +128,8 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
   const windows = electionPhase(election);
   const { candidateVotingOpen, votingOpen: isVotingOpen, votingOver: isClosed } = windows;
 
-  // Determine if candidates were elected unopposed
-  // Decided at lock position by position; for elections locked before that,
-  // only once candidate voting has closed (not during nominations), as the app does.
-  const decided = positionOrder.some((p) => p.unopposed_decision || p.vacant);
-  const candidatesElectedUnopposed =
-    electedUnopposed(election, candidates ?? [], candidateVotingOpen, positionOrder) &&
-    (decided || Date.now() > Date.parse(windows.candidateWindow.end));
+  // Elected unopposed: decided at lock, or once candidate voting has closed (W26).
+  const candidatesElectedUnopposed = electedUnopposedNow(election, candidates ?? [], positionOrder);
 
   // Edges included, as the server accepts nominations (W15).
   const isNominationOpen = windows.nominationsOpen;

@@ -82,59 +82,6 @@ export async function isCandidateVotingOpen(electionId: string, nowUtc: dayjs.Da
 }
 
 /**
- * Check if candidates should be marked as elected unopposed
- */
-export async function shouldShowUnopposedStatus(
-  electionId: string, 
-  candidateVotingOpen: boolean, 
-  hasCandidates: boolean
-): Promise<boolean> {
-  const config = await getElectionVotingConfig(electionId);
-  
-  // If the feature is disabled, never show unopposed status
-  if (!(config.show_unopposed_status ?? true)) {
-    return false;
-  }
-  
-  // Must have candidates and voting must be closed
-  if (!hasCandidates || candidateVotingOpen) {
-    return false;
-  }
-  
-  // Check if candidates are actually running unopposed
-  const supabase = await createClient();
-  
-  try {
-    // Count candidates by position to check if any position is competitive
-    const { data: candidatesByPosition, error } = await supabase
-      .from('candidates')
-      .select('position')
-      .eq('election_id', electionId);
-    
-    if (error) {
-      console.error('Error checking candidate positions:', error);
-      return false;
-    }
-    
-    // Group candidates by position and check if any position has > 1 candidate
-    const positionCounts = candidatesByPosition.reduce((acc, candidate) => {
-      acc[candidate.position] = (acc[candidate.position] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    // If any position has more than 1 candidate, this is a competitive election
-    const hasCompetitivePosition = Object.values(positionCounts).some(count => count > 1);
-    
-    // Only show unopposed if NO position is competitive
-    return !hasCompetitivePosition;
-    
-  } catch (error) {
-    console.error('Database query failed in shouldShowUnopposedStatus:', error);
-    return false;
-  }
-}
-
-/**
  * Get candidate voting period dates for display
  */
 export async function getCandidateVotingPeriod(electionId: string): Promise<{

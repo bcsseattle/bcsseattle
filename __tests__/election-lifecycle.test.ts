@@ -6,6 +6,7 @@ import {
   dateChanges,
   initiativeResultWord,
   electedUnopposed,
+  electedUnopposedNow,
   positionOnBallot,
   defaultTimeline,
   electionPhase,
@@ -422,5 +423,20 @@ describe('dateChanges', () => {
     expect(dateChanges({ results_date: null }, { results_date: '2026-12-21T20:00:00Z' }).map((c) => c.label)).toEqual(['Results expected']);
     expect(dateChanges({ candidate_voting_end: '2026-12-12T08:00:00Z' }, { candidate_voting_end: null })[0].to).toBeNull();
     expect(dateChanges({ end_date: '2026-12-20T08:00:00Z' }, {})).toEqual([]);
+  });
+});
+
+describe('electedUnopposedNow (W26)', () => {
+  const one = [{ position: 'President' }];
+  const pos = (extra = {}) => [{ position: 'President', description: null, display_order: 1, ...extra }];
+  const e = { ...base, show_unopposed_status: true };
+  it('never announces during nominations', () => {
+    expect(electedUnopposedNow(e, one, pos(), at(base.nomination_start!) + ms)).toBe(false);
+  });
+  it('announces once candidate voting has closed', () => {
+    expect(electedUnopposedNow({ ...e, status: 'ballot_locked' }, one, pos(), at(base.end_date) + ms)).toBe(true);
+  });
+  it('announces when the lock decided it', () => {
+    expect(electedUnopposedNow({ ...e, status: 'ballot_locked' }, one, pos({ unopposed_decision: 'elect' }), at(base.start_date) - ms)).toBe(true);
   });
 });

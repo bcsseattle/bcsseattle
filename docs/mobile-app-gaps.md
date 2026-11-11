@@ -20,7 +20,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | W21 | **The donate form's options and the schema disagree.** It offers every active program, though `DonationFormSchema` accepts only `DONATION_PURPOSES`. It also offers Monthly and Yearly even when no recurring price is active, and "Other amount" pre-fills 1000.00. Its pending copy always says "Bank transfers can take a few days", even for cards. | `components/forms/donate-form.tsx:324` and the confirmation page | A purpose the schema rejects; a frequency that can't be charged. | Offer only what can be accepted, as the app does. |
 | W22 | **Closed fundraisers still show Donate** on the card and "Donate Now" on the detail page (the donate page then refuses). The detail page says "Ends 2 days ago". An unnamed donor shows a blank name. | `components/fundraisers/fundraiser-card.tsx`, `fundraiser-details.tsx:82-88` | Confusing dead ends. | Hide Donate when closed and say "Ended {date}", as the app does. |
 | W25 | **Member status wording and rules differ:** the website badge uses `status` only ("Active", "Pending", "Rejected"), while the app also requires `isApproved` for active. The directory says "Yet to choose contribution plan" in red. `/register` shows the form again to people who already applied. | `components/portal/member-row.tsx:9-21`, `components/member-list.tsx`, `app/(site)/register` | Inconsistent states across website and app. | One shared member-state rule, and show the application's state on `/register`. |
-| W26 | **"Elected unopposed" shows before voting has started.** `shouldShowUnopposedStatus` only checks that candidate voting isn't open, so during nominations the website shows the "Candidates elected unopposed" banner and "Unopposed" badges for any single-candidate position. | `utils/election-config.ts` (`shouldShowUnopposedStatus`), `app/(portal)/elections/[id]` | Candidates are announced as elected while nominations are still open. | Require candidate voting to have closed, as the app does (`utils/elections/rules.ts`, `electedUnopposed`). |
 
 ## Production settings and accounts (yours to do)
 
@@ -70,6 +69,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Gap | Fixed in |
 |---|---|---|
+| W26 | "Elected unopposed" could show during nominations (results API); the page and the API now share electedUnopposedNow, and the old rule is deleted | branch `gaps/website-fixes` |
 | W12 | A gift entered with someone else's email was filed under their donor record; signed-in givers now get their own (by account, then their own email), and the account comes from the session | branch `gaps/website-fixes` |
 | W24 | Plan amounts ignored the family size; the account card and the directory now show price × quantity (directory fixed in PR #35) | branch `gaps/website-fixes` |
 | W23 | Funds listed pending and failed gifts as completed, and sorted expenses by entry date; now completed gifts only, expenses by date | branch `gaps/website-fixes` |

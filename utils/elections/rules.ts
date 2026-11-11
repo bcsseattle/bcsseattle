@@ -77,6 +77,23 @@ export function electedUnopposed(
   return Array.from(counts.values()).every((n) => n <= 1);
 }
 
+/**
+ * Whether to announce the candidates as elected unopposed now: decided at the
+ * lock position by position, or (for elections locked before that) only once
+ * candidate voting has closed. Never during nominations (W26). Used by the
+ * election page and the results API.
+ */
+export function electedUnopposedNow(
+  e: PhaseInput & Pick<ElectionRow, 'type' | 'show_unopposed_status'>,
+  candidates: { position: string }[],
+  positions: Position[],
+  now = Date.now()
+) {
+  const w = electionPhase(e, now);
+  const decided = positions.some((p) => p.unopposed_decision || p.vacant);
+  return electedUnopposed(e, candidates, w.candidateVotingOpen, positions) && (decided || now > Date.parse(w.candidateWindow.end));
+}
+
 export type Position = {
   position: string;
   description: string | null;
