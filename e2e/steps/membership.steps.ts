@@ -47,6 +47,14 @@ When('I submit the registration form without a {string}', async function (this: 
 
 When('I submit my registration form again', async function (this: E2EWorld) {
   await this.page.goto('/register');
+  // Since W25 an approved member is sent to their account instead of the form;
+  // only if the form is shown is there anything to resubmit.
+  // (The redirect lands a moment after the page starts streaming.)
+  const left = await this.page.waitForURL((u) => !u.pathname.startsWith('/register'), { timeout: 5_000 }).then(
+    () => true,
+    () => false
+  );
+  if (left) return;
   await acceptTerms(this.page);
   await this.page.getByRole('button', { name: 'Register as member' }).click();
   await expect(this.page).not.toHaveURL(/\/register/);
@@ -116,7 +124,7 @@ Then('the member directory should show my contribution plan as {string}', async 
   const member = await getMember(this.me!.id);
   const row = this.page.getByRole('row').filter({ has: this.page.getByRole('link', { name: member!.fullName!, exact: true }) });
   await expect(row).toContainText(plan.replace('USD ', 'USD\u00a0'));
-  await expect(row).not.toContainText('Yet to choose contribution plan');
+  await expect(row).not.toContainText('No contribution plan yet');
 });
 
 Then(/^my membership should be (active|inactive)$/, async function (this: E2EWorld, status: string) {
