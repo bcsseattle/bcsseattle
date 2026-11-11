@@ -1848,6 +1848,28 @@ export type Database = {
           issue: string
         }[]
       }
+      fundraiser_gift: {
+        Args: { p_donation: string }
+        Returns: {
+          payment_status: string | null
+          amount: number
+          fundraiser_id: string
+          fundraiser_title: string | null
+          created_at: string
+          donor_name: string | null
+        }[]
+      }
+      fundraiser_supporters: {
+        Args: { p_fundraiser: string }
+        Returns: {
+          id: string
+          amount: number
+          donor_name: string | null
+          message: string | null
+          created_at: string
+          is_anonymous: boolean
+        }[]
+      }
       get_election_vote_count: {
         Args: { election_uuid: string }
         Returns: {

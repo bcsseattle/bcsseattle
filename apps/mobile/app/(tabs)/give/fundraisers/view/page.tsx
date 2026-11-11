@@ -27,15 +27,8 @@ async function loadFundraiser(id: string) {
         .eq('fundraiser_id', id)
         .order('created_at', { ascending: false })
     ),
-    // The donor wall, as the website's FundraiserDonors reads it: completed gifts only.
-    must(
-      supabase
-        .from('fundraiser_donations')
-        .select('id, amount, donor_name, message, created_at, is_anonymous')
-        .eq('fundraiser_id', id)
-        .eq('payment_status', 'completed')
-        .order('created_at', { ascending: false })
-    )
+    // The donor wall, as the website reads it: completed gifts, anonymous donors' names and messages left out (W27).
+    must(supabase.rpc('fundraiser_supporters', { p_fundraiser: id }))
   ]);
   return fundraiser && { fundraiser, updates: updates ?? [], donors: donors ?? [] };
 }

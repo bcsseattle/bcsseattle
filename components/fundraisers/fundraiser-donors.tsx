@@ -18,12 +18,8 @@ interface FundraiserDonorsProps {
 // async client component, which suspends forever on client navigation (BUG-074).
 export async function FundraiserDonors({ fundraiserId }: FundraiserDonorsProps) {
   const supabase = await createClient();
-  const { data: donors, error } = await supabase
-    .from('fundraiser_donations')
-    .select('id, amount, donor_name, message, created_at, is_anonymous')
-    .eq('fundraiser_id', fundraiserId)
-    .eq('payment_status', 'completed')
-    .order('created_at', { ascending: false });
+  // Completed gifts, with anonymous donors' names and messages left out (W27).
+  const { data: donors, error } = await supabase.rpc('fundraiser_supporters', { p_fundraiser: fundraiserId });
 
   if (error) {
     console.error(error);

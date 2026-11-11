@@ -26,7 +26,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | W24 | **Plan amounts ignore the family quantity** on the website's plan card (`components/ui/AccountForms/CustomerPortalForm.tsx:40-42, 65`), which shows the unit price only. Checkout sets the subscription quantity to the family size, capped at 1–5. | `CustomerPortalForm.tsx` | Understated amounts on the account page. | Use `priceLabel` from `utils/membership/plan.ts`. (The directory half was fixed with BUG-082.) |
 | W25 | **Member status wording and rules differ:** the website badge uses `status` only ("Active", "Pending", "Rejected"), while the app also requires `isApproved` for active. The directory says "Yet to choose contribution plan" in red. `/register` shows the form again to people who already applied. | `components/portal/member-row.tsx:9-21`, `components/member-list.tsx`, `app/(site)/register` | Inconsistent states across website and app. | One shared member-state rule, and show the application's state on `/register`. |
 | W26 | **"Elected unopposed" shows before voting has started.** `shouldShowUnopposedStatus` only checks that candidate voting isn't open, so during nominations the website shows the "Candidates elected unopposed" banner and "Unopposed" badges for any single-candidate position. | `utils/election-config.ts` (`shouldShowUnopposedStatus`), `app/(portal)/elections/[id]` | Candidates are announced as elected while nominations are still open. | Require candidate voting to have closed, as the app does (`utils/elections/rules.ts`, `electedUnopposed`). |
-| W27 | **Anonymous fundraiser gifts are readable by anyone.** `fundraiser_donations` has a "Donations are viewable by everyone" policy (`SELECT … true`) beside "View non-anonymous donations". Policies are OR-ed, so the narrower one has no effect: any visitor can read every gift, including the donor name and message of anonymous gifts, by querying the table. | Supabase RLS on `fundraiser_donations` | **Privacy leak** of anonymous donors (found while testing the app's gift result screen). | Drop the `true` policy; keep public reads to non-anonymous gifts (plus the donor's own); serve anonymous gifts' totals through a view or the server. *RLS change: needs approval.* **High priority.** |
 
 ## Production settings and accounts (yours to do)
 
@@ -76,6 +75,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Gap | Fixed in |
 |---|---|---|
+| W27 | Anonymous fundraiser gifts were readable by anyone; now only the donor and admins read them, and the donor list leaves out anonymous names and messages | branch `gaps/website-fixes` |
 | — | Privacy page was "Under construction" | PR #21 |
 | — | App links named `bcsseattle.org`, which redirects; now `www.bcsseattle.org` | `da1cdb8`, Phase 3 |
 | — | The app's donation route could charge a monthly gift once | `2578bb8`, Phase 3 |
