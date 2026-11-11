@@ -9,7 +9,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | # | Gap | Where | Impact | Proposed fix |
 |---|---|---|---|---|
 | W4 | **`/members/[id]` returns a 500** for a signed-in non-member. It has no access check, and throws on `member!.created_at` when RLS returns nothing. Nothing leaks. | `app/(portal)/members/[id]` | Error page instead of a "members only" message. | Check access first and show the same "members only" state as the directory. |
-| W5 | **Placeholder pages** that the app's Resources tab links to: `/resources`, `/youth-programs`, `/get-help` ("Under construction" or a bare heading). `/resources/immigration` requires a website sign-in, so the app leaves it out. | `app/(site)/*` | Thin content; App Review may notice. | Write the content, or drop the rows from the app until it exists. |
 
 ## Production settings and accounts (yours to do)
 
@@ -25,6 +24,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | P8 | **Push notifications:** (1) Apple Developer › Keys: create a key with APNs, then set `APNS_KEY` (the .p8 contents), `APNS_KEY_ID` and `APNS_PRODUCTION=true` for TestFlight/App Store builds in Vercel; enable Push Notifications on the `org.bcsseattle.app` App ID. (2) Create a Firebase project with an Android app `org.bcsseattle.app`; put its `google-services.json` in `apps/mobile/android/app/`, set `FCM_SERVICE_ACCOUNT` (service account JSON) in Vercel, and build the app with `NEXT_PUBLIC_ANDROID_PUSH=1`. (3) Apply migration `20261110090000_device_tokens.sql` to production. | Until then nothing is sent and the app hides the Notifications row on Android; iOS shows it. |
 | P9 | **Apply the election migrations** `20261110120000`–`20261110120200` (Phase 1) `20261111090000` (Phase 2) and `20261111100000` (Phase 3) `20261111110000` (Phase 4) `20261111120000` (Phase 5) `20261112090000` (admins review their own nomination) and `20261112100000` (editing after publishing) to production, with the others pending in P1, after those PRs merge. Then turn on `FF_ENABLE_ELECTION_MANAGEMENT` when you want the new Admin › Elections screens. | `db push --linked --dry-run` first. The backfill turns the 2025 election into `completed`; nothing else changes for members. Elections created by SQL from then on must set `status` (see `docs/election-management-plan.md` §3). |
 | P10 | **Election notifications** (Phase 5) are built but send nothing until you approve them. Then set `ELECTION_NOTIFICATIONS=send` in Vercel. Email uses `MY_EMAIL`/`MY_PASSWORD` (Gmail) unless `SMTP_URL` points elsewhere; push needs P8. | Which notices go out, and by which channel, is in `docs/election-management-plan.md` D6 and `utils/elections/notify.ts`. Each is sent once (logged in `election_notifications`). |
+| P11 | **Write the content** for `/youth-programs`, `/resources` and `/get-help` (W5). They are placeholders ("Under construction"); the app stopped linking to them until they have content. | Then add them back in `apps/mobile/components/home/site-links.ts`. |
 
 ## Decisions still open
 
@@ -59,6 +59,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Gap | Fixed in |
 |---|---|---|
+| W5 | The app linked to placeholder pages; it no longer does until they have content (writing it is P11) | branch `gaps/website-fixes` |
 | W7 | members.stripe_customer_id looked like the Stripe id; it now carries a column comment (a rename would break older app builds) | branch `gaps/website-fixes` |
 | W9 | Payments with no matching member showed a blank name (and a broken link) on Funds; now "Not in the directory", as in the app | branch `gaps/website-fixes` |
 | W13 | The app's receipt routes reported problems as redirects; they now return 404 JSON with the message, which the app shows | branch `gaps/website-fixes` |
