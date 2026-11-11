@@ -1,6 +1,7 @@
 'use client';
 
 import { formatMoney } from '@/utils/format';
+import { isMonthlyContribution, MONTHLY_BILLING_NOTE } from '@/utils/membership/billing';
 import { getStripe } from '@/utils/stripe/client';
 import { checkoutWithStripe } from '@/utils/stripe/server';
 import { getErrorRedirect, getSubscriptionInterval } from '@/utils/helpers';
@@ -123,6 +124,9 @@ export default function Plans({ user, products, subscription }: Props) {
                   </CardHeader>
                   <CardContent className="space-y-2">
                     <div className="text-figure text-foreground">{priceString}</div>
+                    {isMonthlyContribution(price) && (
+                      <p className="text-sm text-muted-foreground">{MONTHLY_BILLING_NOTE}</p>
+                    )}
                   </CardContent>
                   <CardFooter>
                     <Button

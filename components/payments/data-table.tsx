@@ -1,4 +1,5 @@
 'use client';
+import { DataTableHead } from '@/components/ui/sortable-table-head';
 import { TablePagination } from '@/components/ui/table-pagination';
 
 import {
@@ -15,7 +16,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow
 } from '@/components/ui/table';
@@ -71,6 +71,7 @@ export function DataTable<TData, TValue>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    sortDescFirst: false,
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
@@ -181,14 +182,7 @@ export function DataTable<TData, TValue>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
+                    <DataTableHead key={header.id} header={header} />
                   );
                 })}
               </TableRow>

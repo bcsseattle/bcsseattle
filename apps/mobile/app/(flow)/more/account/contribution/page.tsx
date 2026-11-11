@@ -1,5 +1,7 @@
 'use client';
 
+import { isMonthlyContribution, MONTHLY_BILLING_NOTE } from '@/utils/membership/billing';
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { OptionCard } from '@/components/ui/option-card';
@@ -154,6 +156,7 @@ export default function MyContribution() {
                   key={price.id}
                   value={price.id}
                   label={`${getSubscriptionInterval(price)} contribution`}
+                  detail={isMonthlyContribution(price) ? MONTHLY_BILLING_NOTE : undefined}
                   trailing={priceLabel(price)}
                   className="min-h-11"
                 />

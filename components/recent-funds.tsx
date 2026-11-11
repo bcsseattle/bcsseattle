@@ -1,4 +1,3 @@
-import { formatDate } from '@/utils/format';
 import { Data } from './payments/columns';
 import { CardHeader, CardTitle } from './ui/card';
 import { DataTable } from './payments/data-table';
@@ -130,7 +129,7 @@ export default async function RecentFunds({
           fullName: member?.fullName,
           totalMembersInFamily: member?.totalMembersInFamily
         },
-        date: formatDate(payment.created * 1000),
+        date: new Date(payment.created * 1000).toISOString(),
         amount: payment.amount
       };
     });

@@ -26,6 +26,24 @@ Feature: Member account and community funds
     And I should see the contribution plans "Monthly", "Six Months" and "Annual"
 
   @P1
+  Scenario: A member with a plan sees their contribution, not the plans
+    Given I am signed in as an approved member
+    And I have an active contribution plan
+    And Stripe reports my contribution plan as active
+    When I go to "/contribute"
+    Then I should see the heading "My contribution"
+    And I should see "Renews"
+    And I should see "Manage plan & payment method"
+
+  @P2
+  Scenario: A monthly donation isn't mistaken for a contribution plan
+    Given I am signed in as an approved member
+    And I have an active recurring donation
+    And Stripe reports my recurring donation as active
+    When I go to "/contribute"
+    Then I should see the heading "Contribution Plans"
+
+  @P1
   Scenario: A registered applicant is asked to pay the membership fee
     Given I am signed in as a pending applicant
     When I go to "/membership-fee"

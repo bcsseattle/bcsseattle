@@ -1,10 +1,10 @@
 'use client';
+import { DataTableHead } from '@/components/ui/sortable-table-head';
 
 import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow
 } from '@/components/ui/table';
@@ -24,6 +24,7 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  getSortedRowModel,
   getPaginationRowModel,
   useReactTable
 } from '@tanstack/react-table';
@@ -103,6 +104,8 @@ export default function DonationTable({
     data: donations,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    sortDescFirst: false,
+    getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     state: {}
   });
@@ -120,12 +123,7 @@ export default function DonationTable({
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id}>
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                      </TableHead>
+                      <DataTableHead key={header.id} header={header} />
                     );
                   })}
                 </TableRow>
