@@ -156,7 +156,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
         getStatusRedirect(
           currentPath,
           'Thank you!',
-          'Your donation is recorded. Please complete it as shown; we will send your receipt once it arrives.'
+          'Your donation is recorded. Please complete it as shown; your receipt is ready to download once it arrives.'
         )
       );
     }
@@ -331,7 +331,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
         </Button>
       </ActionBar>
       <p className="mt-0 text-caption text-muted-foreground lg:hidden">
-        BCS Seattle is a 501(c)(3) nonprofit, EIN 99-2495973. We email a receipt after each payment.
+        BCS Seattle is a 501(c)(3) nonprofit, EIN 99-2495973. You can download a receipt for each payment once it’s through.
       </p>
     </div>
   );
@@ -487,7 +487,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
       {viaStripe && (
         <p className="mt-0 text-caption text-muted-foreground">
           {values.paymentMethod === 'card' ? 'Card' : 'Bank'} details are entered in Stripe&apos;s secure payment
-          sheet. BCS Seattle is a 501(c)(3) nonprofit; we email a tax receipt for every gift.
+          sheet. BCS Seattle is a 501(c)(3) nonprofit; every gift gets a tax receipt to download.
         </p>
       )}
       <ActionBar summary={viaStripe ? 'Step 3 of 3 · You confirm payment details with Stripe' : 'Step 3 of 3'}>
@@ -536,7 +536,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
           </CardContent>
         </Card>
         <Banner tone="info" title="A receipt for every gift">
-          BCS Seattle is a 501(c)(3) nonprofit, EIN 99-2495973. We email a receipt after each payment.
+          BCS Seattle is a 501(c)(3) nonprofit, EIN 99-2495973. You can download a receipt for each payment once it’s through.
         </Banner>
       </aside>
     </div>

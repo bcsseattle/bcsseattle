@@ -71,7 +71,9 @@ export default async function DonationConfirmation(props: {
         <meta httpEquiv="refresh" content="5" />
         <ResultHeader tone="pending" title="We’re confirming your payment">
           {firstName ? `Thank you, ${firstName}. ` : 'Thank you. '}
-          Bank transfers can take a few days; we’ll email your receipt as soon as the money arrives.
+          {donation.payment_method === 'us_bank_account'
+            ? 'Bank transfers can take a few days. This page updates on its own, and your receipt will be here once the money arrives.'
+            : 'This usually takes a moment. This page updates on its own, and your receipt will be here once the payment is through.'}
         </ResultHeader>
         <ReceiptRows
           rows={[
