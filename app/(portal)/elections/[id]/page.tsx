@@ -66,6 +66,7 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
   let userVotes = null;
   let candidateSession = null;
   let initiativeSession = null;
+  let combined: { confirmation_code: string; confirmed_at: string | null } | null = null;
 
   if (user) {
     // Check for candidate votes
@@ -92,8 +93,9 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
     hasInitiativeVotes = !!initiativeSessionData?.completed_at;
     initiativeSession = initiativeSessionData;
 
-    // Get all user votes for display
-    if (hasCandidateVotes || hasInitiativeVotes) {
+    // The member's own votes. Having any of a kind counts as voted, whichever
+    // ballot cast them, as the vote handlers decide (W8).
+    {
       const { data: userVotesData } = await supabase
         .from('votes')
         .select(
@@ -112,6 +114,19 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         .eq('election_id', id);
 
       userVotes = userVotesData;
+      hasCandidateVotes ||= !!userVotes?.some((v) => v.candidate_id);
+      hasInitiativeVotes ||= !!userVotes?.some((v) => v.initiative_id);
+      // The election page's own (combined) ballot records one confirmation, not sessions.
+      if (userVotes?.length) {
+        const { data } = await supabase
+          .from('vote_confirmations')
+          .select('confirmation_code, confirmed_at')
+          .eq('user_id', user.id)
+          .eq('election_id', id)
+          .eq('session_type', 'combined')
+          .maybeSingle();
+        combined = data;
+      }
     }
   }
 
@@ -185,7 +200,8 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
 
   const votedRows = (kind: 'candidates' | 'initiatives') =>
     (userVotes ?? [])
-      .filter((vote) => (kind === 'candidates' ? vote.candidate_id && vote.vote_type === 'candidates' : vote.initiative_id && vote.vote_type === 'initiatives'))
+      // Whichever ballot cast them: separate (candidates, initiatives) or the combined one (W8).
+      .filter((vote) => (kind === 'candidates' ? vote.candidate_id : vote.initiative_id))
       .map((vote) =>
         kind === 'candidates'
           ? ([vote.candidates?.position ?? '', vote.candidates?.full_name ?? ''] as const)
@@ -322,22 +338,34 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
 
       {(hasCandidateVotes || hasInitiativeVotes) && (
         <div className="grid gap-4 md:grid-cols-2">
-          {hasCandidateVotes && candidateSession && (
+          {hasCandidateVotes && (
             <VotedCard title="Your leadership votes" rows={votedRows('candidates')}>
-              <ConfirmationLink
-                code={candidateSession.confirmation_code}
-                href={`/elections/${election.id}/vote/candidates/confirmation?code=${candidateSession.confirmation_code}`}
-                when={candidateSession.completed_at}
-              />
+              {candidateSession?.completed_at ? (
+                <ConfirmationLink
+                  code={candidateSession.confirmation_code}
+                  href={`/elections/${election.id}/vote/candidates/confirmation?code=${candidateSession.confirmation_code}`}
+                  when={candidateSession.completed_at}
+                />
+              ) : (
+                combined && (
+                  <ConfirmationLink code={combined.confirmation_code} href={`/elections/${election.id}/vote/confirmation`} when={combined.confirmed_at} />
+                )
+              )}
             </VotedCard>
           )}
-          {hasInitiativeVotes && initiativeSession && (
+          {hasInitiativeVotes && (
             <VotedCard title="Your initiative votes" rows={votedRows('initiatives')}>
-              <ConfirmationLink
-                code={initiativeSession.confirmation_code}
-                href={`/elections/${election.id}/vote/initiatives/confirmation?code=${initiativeSession.confirmation_code}`}
-                when={initiativeSession.completed_at}
-              />
+              {initiativeSession?.completed_at ? (
+                <ConfirmationLink
+                  code={initiativeSession.confirmation_code}
+                  href={`/elections/${election.id}/vote/initiatives/confirmation?code=${initiativeSession.confirmation_code}`}
+                  when={initiativeSession.completed_at}
+                />
+              ) : (
+                combined && (
+                  <ConfirmationLink code={combined.confirmation_code} href={`/elections/${election.id}/vote/confirmation`} when={combined.confirmed_at} />
+                )
+              )}
             </VotedCard>
           )}
         </div>

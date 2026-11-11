@@ -66,6 +66,16 @@ Feature: Voting in member elections
     When I submit the combined ballot with a vote for "Hani"
     Then my vote for "Hani" should be recorded
 
+  @P1 @W8
+  Scenario: After voting on the election page's ballot, the page shows the votes, not the ballot
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an approved member
+    When I submit the combined ballot with a vote for "Hani"
+    And I open the election
+    Then I should see "Your leadership votes"
+    And I should see "Hani"
+    And I should not see a "Review votes" button
+
   @P1 @BUG-052
   Scenario: An initiative vote on the combined ballot is recorded
     Given there is an open election with the initiative "Build a community garden"
