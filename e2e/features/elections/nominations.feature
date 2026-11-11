@@ -72,6 +72,17 @@ Feature: Nominating, answering and reviewing nominations
     Then I should see the message "Candidate added."
     And there should be a candidate named "Karim Rind" for "Secretary"
 
+  @P1
+  Scenario: An admin who nominated themselves can approve their own nomination
+    Given there is an election accepting nominations
+    And there is an admin named "Ayaan"
+    And there is a nomination of "Ayaan" for "President" waiting for review
+    And I am signed in as "Ayaan"
+    When I approve "Ayaan"'s nomination
+    Then I should see the message "Nomination approved."
+    And "Ayaan" should be a candidate for "President"
+    And "Ayaan"'s nomination for "President" should be on the ballot
+
   @P0 @security @api
   Scenario: A member can't approve a nomination
     Given there is an election accepting nominations
