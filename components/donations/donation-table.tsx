@@ -1,8 +1,12 @@
+'use client';
+import { DataTableHead } from '@/components/ui/sortable-table-head';
+
 import React from 'react';
 import { TablePagination } from '@/components/ui/table-pagination';
 import {
   useReactTable,
   getCoreRowModel,
+  getSortedRowModel,
   flexRender,
   getPaginationRowModel
 } from '@tanstack/react-table';
@@ -10,7 +14,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow
 } from '@/components/ui/table';
@@ -26,6 +29,8 @@ const DonationTable: React.FC<DonationTableProps> = ({ data }) => {
     data,
     columns: donationColumns,
     getCoreRowModel: getCoreRowModel(),
+    sortDescFirst: false,
+    getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     initialState: {
       pagination: {
@@ -43,14 +48,7 @@ const DonationTable: React.FC<DonationTableProps> = ({ data }) => {
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
+                    <DataTableHead key={header.id} header={header} />
                   );
                 })}
               </TableRow>

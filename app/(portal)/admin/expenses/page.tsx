@@ -1,14 +1,13 @@
-import { ExpenseRow } from '@/components/portal/expense-row';
+import { Expenses } from '@/components/expenses';
 import { PageHeader } from '@/components/portal/page-header';
 import { Panel } from '@/components/portal/panel';
 import { Banner } from '@/components/ui/banner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import dayjs from '@/libs/dayjs';
-import { formatDate, formatMoney } from '@/utils/format';
+import { formatMoney } from '@/utils/format';
 import { createClient } from '@/utils/supabase/server';
 import { addExpense } from './actions';
 
@@ -94,30 +93,7 @@ export default async function AdminExpensesPage() {
           </div>
         ) : expenses?.length ? (
           <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Payee</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expenses.map((e) => (
-                  <ExpenseRow
-                    key={e.id}
-                    date={e.date ? formatDate(e.date) : ''}
-                    category={e.category}
-                    isPrivate={!!e.is_private}
-                    payee={e.payee}
-                    description={e.description}
-                    amount={formatMoney(e.amount)}
-                  />
-                ))}
-              </TableBody>
-            </Table>
+            <Expenses expenses={expenses} />
             <div className="flex items-center gap-2 border-t px-4 py-3">
               <span className="text-sm text-muted-foreground">Total, all expenses</span>
               <span className="text-table font-medium text-foreground">{formatMoney(total)}</span>

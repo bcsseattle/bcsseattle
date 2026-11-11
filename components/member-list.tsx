@@ -1,9 +1,13 @@
+'use client';
+
+import { SortableTableHead } from '@/components/ui/sortable-table-head';
+import { useTableSort } from '@/components/ui/use-table-sort';
+import { memberState } from '@/utils/membership/state';
 import {
   Table,
   TableBody,
   TableCaption,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow
 } from '@/components/ui/table';
@@ -27,6 +31,16 @@ export default function MemberList({
   members: Member[];
   subscriptions: PlanSubscription[];
 }) {
+  const rows = members.map((member, index) => ({ member, index, plan: currentPlan(member.user_id, subscriptions) }));
+  const { sortedRows, sortProps } = useTableSort(rows, {
+    number: (r) => r.index,
+    name: (r) => r.member.fullName,
+    city: (r) => r.member.city,
+    status: (r) => memberState(r.member).label,
+    type: (r) => r.member.membershipType,
+    family: (r) => r.member.totalMembersInFamily,
+    plan: (r) => r.plan ? (r.plan.price.unit_amount ?? 0) * (r.plan.quantity ?? 1) : null
+  });
   return (
     <Card>
       <CardHeader>
@@ -40,18 +54,17 @@ export default function MemberList({
           <TableCaption></TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className=""></TableHead>
-              <TableHead className="">Name</TableHead>
-              <TableHead>City</TableHead>
-              <TableHead>Membership Status</TableHead>
-              <TableHead>Membership Type</TableHead>
-              <TableHead>Members in Family</TableHead>
-              <TableHead className="text-right">Contribution Plan</TableHead>
+              <SortableTableHead {...sortProps('number')}><span className="sr-only">Number</span></SortableTableHead>
+              <SortableTableHead className="" {...sortProps('name')}>Name</SortableTableHead>
+              <SortableTableHead {...sortProps('city')}>City</SortableTableHead>
+              <SortableTableHead {...sortProps('status')}>Membership Status</SortableTableHead>
+              <SortableTableHead {...sortProps('type')}>Membership Type</SortableTableHead>
+              <SortableTableHead {...sortProps('family')}>Members in Family</SortableTableHead>
+              <SortableTableHead className="text-right" {...sortProps('plan')}>Contribution Plan</SortableTableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {members.map((member, index) => {
-              const plan = currentPlan(member.user_id, subscriptions);
+            {sortedRows.map(({ member, index, plan }) => {
 
               return (
                 <TableRow key={member.id}>
@@ -70,7 +83,7 @@ export default function MemberList({
                   </TableCell>
                   <TableCell>{member.membershipType}</TableCell>
                   <TableCell>{member.totalMembersInFamily}</TableCell>
-                  <TableCell colSpan={3} className="text-right">
+                  <TableCell className="text-right">
                     {plan ? (
                       priceLabel(plan.price, plan.quantity)
                     ) : (

@@ -1,6 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import { SortableTableHead } from '@/components/ui/sortable-table-head';
+import { useTableSort } from '@/components/ui/use-table-sort';
 import { Users } from 'lucide-react';
 
 import MemberApprovalActions from '@/components/admin/MemberApprovalActions';
@@ -44,6 +46,13 @@ export function MembersTable({ members }: { members: MemberWithState[] }) {
     // Pending first; otherwise the page's order (newest first).
     .sort((a, b) => Number(b.state === 'pending') - Number(a.state === 'pending'));
 
+  const { sortedRows, sortProps, isSorted } = useTableSort(shown, {
+    member: (m) => m.fullName ?? 'Unnamed member',
+    phone: (m) => m.phone,
+    status: (m) => m.state,
+    registered: (m) => m.created_at
+  });
+
   return (
     <div className="flex flex-col gap-4">
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
@@ -71,17 +80,17 @@ export function MembersTable({ members }: { members: MemberWithState[] }) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Registered</TableHead>
+                  <SortableTableHead {...sortProps('member')}>Member</SortableTableHead>
+                  <SortableTableHead {...sortProps('phone')}>Phone</SortableTableHead>
+                  <SortableTableHead {...sortProps('status')}>Status</SortableTableHead>
+                  <SortableTableHead {...sortProps('registered')}>Registered</SortableTableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {shown.map((member) => (
+                {sortedRows.map((member) => (
                   <MemberRow
                     key={member.id}
                     name={member.fullName ?? 'Unnamed member'}
@@ -94,7 +103,7 @@ export function MembersTable({ members }: { members: MemberWithState[] }) {
                 ))}
               </TableBody>
             </Table>
-            <p className="mt-0 border-t px-4 py-3 text-sm text-muted-foreground">Pending applications are listed first.</p>
+            <p className="mt-0 border-t px-4 py-3 text-sm text-muted-foreground">{isSorted ? 'Members are sorted by the selected column.' : 'Pending applications are listed first.'}</p>
           </>
         )}
       </div>
