@@ -27,8 +27,8 @@ const base64 = (blob: Blob) =>
  * opens the PDF in a new tab instead. Returns an error message, or nothing.
  *
  * The receipt routes answer a problem (no contributions that year, a gift not
- * yet paid) with a redirect to a website page rather than an error status, so
- * redirects aren't followed: any non-PDF answer is `notFound`.
+ * yet paid) with JSON { error } (W13), shown as is; anything else that isn't a
+ * PDF is `notFound`.
  */
 export async function sharePdf(path: string, fileName: string, notFound: string): Promise<string | void> {
   let response: Response;
@@ -39,7 +39,8 @@ export async function sharePdf(path: string, fileName: string, notFound: string)
   }
   if (!response.ok || !response.headers.get('content-type')?.includes('application/pdf')) {
     if (response.status === 401) return 'Sign in again to download receipts.';
-    return notFound;
+    const body = await response.json().catch(() => null);
+    return typeof body?.error === 'string' ? body.error : notFound;
   }
   const blob = await response.blob();
 

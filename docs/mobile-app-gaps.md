@@ -12,7 +12,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | W5 | **Placeholder pages** that the app's Resources tab links to: `/resources`, `/youth-programs`, `/get-help` ("Under construction" or a bare heading). `/resources/immigration` requires a website sign-in, so the app leaves it out. | `app/(site)/*` | Thin content; App Review may notice. | Write the content, or drop the rows from the app until it exists. |
 | W7 | **Confusing column name:** `members.stripe_customer_id` holds `customers.id` (the user's UUID), not the Stripe ID. The Stripe ID is `customers.stripe_customer_id`. | schema | Easy to misread; already caught one draft of the deletion migration. | Rename to `customer_id` in a migration, or at least add a column comment. *Schema change: needs approval.* |
 | W9 | **Payments with no matching member** show a blank name on the website's Funds page. The app shows "Not in the directory". | `app/(portal)/community-funds` | Cosmetic. | Use the same wording on the website. |
-| W13 | **The app's receipt routes report problems as redirects to website pages**, not `{ error }` JSON, because they wrap the website's PDF routes. The app shows a general "no receipt" message. | `app/api/app/receipts/contributions`, `app/api/app/donations/[donationId]/pdf` | Members don't see the real reason (for example, no payments that year). | Return 4xx JSON with the message from the app routes. |
 
 ## Production settings and accounts (yours to do)
 
@@ -62,6 +61,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Gap | Fixed in |
 |---|---|---|
+| W13 | The app's receipt routes reported problems as redirects; they now return 404 JSON with the message, which the app shows | branch `gaps/website-fixes` |
 | W25 | Member status wording and rules differed; the website now uses the app's rule (utils/membership/state.ts), the directory says "No contribution plan yet", and /register shows an application's state | branch `gaps/website-fixes` |
 | W22 | Closed fundraisers still offered Donate and said "Ends 2 days ago"; now no Donate, "Ended {date}", and unnamed donors show as anonymous | branch `gaps/website-fixes` |
 | W21 | The donate form offered purposes and frequencies it couldn't accept or charge, and pre-filled "Other amount" with 1000; it now offers what the app does | branch `gaps/website-fixes` |
