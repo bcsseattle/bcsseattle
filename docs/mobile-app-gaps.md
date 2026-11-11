@@ -8,7 +8,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Gap | Where | Impact | Proposed fix |
 |---|---|---|---|---|
-| W4 | **`/members/[id]` returns a 500** for a signed-in non-member. It has no access check, and throws on `member!.created_at` when RLS returns nothing. Nothing leaks. | `app/(portal)/members/[id]` | Error page instead of a "members only" message. | Check access first and show the same "members only" state as the directory. |
 
 ## Production settings and accounts (yours to do)
 
@@ -59,6 +58,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Gap | Fixed in |
 |---|---|---|
+| W4 | /members/[id] returned a 500 to a signed-in non-member; it now says the page is for members | branch `gaps/website-fixes` |
 | W5 | The app linked to placeholder pages; it no longer does until they have content (writing it is P11) | branch `gaps/website-fixes` |
 | W7 | members.stripe_customer_id looked like the Stripe id; it now carries a column comment (a rename would break older app builds) | branch `gaps/website-fixes` |
 | W9 | Payments with no matching member showed a blank name (and a broken link) on Funds; now "Not in the directory", as in the app | branch `gaps/website-fixes` |

@@ -250,3 +250,7 @@ Then('the estimated bank balance should count only money received outside Stripe
     }, { timeout: 30_000 })
     .toBe(true);
 });
+
+When('I open the member page of {string}', async function (this: E2EWorld, name: string) {
+  this.response = { status: (await this.page.goto(`/members/${this.user(name).memberId}`))!.status(), body: '' };
+});

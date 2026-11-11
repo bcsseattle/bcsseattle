@@ -97,3 +97,10 @@ Feature: Members-only and admin-only pages are protected
     And I am signed in as an approved member
     When I open the member details page of "Amina"
     Then I should see "Amina"'s details and total contributions
+
+  @P1 @W4
+  Scenario: Someone without a membership is told a member's page is for members
+    Given there is an approved member named "Amina"
+    And I am signed in as a user with no membership
+    When I open the member page of "Amina"
+    Then I should see "Members only"
