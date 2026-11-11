@@ -22,7 +22,8 @@ const SUBJECT: Record<string, string> = {
   ballot_positions: 'position',
   initiatives: 'initiative',
   candidates: 'candidate',
-  nominations: 'nomination'
+  nominations: 'nomination',
+  initiative_proposals: 'initiative proposal'
 };
 
 const FIELD: Record<string, string> = {

@@ -28,7 +28,7 @@ import { useData } from '~/lib/use-data';
  * optional photo compressed before upload), posted as multipart to
  * /api/app/elections/[id]/nominate. With ?nomination=, it accepts a
  * nomination someone else made instead (position fixed), posted to
- * /api/app/nominations/[id]. Nominating someone else is on the website.
+ * /api/app/nominations/[id]. Nominating someone else is its own screen (nominate-member).
  */
 export default function NominateFlow() {
   const params = useSearchParams();

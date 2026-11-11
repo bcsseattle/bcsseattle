@@ -154,6 +154,18 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
   const myNominations = (['draft', 'scheduled'].includes(election.status) ? (myNominationRows ?? []) : []).filter(
     (n) => n.status !== 'awaiting_acceptance' || isNominationOpen
   );
+  // The member's own initiative proposals, until the ballot is locked.
+  const { data: myProposalRows } =
+    managed && user && ['draft', 'scheduled'].includes(election.status)
+      ? await supabase
+          .from('initiative_proposals')
+          .select('id, title, status, rejection_reason')
+          .eq('election_id', id)
+          .eq('proposed_by', user.id)
+          .in('status', ['submitted', 'approved', 'rejected'])
+          .order('created_at')
+      : { data: [] };
+  const myProposals = myProposalRows ?? [];
 
   const supportsUnopposed = supportsUnopposedCandidates(election.type as ElectionType);
 
@@ -233,21 +245,56 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           This is how members will see the election once it’s published. Only admins can see a draft.
         </Banner>
       )}
-      {isNominationOpen && (
+      {isNominationOpen && (managed || positionOrder.length > 0) && (
         <Banner
           tone="info"
-          title="Nominations are open"
+          title={positionOrder.length > 0 ? 'Nominations are open' : 'Initiative proposals are open'}
           action={
-            <Link href={`/elections/${election.id}/nominate`} className={buttonVariants({ size: 'sm' })}>
-              {managed ? 'Nominate' : 'Nominate yourself'}
+            <div className="flex flex-wrap gap-2">
+              {positionOrder.length > 0 && (
+                <Link href={`/elections/${election.id}/nominate`} className={buttonVariants({ size: 'sm' })}>
+                  {managed ? 'Nominate' : 'Nominate yourself'}
+                </Link>
+              )}
+              {managed && (
+                <Link
+                  href={`/elections/${election.id}/propose`}
+                  className={buttonVariants({ size: 'sm', variant: positionOrder.length > 0 ? 'outline' : 'default' })}
+                >
+                  Propose an initiative
+                </Link>
+              )}
+            </div>
+          }
+        >
+          {!managed
+            ? 'Submit your nomination for this election.'
+            : positionOrder.length > 0
+              ? `Nominate yourself or another approved member, or propose a question for members to vote on, by ${formatDeadline(election.nomination_end!)}.`
+              : `Propose a question for members to vote on by ${formatDeadline(election.nomination_end!)}.`}
+        </Banner>
+      )}
+      {myProposals.map((p) => (
+        <Banner
+          key={p.id}
+          tone={p.status === 'rejected' ? 'attention' : 'info'}
+          title={
+            p.status === 'approved'
+              ? 'Your initiative is on the ballot'
+              : p.status === 'submitted'
+                ? 'Your initiative is waiting for review'
+                : 'Your initiative wasn’t approved'
+          }
+          action={
+            <Link href={`/elections/${election.id}/proposals/${p.id}`} className={buttonVariants({ size: 'sm', variant: 'outline' })}>
+              View
+              <span className="sr-only">: {p.title}</span>
             </Link>
           }
         >
-          {managed
-            ? `Nominate yourself or another approved member by ${formatDeadline(election.nomination_end!)}.`
-            : 'Submit your nomination for this election.'}
+          {p.status === 'rejected' ? `“${p.title}”: ${p.rejection_reason}` : `“${p.title}”`}
         </Banner>
-      )}
+      ))}
       {myNominations.map((n) => (
         <Banner
           key={n.id}

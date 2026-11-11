@@ -312,6 +312,8 @@ export type AdminAction =
 export type AdminContext = {
   /** Nominations still awaiting acceptance or review. */
   undecidedNominations: number;
+  /** Initiative proposals waiting for review. */
+  undecidedProposals?: number;
   /** Positions with no candidate that aren't marked vacant. */
   emptyPositions: string[];
   candidateCount: number;
@@ -353,6 +355,7 @@ export function adminActions(e: PhaseInput, ctx: AdminContext, now = Date.now())
         !p.nominationsOpen &&
         p.phase !== 'upcoming' &&
         ctx.undecidedNominations === 0 &&
+        !ctx.undecidedProposals &&
         ctx.emptyPositions.length === 0 &&
         ctx.candidateCount + ctx.initiativeCount > 0,
       e.status !== 'scheduled'
@@ -361,9 +364,11 @@ export function adminActions(e: PhaseInput, ctx: AdminContext, now = Date.now())
           ? 'Nominations are still open.'
           : ctx.undecidedNominations > 0
             ? 'Some nominations haven’t been decided yet.'
-            : ctx.emptyPositions.length > 0
-              ? `No candidates for: ${ctx.emptyPositions.join(', ')}. Mark them vacant or extend nominations.`
-              : 'The ballot is empty.'
+            : ctx.undecidedProposals
+              ? 'Some initiative proposals haven’t been decided yet.'
+              : ctx.emptyPositions.length > 0
+                ? `No candidates for: ${ctx.emptyPositions.join(', ')}. Mark them vacant or extend nominations.`
+                : 'The ballot is empty.'
     ),
     extend_voting: guard(
       scheduledOrLocked && !p.votingOver,
@@ -544,18 +549,29 @@ export type NextAction =
 /** The one primary action an election's phase calls for (plan §5), or null when there's nothing left to do. */
 export function nextAction(
   phase: ElectionPhase,
-  { canPublish, nominationsToReview, ties = 0 }: { canPublish: boolean; nominationsToReview: number; ties?: number }
+  {
+    canPublish,
+    nominationsToReview,
+    proposalsToReview = 0,
+    ties = 0
+  }: { canPublish: boolean; nominationsToReview: number; proposalsToReview?: number; ties?: number }
 ): { action: NextAction; label: string } | null {
-  const review = { action: 'review_nominations' as const, label: `Review ${nominationsToReview} nomination${nominationsToReview === 1 ? '' : 's'}` };
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const waiting = [
+    nominationsToReview ? plural(nominationsToReview, 'nomination') : '',
+    proposalsToReview ? plural(proposalsToReview, 'proposal') : ''
+  ].filter(Boolean);
+  const review = { action: 'review_nominations' as const, label: `Review ${waiting.join(' and ')}` };
+  const toReview = nominationsToReview + proposalsToReview;
   switch (phase) {
     case 'draft':
       return canPublish ? { action: 'publish', label: 'Publish' } : { action: 'finish_setup', label: 'Finish setup' };
     case 'upcoming':
       return { action: 'preview', label: 'Preview' };
     case 'nominations_open':
-      return nominationsToReview > 0 ? review : { action: 'preview', label: 'Preview' };
+      return toReview > 0 ? review : { action: 'preview', label: 'Preview' };
     case 'review':
-      return nominationsToReview > 0 ? review : { action: 'lock_ballot', label: 'Lock ballot' };
+      return toReview > 0 ? review : { action: 'lock_ballot', label: 'Lock ballot' };
     case 'ballot_ready':
       return { action: 'preview', label: 'Preview ballot' };
     case 'voting_open':

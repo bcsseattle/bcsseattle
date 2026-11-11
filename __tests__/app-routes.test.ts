@@ -54,6 +54,7 @@ jest.mock('@/utils/donation/handlers', () => ({ submitDonation: jest.fn() }));
 jest.mock('@/utils/fundraisers/handlers', () => ({ submitDonation: jest.fn() }));
 jest.mock('@/utils/membership/handlers', () => ({ registerMember: jest.fn() }));
 jest.mock('@/utils/elections/handlers', () => ({ nominateCandidate: jest.fn() }));
+jest.mock('@/utils/elections/notify', () => ({ notifyNominated: jest.fn() }));
 // enableElectionManagement: off unless a test turns it on.
 jest.mock('@/utils/server-feature-flags', () => ({ checkFeatureFlag: async () => mockDb.managed }));
 jest.mock('@/utils/supabase/admin', () => ({
@@ -326,6 +327,18 @@ describe('POST /api/app/elections/[id]/nominate', () => {
       mockDb.rpc.mockResolvedValue({ data: null, error: { code: '22023', message: "Nominations aren't open for this election." } });
       const res = await nominate(form({ fullName: 'Amina Baloch', position: 'President' }), id('e1'));
       expect(await res.json()).toEqual({ error: "Nominations aren't open for this election." });
+    });
+
+    it('nominates another member, who then accepts or declines', async () => {
+      mockDb.rpc.mockResolvedValue({ data: 'n2', error: null });
+      const res = await nominate(form({ position: 'President', nominee: 'u2', message: 'You’d be great' }), id('e1'));
+      expect(await res.json()).toEqual({ status: 'awaiting_acceptance' });
+      expect(mockDb.rpc).toHaveBeenCalledWith('nomination_create', {
+        p_election: 'e1',
+        p_position: 'pos-president',
+        p_nominee: 'u2',
+        p_message: 'You’d be great'
+      });
     });
   });
 });

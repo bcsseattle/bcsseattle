@@ -119,8 +119,11 @@ function List({
       {elections.map((e) => {
         const p = electionPhase(e);
         const view = `/elections/view/?id=${e.id}`;
+        // Without positions, the nominations window is for initiative proposals (A10).
         const action = p.nominationsOpen
-          ? { label: 'Nominate', href: `/elections/nominate/?id=${e.id}` }
+          ? e.types.includes('Leadership')
+            ? { label: 'Nominate', href: `/elections/nominate/?id=${e.id}` }
+            : { label: 'Propose', href: `/elections/propose/?id=${e.id}` }
           : p.votingOpen
             ? { label: 'Vote now', href: view }
             : p.closed

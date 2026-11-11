@@ -29,11 +29,12 @@ const actionHref = (id: string, action: NextAction) =>
 
 async function ManageElections() {
   const supabase = await createClient();
-  const [{ data: elections }, { data: positions }, { data: initiatives }, { data: nominations }] = await Promise.all([
+  const [{ data: elections }, { data: positions }, { data: initiatives }, { data: nominations }, { data: proposals }] = await Promise.all([
     supabase.from('elections').select('*').order('start_date', { ascending: false }),
     supabase.from('ballot_positions').select('election_id'),
     supabase.from('initiatives').select('election_id'),
-    supabase.from('nominations').select('election_id').eq('status', 'submitted')
+    supabase.from('nominations').select('election_id').eq('status', 'submitted'),
+    supabase.from('initiative_proposals').select('election_id').eq('status', 'submitted')
   ]);
   const count = (list: { election_id: string | null }[] | null, id: string) => (list ?? []).filter((r) => r.election_id === id).length;
 
@@ -44,7 +45,7 @@ async function ManageElections() {
     // The list only needs to know whether a draft could be published; the
     // overview checks the rest (adminActions).
     const canPublish = (hasPositions || count(initiatives, e.id) > 0) && validateTimeline(e, { hasPositions }).valid;
-    const next = nextAction(p.phase, { canPublish, nominationsToReview: count(nominations, e.id) });
+    const next = nextAction(p.phase, { canPublish, nominationsToReview: count(nominations, e.id), proposalsToReview: count(proposals, e.id) });
     const date = keyDate(e, p.phase);
     return {
       id: e.id,

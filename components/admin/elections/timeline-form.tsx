@@ -26,33 +26,36 @@ type Values = Record<
  * initiative windows) and the results date. Values are datetime-local fields
  * read as Pacific time; windows include their start and end.
  */
+type Nominations = 'required' | 'optional' | 'none';
+
 export function TimelineForm({
   action,
   initial,
-  hasPositions
+  nominations
 }: {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   /** datetime-local strings in Pacific time. */
   initial: Values;
-  hasPositions: boolean;
+  /** required with positions; optional without (it's when members propose initiatives); none once locked or for a run-off. */
+  nominations: Nominations;
 }) {
   const [state, formAction] = React.useActionState(action, {});
   const v: Values = state.values
     ? { ...(state.values as unknown as Values), separate: state.values.enable_separate_voting_periods === 'on' }
     : initial;
-  return <TimelineFields key={JSON.stringify(state)} formAction={formAction} state={state} v={v} hasPositions={hasPositions} />;
+  return <TimelineFields key={JSON.stringify(state)} formAction={formAction} state={state} v={v} nominations={nominations} />;
 }
 
 function TimelineFields({
   formAction,
   state,
   v,
-  hasPositions
+  nominations
 }: {
   formAction: (formData: FormData) => void;
   state: FormState;
   v: Values;
-  hasPositions: boolean;
+  nominations: Nominations;
 }) {
   const [separate, setSeparate] = React.useState(v.separate);
   const e = state.fieldErrors ?? {};
@@ -64,15 +67,22 @@ function TimelineFields({
 
   return (
     <form action={formAction} className="flex flex-col gap-6" noValidate>
-      {hasPositions ? (
-        <Panel title="Nominations" subtitle="Members nominate candidates from the start to the end, both included.">
+      {nominations !== 'none' ? (
+        <Panel
+          title="Nominations"
+          subtitle={
+            nominations === 'required'
+              ? 'Members nominate candidates and propose initiatives from the start to the end, both included.'
+              : 'Optional. Set it to let members propose initiative questions, from the start to the end, both included.'
+          }
+        >
           <div className="grid gap-4 p-4 md:grid-cols-2">
             {when('nomination_start', 'Nominations open')}
             {when('nomination_end', 'Nominations close', 'Pacific time. Must be on or before voting opens.')}
           </div>
         </Panel>
       ) : (
-        <p className="mt-0 text-sm text-muted-foreground">This election has no positions, so it has no nominations window.</p>
+        <p className="mt-0 text-sm text-muted-foreground">Nominations are over for this election.</p>
       )}
 
       <Panel title="Voting" subtitle="Voting opens only after you lock the ballot.">

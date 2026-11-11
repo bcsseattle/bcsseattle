@@ -26,6 +26,8 @@ export type NoticeKind =
   | 'nominated'
   | 'nomination_approved'
   | 'nomination_rejected'
+  | 'proposal_approved'
+  | 'proposal_rejected'
   | 'voting_open'
   | 'voting_extended'
   | 'cancelled'
@@ -230,5 +232,25 @@ export async function notifyDatesChanged(id: string, changes: ReturnType<typeof 
         link(id)
       ].join('\n')
     }
+  });
+}
+
+/** To the member who proposed an initiative: on the ballot, or not and why. Keyed by proposal (up to 3 each). */
+export async function notifyProposalDecided(proposalId: string) {
+  const { data: p } = await supabaseAdmin.from('initiative_proposals').select('*').eq('id', proposalId).single();
+  if (!p || !['approved', 'rejected'].includes(p.status)) return 0;
+  const e = await election(p.election_id);
+  const approved = p.status === 'approved';
+  return notify({
+    electionId: p.election_id,
+    kind: `${approved ? 'proposal_approved' : 'proposal_rejected'}:${p.id}`,
+    to: [p.proposed_by],
+    email: {
+      subject: approved ? `On the ballot: ${p.title}` : `Initiative not approved: ${p.title}`,
+      text: approved
+        ? `Your initiative "${p.title}" is on the ballot in ${e.title}.\n\n${link(e.id)}`
+        : `Your initiative "${p.title}" in ${e.title} wasn't approved.\n\nReason: ${p.rejection_reason ?? ''}\n\n${site()}/elections/${e.id}/proposals/${p.id}`
+    },
+    push: { title: approved ? 'Your initiative is on the ballot' : 'Initiative not approved', body: p.title, url: appUrl(e.id) }
   });
 }
