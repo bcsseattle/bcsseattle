@@ -149,7 +149,7 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           .select('id, position, status, rejection_reason')
           .eq('election_id', id)
           .eq('nominee_user_id', user.id)
-          .in('status', ['awaiting_acceptance', 'submitted', 'rejected'])
+          .in('status', ['awaiting_acceptance', 'submitted', 'approved', 'rejected'])
       : { data: [] };
   const myNominations = (['draft', 'scheduled'].includes(election.status) ? (myNominationRows ?? []) : []).filter(
     (n) => n.status !== 'awaiting_acceptance' || isNominationOpen
@@ -255,7 +255,9 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           title={
             n.status === 'awaiting_acceptance'
               ? `You’ve been nominated for ${n.position}`
-              : n.status === 'submitted'
+              : n.status === 'approved'
+                ? `You’re on the ballot for ${n.position}`
+                : n.status === 'submitted'
                 ? `Your nomination for ${n.position} is waiting for review`
                 : `Your nomination for ${n.position} wasn’t approved`
           }
@@ -265,7 +267,7 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
             </Link>
           }
         >
-          {n.status === 'rejected' ? n.rejection_reason : n.status === 'awaiting_acceptance' ? 'Answer before nominations close.' : 'You can change your details until the ballot is locked.'}
+          {n.status === 'rejected' ? n.rejection_reason : n.status === 'awaiting_acceptance' ? 'Answer before nominations close.' : n.status === 'approved' ? 'You can change your details or withdraw until the ballot is locked.' : 'You can change your details until the ballot is locked.'}
         </Banner>
       ))}
 
