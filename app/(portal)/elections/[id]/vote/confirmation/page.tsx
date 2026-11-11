@@ -75,7 +75,7 @@ export default async function VoteConfirmationPage(props: Props) {
           <CardHeader>
             <CardTitle className="text-center">No Votes Found</CardTitle>
             <CardDescription className="text-center">
-              We couldn't find any votes for this election.
+              We couldn&apos;t find any votes for this election.
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-center">
@@ -101,7 +101,7 @@ export default async function VoteConfirmationPage(props: Props) {
               Vote Confirmed
             </CardTitle>
             <CardDescription className="text-badge-green-text">
-              Your vote has been successfully recorded for "{election.title}".
+              Your vote has been successfully recorded for &quot;{election.title}&quot;.
               {voteConfirmation && (
                 <span className="block mt-2 font-medium">
                   Confirmation Code: <code className="bg-card px-2 py-1 rounded text-sm">{voteConfirmation.confirmation_code}</code>

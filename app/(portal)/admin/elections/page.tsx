@@ -1,14 +1,81 @@
 import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { PageHeader } from '@/components/portal/page-header';
+import { ElectionsList, type ElectionListRow } from '@/components/admin/elections/elections-list';
 import { createClient } from '@/utils/supabase/server';
 import dayjs from '@/libs/dayjs';
-import { formatDate } from '@/utils/format';
+import { formatDate, formatDeadline } from '@/utils/format';
+import { ADMIN_TAB, electionPhase, keyDate, nextAction, validateTimeline, type NextAction } from '@/utils/elections/rules';
+import { electionManagementEnabled } from './data';
 
 // The admin layout already turns away anyone who isn't an admin.
 export default async function AdminElectionsPage() {
+  return (await electionManagementEnabled()) ? <ManageElections /> : <LegacyElections />;
+}
+
+/** Where each next action is done. Phase 5 adds the results tab. */
+const actionHref = (id: string, action: NextAction) =>
+  action === 'finish_setup'
+    ? `/admin/elections/${id}/edit?step=review`
+    : action === 'preview'
+      ? `/elections/${id}`
+      : action === 'review_nominations' || action === 'lock_ballot' || action === 'turnout'
+        ? `/admin/elections/${id}?tab=${{ review_nominations: 'nominations', lock_ballot: 'ballot', turnout: 'voting' }[action]}`
+        : `/admin/elections/${id}`;
+
+async function ManageElections() {
+  const supabase = await createClient();
+  const [{ data: elections }, { data: positions }, { data: initiatives }, { data: nominations }] = await Promise.all([
+    supabase.from('elections').select('*').order('start_date', { ascending: false }),
+    supabase.from('ballot_positions').select('election_id'),
+    supabase.from('initiatives').select('election_id'),
+    supabase.from('nominations').select('election_id').eq('status', 'submitted')
+  ]);
+  const count = (list: { election_id: string | null }[] | null, id: string) => (list ?? []).filter((r) => r.election_id === id).length;
+
+  const rows: ElectionListRow[] = (elections ?? []).map((e) => {
+    const p = electionPhase(e);
+    // A run-off has positions but no nominations window.
+    const hasPositions = count(positions, e.id) > 0 && !e.runoff_of;
+    // The list only needs to know whether a draft could be published; the
+    // overview checks the rest (adminActions).
+    const canPublish = (hasPositions || count(initiatives, e.id) > 0) && validateTimeline(e, { hasPositions }).valid;
+    const next = nextAction(p.phase, { canPublish, nominationsToReview: count(nominations, e.id) });
+    const date = keyDate(e, p.phase);
+    return {
+      id: e.id,
+      title: e.title,
+      type: e.type ?? 'leadership',
+      tab: ADMIN_TAB[p.phase],
+      phase: { label: p.label.admin, tone: p.label.tone },
+      keyDate: date ? `${date.label} ${formatDeadline(date.at)}` : null,
+      next: next && { label: next.label, href: actionHref(e.id, next.action) }
+    };
+  });
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Elections"
+        description="Create elections, run nominations and voting, and publish results. Times are Pacific."
+        actions={
+          <Link href="/admin/elections/new" className={buttonVariants()}>
+            <Plus aria-hidden className="size-4" />
+            New election
+          </Link>
+        }
+      />
+      <ElectionsList rows={rows} />
+    </div>
+  );
+}
+
+/** The read-only list shown until enableElectionManagement is on. */
+async function LegacyElections() {
   const supabase = await createClient();
   const { data: elections } = await supabase
     .from('elections')
@@ -25,14 +92,6 @@ export default async function AdminElectionsPage() {
         <div>
           <CardTitle>Election Management</CardTitle>
           <CardDescription>All elections, newest first.</CardDescription>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/voting-config">Voting configuration</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/election-types">Election types</Link>
-          </Button>
         </div>
       </CardHeader>
       <CardContent>

@@ -143,7 +143,7 @@ export default function MemberApprovalActions({ member }: MemberApprovalActionsP
             <AlertDialogHeader>
               <AlertDialogTitle>Reject Member Application</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to reject <strong>{member.fullName}</strong>'s membership application? 
+                Are you sure you want to reject <strong>{member.fullName}</strong>&apos;s membership application? 
                 This action can be reversed later if needed.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -228,7 +228,7 @@ export default function MemberApprovalActions({ member }: MemberApprovalActionsP
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate Member</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to deactivate <strong>{member.fullName}</strong>'s membership? 
+              Are you sure you want to deactivate <strong>{member.fullName}</strong>&apos;s membership? 
               This will remove their member benefits and voting rights.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -13,6 +13,7 @@ export interface FeatureFlags {
   showFeatureFlags: boolean;
   enableNewUI: boolean;
   allowAnonymousFeedback: boolean;
+  enableElectionManagement: boolean;
 }
 
 export interface FeatureFlagContext {
@@ -40,6 +41,7 @@ function getEnvironmentFeatures(): Partial<FeatureFlags> {
     showFeatureFlags: process.env.FF_SHOW_FEATURE_FLAGS === 'true',
     enableNewUI: process.env.FF_ENABLE_NEW_UI === 'true',
     allowAnonymousFeedback: process.env.FF_ALLOW_ANONYMOUS_FEEDBACK === 'true',
+    enableElectionManagement: process.env.FF_ENABLE_ELECTION_MANAGEMENT === 'true',
   };
 }
 

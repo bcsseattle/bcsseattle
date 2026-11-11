@@ -52,7 +52,6 @@ interface Props {
   member: Member;
 }
 export default function ReceiptForm({ member }: Props) {
-  if (!member) return null;
   const router = useRouter();
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -67,6 +66,7 @@ export default function ReceiptForm({ member }: Props) {
     );
   }
 
+  if (!member) return null;
   return (
     <Card>
       <CardHeader>

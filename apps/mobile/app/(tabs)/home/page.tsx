@@ -18,7 +18,7 @@ import { PROGRAMS } from '~/components/home/site-links';
 import {
   ballotOffer,
   electedUnopposed,
-  votingWindows
+  electionPhase
 } from '@/utils/elections/rules';
 import { rows, typeTags } from '~/components/elections/election';
 import { must } from '~/lib/api';
@@ -87,12 +87,17 @@ function Summary({ me }: { me: Me }) {
     ]);
     // Open by the Elections tab's rules (the candidate window counts), and
     // still offering this member a part of its ballot.
-    const open = elections.filter((e) => votingWindows(e).votingOpen);
+    const open = elections.filter((e) => electionPhase(e).votingOpen);
     const ids = open.map((e) => e.id);
-    // candidates has no foreign key to elections, so each part is read on its own.
+    // Each part is read on its own.
     const [positions, candidates, initiatives, sessions, votes] = ids.length
       ? await Promise.all([
-          rows(supabase.from('election_positions').select('election_type')),
+          rows(
+            supabase
+              .from('ballot_positions')
+              .select('election_id, title, seats, vacant, unopposed_decision')
+              .in('election_id', ids)
+          ),
           rows(
             supabase
               .from('candidates')
@@ -124,7 +129,7 @@ function Summary({ me }: { me: Me }) {
       : [[], [], [], [], []];
     const toVote = open
       .map((e) => {
-        const windows = votingWindows(e);
+        const windows = electionPhase(e);
         const mine = <T extends { election_id: string | null }>(list: T[]) =>
           list.filter((r) => r.election_id === e.id);
         const done = (type: string) =>
@@ -139,7 +144,15 @@ function Summary({ me }: { me: Me }) {
           electedUnopposed: electedUnopposed(
             e,
             mine(candidates),
-            windows.candidateVotingOpen
+            windows.candidateVotingOpen,
+            mine(positions).map((x) => ({
+              position: x.title,
+              description: null,
+              display_order: 0,
+              seats: x.seats,
+              vacant: x.vacant,
+              unopposed_decision: x.unopposed_decision
+            }))
           ),
           candidateCount: mine(candidates).length,
           initiativeCount: mine(initiatives).length

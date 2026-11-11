@@ -26,22 +26,35 @@ import { useData } from '~/lib/use-data';
 /**
  * Nominate yourself: the website's nominate form (NominateFormSchema, an
  * optional photo compressed before upload), posted as multipart to
- * /api/app/elections/[id]/nominate, which runs nominateCandidate.
+ * /api/app/elections/[id]/nominate. With ?nomination=, it accepts a
+ * nomination someone else made instead (position fixed), posted to
+ * /api/app/nominations/[id]. Nominating someone else is on the website.
  */
 export default function NominateFlow() {
-  const id = useSearchParams().get('id') ?? '';
+  const params = useSearchParams();
+  const id = params.get('id') ?? '';
+  const nominationId = params.get('nomination');
   const userId = useSession().session!.user.id;
   const state = useData(() => loadElection(id, userId), [id, userId]);
   return (
     <>
-      <AppHeader title="Nominate yourself" back={{}} />
+      <AppHeader title={nominationId ? 'Accept nomination' : 'Nominate yourself'} back={{}} />
       <Loaded state={state}>
-        {(d) =>
-          d.myCandidacy ? (
+        {(d) => {
+          const accepting = nominationId ? d.myNominations.find((n) => n.id === nominationId) : undefined;
+          if (nominationId)
+            return accepting?.status === 'awaiting_acceptance' && d.phase.nominationsOpen ? (
+              <NominateForm d={d} accepting={accepting} />
+            ) : (
+              <StatePanel title="This nomination can’t be accepted">
+                It has been answered already, or nominations have closed.
+              </StatePanel>
+            );
+          return d.myCandidacy || d.myAcceptedNomination ? (
             <StatePanel icon={CheckCircle} title="You’re already nominated">
-              You are running for {d.myCandidacy.position} in {d.election.title}
-              . You can nominate yourself for one position per election; to
-              change it, contact the election administrator.
+              You are standing for{' '}
+              {(d.myCandidacy ?? d.myAcceptedNomination)!.position} in{' '}
+              {d.election.title}. You can stand for one position per election.
             </StatePanel>
           ) : !d.phase.nominationsOpen ? (
             <StatePanel title="Nominations are not open">
@@ -49,14 +62,20 @@ export default function NominateFlow() {
             </StatePanel>
           ) : (
             <NominateForm d={d} />
-          )
-        }
+          );
+        }}
       </Loaded>
     </>
   );
 }
 
-function NominateForm({ d }: { d: ElectionData }) {
+function NominateForm({
+  d,
+  accepting
+}: {
+  d: ElectionData;
+  accepting?: ElectionData['myNominations'][number];
+}) {
   const router = useRouter();
   const { data: me } = useMember();
   const ids = {
@@ -70,7 +89,9 @@ function NominateForm({ d }: { d: ElectionData }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
-  const [position, setPosition] = useState(d.positions[0]?.position ?? '');
+  const [position, setPosition] = useState(
+    accepting?.position ?? d.positions[0]?.position ?? ''
+  );
   const description = d.positions.find(
     (p) => p.position === position
   )?.description;
@@ -124,7 +145,12 @@ function NominateForm({ d }: { d: ElectionData }) {
     if (values.manifesto) body.set('manifesto', values.manifesto);
     if (photo) body.set('photoFile', photo, photo.name);
     try {
-      await api(`/api/app/elections/${d.election.id}/nominate`, { form: body });
+      if (accepting) {
+        body.set('action', 'accept');
+        await api(`/api/app/nominations/${accepting.id}`, { form: body });
+      } else {
+        await api(`/api/app/elections/${d.election.id}/nominate`, { form: body });
+      }
       router.replace(`/elections/view/?id=${d.election.id}`);
     } catch (e) {
       setError(
@@ -150,8 +176,9 @@ function NominateForm({ d }: { d: ElectionData }) {
       className="flex flex-1 flex-col gap-5 px-4 pt-4"
     >
       <p className="text-body text-muted-foreground">
-        Nominate yourself for a leadership position in {d.election.title}. You
-        can nominate yourself for one position per election.
+        {accepting
+          ? `You were nominated for ${accepting.position} in ${d.election.title}. To accept, give the details members will see. Accepting declines any other position you were nominated for in this election.`
+          : `Nominate yourself for a position in ${d.election.title}. You can stand for one position per election.`}
       </p>
 
       <div className="flex flex-col gap-1.5">
@@ -170,6 +197,7 @@ function NominateForm({ d }: { d: ElectionData }) {
         <select
           id={ids.position}
           value={position}
+          disabled={!!accepting}
           onChange={(e) => setPosition(e.target.value)}
           className="h-11 rounded-md border border-input bg-card px-3 text-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
@@ -252,14 +280,14 @@ function NominateForm({ d }: { d: ElectionData }) {
       </div>
 
       {error && (
-        <Banner tone="error" title="Your nomination was not submitted">
+        <Banner tone="error" title={accepting ? 'The nomination was not accepted' : 'Your nomination was not submitted'}>
           {error}
         </Banner>
       )}
       <div className="flex-1" />
       <ActionBar>
         <Button type="submit" size="lg" className="w-full" disabled={pending}>
-          {pending ? 'Submitting…' : 'Submit nomination'}
+          {pending ? 'Submitting…' : accepting ? 'Accept nomination' : 'Submit nomination'}
         </Button>
       </ActionBar>
     </form>

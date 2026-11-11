@@ -5,7 +5,9 @@ import { getErrorRedirect, getStatusRedirect } from 'utils/helpers';
 import { createClient } from '@/utils/supabase/server';
 // Votes have no insert policy for users: they are written here, after the checks above (BUG-005).
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { currentUserIsActiveMember, isCandidateVotingOpen } from '@/utils/election-config';
+import { ballotRefusal, PHASE_COLUMNS } from '@/utils/elections/access';
+import { currentUserIsActiveMember } from '@/utils/election-config';
+import { electionPhase, positionOnBallot, type Position } from '@/utils/elections/rules';
 import {
   Candidate,
   NominateFormSchema,
@@ -66,9 +68,10 @@ async function hasVoted(userId: string, electionId: string, kind: 'candidates' |
   return (data?.length ?? 0) > 0;
 }
 
-// Voting handlers following the same pattern as membership handlers
 /**
- * Candidates must belong to the election, and at most one vote per position.
+ * Candidates must belong to the election and stand for a position on the
+ * ballot (not vacant, not elected unopposed). Withdrawn candidates can't be
+ * chosen, and each position takes at most as many votes as it has seats.
  * Positions come from the database, never from the request (BUG-011).
  */
 async function validateCandidateVotes(
@@ -78,19 +81,33 @@ async function validateCandidateVotes(
 ): Promise<string | null> {
   if (candidateVotes.length === 0) return null;
   const candidateIds = candidateVotes.map((v) => v.candidateId);
-  const { data: validCandidates } = await supabase
-    .from('candidates')
-    .select('id, position')
-    .eq('election_id', electionId)
-    .in('id', candidateIds);
+  if (new Set(candidateIds).size !== candidateIds.length) return 'Each candidate can be chosen once';
 
-  const positionById = new Map((validCandidates ?? []).map((c) => [c.id, c.position]));
-  const invalid = candidateIds.filter((id) => !positionById.has(id));
+  const [{ data: all }, { data: dbPositions }] = await Promise.all([
+    supabase.from('candidates').select('id, position, withdrawn_at').eq('election_id', electionId),
+    supabase.from('ballot_positions').select('title, seats, vacant, unopposed_decision').eq('election_id', electionId)
+  ]);
+  const candidates = all ?? [];
+  const byId = new Map(candidates.map((c) => [c.id, c]));
+  const invalid = candidateIds.filter((id) => !byId.has(id));
   if (invalid.length > 0) return `Invalid candidate IDs: ${invalid.join(', ')}`;
+  if (candidateIds.some((id) => byId.get(id)!.withdrawn_at)) return 'A withdrawn candidate can’t be chosen';
 
-  const positions = candidateIds.map((id) => positionById.get(id));
-  if (new Set(positions).size !== positions.length) {
-    return 'Cannot vote for multiple candidates in the same position';
+  // Elections set up before per-election positions: one seat each.
+  const position = (title: string): Position =>
+    (dbPositions ?? []).map((p) => ({ position: p.title, description: null, display_order: 0, seats: p.seats, vacant: p.vacant, unopposed_decision: p.unopposed_decision }))
+      .find((p) => p.position === title) ?? { position: title, description: null, display_order: 0 };
+  const chosen = new Map<string, number>();
+  for (const id of candidateIds) {
+    const title = byId.get(id)!.position;
+    chosen.set(title, (chosen.get(title) ?? 0) + 1);
+  }
+  for (const [title, count] of Array.from(chosen)) {
+    const p = position(title);
+    if (!positionOnBallot(p, candidates)) return `${title} isn’t on the ballot`;
+    if (count > (p.seats ?? 1)) {
+      return (p.seats ?? 1) === 1 ? 'Cannot vote for multiple candidates in the same position' : `Choose up to ${p.seats} candidates for ${title}`;
+    }
   }
   return null;
 }
@@ -108,24 +125,10 @@ export async function submitCandidateVotes(
       return { success: false, error: 'Authentication required' };
     }
 
-    if (!(await currentUserIsActiveMember())) {
-      return { success: false, error: 'Only approved members with active membership can vote' };
-    }
-
-    // Validate election exists and is active
-    const { data: election, error: electionError } = await supabase
-      .from('elections')
-      .select('id, start_date, end_date, candidate_voting_end, enable_separate_voting_periods')
-      .eq('id', electionId)
-      .single();
-
-    if (electionError || !election) {
-      return { success: false, error: 'Election not found' };
-    }
-
-    // Same window as everywhere else, including candidate_voting_start (BUG-060).
-    if (!(await isCandidateVotingOpen(electionId))) {
-      return { success: false, error: 'Candidate voting is not currently open for this election' };
+    // Locked ballot, candidate window open (BUG-060), active member, on the roll.
+    const refusal = await ballotRefusal(supabase, electionId, user.id, 'candidates');
+    if (refusal) {
+      return { success: false, error: refusal };
     }
 
     // Check if user has already voted for candidates
@@ -245,28 +248,10 @@ export async function submitInitiativeVotes(
       return { success: false, error: 'Authentication required' };
     }
 
-    if (!(await currentUserIsActiveMember())) {
-      return { success: false, error: 'Only approved members with active membership can vote' };
-    }
-
-    // Validate election exists and is active
-    const { data: election, error: electionError } = await supabase
-      .from('elections')
-      .select('id, start_date, end_date')
-      .eq('id', electionId)
-      .single();
-
-    if (electionError || !election) {
-      return { success: false, error: 'Election not found' };
-    }
-
-    // Check if voting is open
-    const now = new Date();
-    const startDate = new Date(election.start_date);
-    const endDate = new Date(election.end_date);
-
-    if (now < startDate || now > endDate) {
-      return { success: false, error: 'Voting is not currently open for this election' };
+    // Locked ballot, window open, active member, on the roll.
+    const refusal = await ballotRefusal(supabase, electionId, user.id, 'initiatives');
+    if (refusal) {
+      return { success: false, error: refusal };
     }
 
     // Check if user has already voted for initiatives
@@ -406,28 +391,10 @@ export async function submitCombinedVotes(
       return { success: false, error: 'Authentication required' };
     }
 
-    if (!(await currentUserIsActiveMember())) {
-      return { success: false, error: 'Only approved members with active membership can vote' };
-    }
-
-    // Validate election exists and is active
-    const { data: election, error: electionError } = await supabase
-      .from('elections')
-      .select('id, start_date, end_date')
-      .eq('id', electionId)
-      .single();
-
-    if (electionError || !election) {
-      return { success: false, error: 'Election not found' };
-    }
-
-    // Check if voting is open
-    const now = new Date();
-    const startDate = new Date(election.start_date);
-    const endDate = new Date(election.end_date);
-
-    if (now < startDate || now > endDate) {
-      return { success: false, error: 'Voting is not currently open for this election' };
+    // Locked ballot, window open, active member, on the roll.
+    const refusal = await ballotRefusal(supabase, electionId, user.id, 'any');
+    if (refusal) {
+      return { success: false, error: refusal };
     }
 
     // Already voted through any ballot? (BUG-016)
@@ -645,8 +612,8 @@ async function uploadPhotoFile(
 
     // Generate unique filename
     const fileExt = photoFile.name.split('.').pop();
-    const fileName = `${userId}_${Date.now()}.${fileExt}`;
-    const filePath = `candidate-photos/${fileName}`;
+    // Members may write only under their own folder (storage policy, W1).
+    const filePath = `${userId}/${Date.now()}.${fileExt}`;
 
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -709,18 +676,17 @@ export async function nominateCandidate(
     // Always the signed-in user: a userId from the browser is not trusted (BUG-006).
     const finalUserId = user.id;
 
-    const { data: election } = await supabase
-      .from('elections')
-      .select('nomination_start, nomination_end')
-      .eq('id', electionId)
-      .maybeSingle();
-    const now = Date.now();
-    if (
-      !election?.nomination_start ||
-      !election?.nomination_end ||
-      now < new Date(election.nomination_start).getTime() ||
-      now > new Date(election.nomination_end).getTime()
-    ) {
+    // Only approved, active members can stand (B3).
+    if (!(await currentUserIsActiveMember())) {
+      return getErrorRedirect(
+        `/elections/${electionId}/nominate`,
+        'Only approved members with active membership can be nominated.'
+      );
+    }
+
+    // The same window everywhere: a published election, edges included.
+    const { data: election } = await supabase.from('elections').select(PHASE_COLUMNS).eq('id', electionId).maybeSingle();
+    if (!election || !electionPhase(election).nominationsOpen) {
       return getErrorRedirect(
         `/elections/${electionId}/nominate`,
         'Nominations are not open for this election.'
@@ -790,223 +756,6 @@ export async function nominateCandidate(
     return getErrorRedirect(
       `/elections/${electionId}/nominate`,
       'An unexpected error occurred. Please try again.'
-    );
-  }
-}
-
-async function deleteUploadedPhoto(filePath: string) {
-  try {
-    const supabase = await createClient();
-    const { error } = await supabase.storage
-      .from('candidate-photos')
-      .remove([filePath]);
-
-    if (error) {
-      console.error('Failed to delete uploaded photo:', error);
-    }
-  } catch (error) {
-    console.error('Error deleting uploaded photo:', error);
-  }
-}
-
-export async function nominateCandidateWithRollback(
-  formValue: z.infer<typeof NominateFormSchema>,
-  electionId: string,
-  userId?: string
-) {
-  let uploadedFilePath: string | null = null;
-
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return getErrorRedirect(
-        '/signin',
-        'Please sign in to nominate yourself.'
-      );
-    }
-
-    // Always the signed-in user: a userId from the browser is not trusted (BUG-006).
-    const finalUserId = user.id;
-
-    const { data: election } = await supabase
-      .from('elections')
-      .select('nomination_start, nomination_end')
-      .eq('id', electionId)
-      .maybeSingle();
-    const now = Date.now();
-    if (
-      !election?.nomination_start ||
-      !election?.nomination_end ||
-      now < new Date(election.nomination_start).getTime() ||
-      now > new Date(election.nomination_end).getTime()
-    ) {
-      return getErrorRedirect(
-        `/elections/${electionId}/nominate`,
-        'Nominations are not open for this election.'
-      );
-    }
-
-    // Check for existing nomination
-    const { data: existingNomination, error: checkError } = await supabase
-      .from('candidates')
-      .select('id, position')
-      .eq('user_id', finalUserId)
-      .eq('election_id', electionId)
-      .single();
-
-    if (existingNomination && !checkError) {
-      return getErrorRedirect(
-        `/elections/${electionId}/nominate`,
-        `You have already nominated yourself for ${existingNomination.position}. You can only nominate yourself for one position per election.`
-      );
-    }
-
-    const { fullName, position, bio, photoFile } = formValue;
-
-    let photoUrl = '';
-
-    if (photoFile) {
-      const validation = validatePhotoFile(photoFile);
-      if (!validation.valid) {
-        return getErrorRedirect(
-          `/elections/${electionId}/nominate`,
-          validation.error!
-        );
-      }
-
-      try {
-        // Generate unique filename with user folder structure
-        const fileExt = photoFile.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `candidate-photos/${finalUserId}/${fileName}`; // Organize by user ID
-
-        uploadedFilePath = filePath;
-
-        console.log('Starting file upload:', {
-          fileName,
-          filePath,
-          fileSize: photoFile.size,
-          fileType: photoFile.type
-        });
-
-        console.log('User authentication check:', {
-          userId: finalUserId,
-          userEmail: user.email,
-          userRole: user.role,
-          bucketPath: filePath
-        });
-
-        // Upload file to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('candidate-photos')
-          .upload(filePath, photoFile, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (uploadError) {
-          console.error('Upload error details:', {
-            message: uploadError.message,
-            details: uploadError
-          });
-          return getErrorRedirect(
-            `/elections/${electionId}/nominate`,
-            `Failed to upload photo: ${uploadError.message}`
-          );
-        }
-
-        console.log('File uploaded successfully:', uploadData);
-
-        // Get public URL for the uploaded file
-        const { data: urlData } = supabase.storage
-          .from('candidate-photos')
-          .getPublicUrl(filePath);
-
-        // FIX: Check if URL was generated properly
-        if (!urlData?.publicUrl) {
-          console.error('Failed to get public URL for uploaded file');
-          return getErrorRedirect(
-            `/elections/${electionId}/nominate`,
-            'Failed to generate photo URL. Please try again.'
-          );
-        }
-
-        photoUrl = urlData.publicUrl;
-
-        console.log('Photo uploaded successfully:', {
-          filePath,
-          publicUrl: photoUrl
-        });
-      } catch (uploadError) {
-        console.error('File upload error:', uploadError);
-        if (uploadedFilePath) {
-          await deleteUploadedPhoto(uploadedFilePath);
-        }
-        return getErrorRedirect(
-          `/elections/${electionId}/nominate`,
-          'Failed to process photo upload. Please try again.'
-        );
-      }
-    }
-
-    // Create candidate record
-    const candidateDetails: Partial<Candidate> = {
-      bio,
-      election_id: electionId,
-      full_name: fullName,
-      photo_url: photoUrl,
-      position,
-      user_id: finalUserId
-    };
-
-    const { data, error } = await createCandidate(candidateDetails);
-
-    if (error) {
-      console.error('Error creating candidate:', error);
-
-      // Rollback: Delete uploaded photo if candidate creation failed
-      if (uploadedFilePath) {
-        await deleteUploadedPhoto(uploadedFilePath);
-      }
-
-      if (
-        (error as any).message?.includes('candidates_user_election_unique') ||
-        (error as any).message?.includes('duplicate key value')
-      ) {
-        return getErrorRedirect(
-          `/elections/${electionId}/nominate`,
-          'You have already nominated yourself for this election.'
-        );
-      }
-
-      return getErrorRedirect(
-        `/elections/${electionId}/nominate`,
-        `Failed to submit nomination: ${(error as any).message}`
-      );
-    }
-
-    console.log('Candidate created successfully:', data);
-
-    return getStatusRedirect(
-      `/elections/${electionId}`,
-      'Success!',
-      'You have successfully nominated yourself as a candidate.'
-    );
-  } catch (error) {
-    console.error('Error in nominateCandidate:', error);
-
-    // Rollback: Delete uploaded photo if any error occurred
-    if (uploadedFilePath) {
-      await deleteUploadedPhoto(uploadedFilePath);
-    }
-
-    return getErrorRedirect(
-      `/elections/${electionId}`,
-      'An unexpected error occurred while submitting your nomination. Please try again.'
     );
   }
 }

@@ -10,7 +10,7 @@ import { FEATURE_FLAGS, FeatureFlagKey } from './feature-flag-constants';
  * Server-side feature flag resolver for Next.js server components
  * This is the server equivalent of a "hook" for feature flags
  */
-export async function useServerFeatureFlags(urlOverride?: string): Promise<FeatureFlags> {
+export async function getServerFeatureFlags(urlOverride?: string): Promise<FeatureFlags> {
   const supabase = await createClient();
   
   // Get user context
@@ -53,11 +53,11 @@ export async function useServerFeatureFlags(urlOverride?: string): Promise<Featu
  * @param urlOverride - Optional URL override string
  * @returns Promise<Record<FeatureFlagKey, boolean>> - Object with feature flag results
  */
-export async function useServerFeatureFlag(
+export async function getServerFeatureFlag(
   featureNames: FeatureFlagKey[],
   urlOverride?: string
 ): Promise<Record<FeatureFlagKey, boolean>> {
-  const features = await useServerFeatureFlags(urlOverride);
+  const features = await getServerFeatureFlags(urlOverride);
   
   // Map feature flag constants to FeatureFlags interface properties
   const featureMap: Record<FeatureFlagKey, keyof FeatureFlags> = {
@@ -68,6 +68,7 @@ export async function useServerFeatureFlag(
     [FEATURE_FLAGS.SHOW_FEATURE_FLAGS]: 'showFeatureFlags',
     [FEATURE_FLAGS.ENABLE_NEW_UI]: 'enableNewUI',
     [FEATURE_FLAGS.ALLOW_ANONYMOUS_FEEDBACK]: 'allowAnonymousFeedback',
+    [FEATURE_FLAGS.ENABLE_ELECTION_MANAGEMENT]: 'enableElectionManagement',
   };
 
   // Build result object
@@ -87,11 +88,11 @@ export async function useServerFeatureFlag(
  * @param urlOverride - Optional URL override string
  * @returns Promise<boolean> - Whether the feature is enabled
  */
-export async function useServerFeatureFlagSingle(
+export async function getServerFeatureFlagSingle(
   featureName: FeatureFlagKey,
   urlOverride?: string
 ): Promise<boolean> {
-  const result = await useServerFeatureFlag([featureName], urlOverride);
+  const result = await getServerFeatureFlag([featureName], urlOverride);
   return result[featureName];
 }
 
@@ -102,6 +103,6 @@ export async function checkFeatureFlag(
   featureName: keyof FeatureFlags,
   urlOverride?: string
 ): Promise<boolean> {
-  const features = await useServerFeatureFlags(urlOverride);
+  const features = await getServerFeatureFlags(urlOverride);
   return features[featureName];
 }

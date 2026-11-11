@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { BarChart3, ChevronRight, UserPlus } from 'lucide-react';
+import { ChevronRight, UserPlus } from 'lucide-react';
 import { PhaseTimeline } from '@/components/elections/phase-timeline';
 import { VotedCard } from '@/components/elections/voted-card';
 import { ListGroup, ListRow } from '@/components/portal/list-row';
@@ -17,6 +17,7 @@ import {
   loadElection,
   type ElectionData
 } from '~/components/elections/election';
+import { MyNominations } from '~/components/elections/my-nominations';
 import { useMember } from '~/lib/member';
 import { useSession } from '~/lib/session';
 import { useData } from '~/lib/use-data';
@@ -33,17 +34,17 @@ export default function ElectionDetail() {
       back={{ label: 'Elections', href: '/elections/' }}
     >
       <Loaded state={state}>
-        {(d) => <Detail d={d} isActive={me.data?.isActive} />}
+        {(d) => <Detail d={d} isActive={me.data?.isActive} reload={state.reload} />}
       </Loaded>
     </Screen>
   );
 }
 
-function Detail({ d, isActive }: { d: ElectionData; isActive?: boolean }) {
+function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; reload: () => Promise<void> }) {
   const { election: e, phase: p } = d;
   const canBallot =
-    p.votingOpen && !!isActive && (d.offerCandidates || d.offerInitiatives);
-  const canNominate = p.nominationsOpen && !d.myCandidacy;
+    p.votingOpen && !!isActive && d.onRoll && (d.offerCandidates || d.offerInitiatives);
+  const canNominate = p.nominationsOpen && !d.myCandidacy && !d.myAcceptedNomination;
   const results = `/elections/results/?id=${e.id}`;
 
   // One primary action: vote, else nominate, else results once closed.
@@ -51,7 +52,7 @@ function Detail({ d, isActive }: { d: ElectionData; isActive?: boolean }) {
     ? { label: 'Vote', href: `/elections/ballot/?id=${e.id}` }
     : canNominate
       ? { label: 'Nominate yourself', href: `/elections/nominate/?id=${e.id}` }
-      : p.closed
+      : p.stage === 'results_published' || p.stage === 'archived'
         ? { label: 'View results', href: results }
         : null;
 
@@ -75,18 +76,21 @@ function Detail({ d, isActive }: { d: ElectionData; isActive?: boolean }) {
         className="rounded-lg border bg-card p-4"
       />
 
-      {d.myCandidacy && (
-        <Banner
-          tone="success"
-          title={`You’re nominated for ${d.myCandidacy.position}`}
-        >
-          To change or withdraw your nomination, contact the election
-          administrator.
-        </Banner>
-      )}
+      <MyNominations d={d} reload={reload} />
       {d.electedUnopposed && (
         <Banner tone="success" title="Candidates elected unopposed">
           Every position had one candidate, so they are elected without a vote.
+        </Banner>
+      )}
+      {p.votingOpen && isActive && !d.onRoll && (
+        <Banner tone="attention" title="You aren’t on the voter roll for this election">
+          The roll was set when the ballot was locked. If you think this is
+          wrong, contact BCS Seattle.
+        </Banner>
+      )}
+      {p.lockOverdue && (
+        <Banner tone="info" title="Voting will open soon">
+          The ballot is being finalised. Check back shortly.
         </Banner>
       )}
       {p.votingOpen && isActive === false && (
@@ -109,8 +113,12 @@ function Detail({ d, isActive }: { d: ElectionData; isActive?: boolean }) {
 
       <MyVotes d={d} />
 
-      {(p.votingOpen ||
-        (canNominate && primary?.label !== 'Nominate yourself')) && (
+      {p.votingOver && (e.status === 'ballot_locked' || e.status === 'certified') && (
+        <Banner tone="info" title="Voting has closed">
+          Results are published once the votes are certified.
+        </Banner>
+      )}
+      {canNominate && primary?.label !== 'Nominate yourself' && (
         <ListGroup>
           {canNominate && primary?.label !== 'Nominate yourself' && (
             <ListRow
@@ -119,9 +127,7 @@ function Detail({ d, isActive }: { d: ElectionData; isActive?: boolean }) {
               href={`/elections/nominate/?id=${e.id}`}
             />
           )}
-          {p.votingOpen && (
-            <ListRow label="Live results" icon={BarChart3} href={results} />
-          )}
+
         </ListGroup>
       )}
 

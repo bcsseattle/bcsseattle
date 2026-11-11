@@ -10,17 +10,17 @@ import { Ballot } from '@/components/elections/ballot';
 import Candidates from '@/components/elections/candidates';
 import { PhaseTimeline } from '@/components/elections/phase-timeline';
 import { VotedCard } from '@/components/elections/voted-card';
-import dayjs from '@/libs/dayjs';
 import { supportsUnopposedCandidates } from '@/utils/election-types';
 import { ElectionType } from '@/types';
 import { formatDeadline } from '@/utils/format';
 import { currentUserIsActiveMember } from '@/utils/election-config';
+import { checkFeatureFlag } from '@/utils/server-feature-flags';
 import {
   ballotOffer,
   ballotQuestions,
   electedUnopposed,
-  positionOrder as orderPositions,
-  votingWindows
+  electionPhase,
+  positionOrder as orderPositions
 } from '@/utils/elections/rules';
 import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
@@ -115,40 +115,59 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
     }
   }
 
-  // Positions are defined per election type; the shared rules fall back to defaults.
+  // This election's own positions (ballot_positions); the shared rules fall back to defaults.
   const { data: dbPositions } = await supabase
-    .from('election_positions')
-    .select('position, description, display_order')
-    .eq('election_type', election.type!)
+    .from('ballot_positions')
+    .select('position:title, description, display_order, seats, vacant, unopposed_decision')
+    .eq('election_id', id)
     .order('display_order');
   const positionOrder = orderPositions(election.type, dbPositions, candidates || []);
 
-  // Use consistent UTC for all date comparisons to avoid timezone issues
-  const nowUtc = dayjs.utc();
-  // Candidate voting has its own window when separate periods are on (BUG-015, BUG-060).
-  const windows = votingWindows(election, nowUtc.valueOf());
-  const {
-    candidateVotingOpen,
-    votingOpen: isVotingOpen,
-    upcoming: isUpcoming,
-    closed: isClosed
-  } = windows;
+  // The shared phase: status (what admins decided) plus the dates, windows
+  // inclusive. Voting is open only once the ballot is locked (BUG-015, BUG-060).
+  const windows = electionPhase(election);
+  const { candidateVotingOpen, votingOpen: isVotingOpen, votingOver: isClosed } = windows;
 
   // Determine if candidates were elected unopposed
-  const candidatesElectedUnopposed = electedUnopposed(election, candidates ?? [], candidateVotingOpen);
+  // Decided at lock position by position; for elections locked before that,
+  // only once candidate voting has closed (not during nominations), as the app does.
+  const decided = positionOrder.some((p) => p.unopposed_decision || p.vacant);
+  const candidatesElectedUnopposed =
+    electedUnopposed(election, candidates ?? [], candidateVotingOpen, positionOrder) &&
+    (decided || Date.now() > Date.parse(windows.candidateWindow.end));
 
-  // Fix timezone issue by ensuring consistent UTC comparison
-  const isNominationOpen =
-    election.nomination_start &&
-    election.nomination_end &&
-    dayjs.utc(election.nomination_start).isBefore(nowUtc) &&
-    nowUtc.isBefore(dayjs.utc(election.nomination_end));
+  // Edges included, as the server accepts nominations (W15).
+  const isNominationOpen = windows.nominationsOpen;
+
+  // The nomination flow with review (Phase 3) is behind the flag; it shows the
+  // member what's waiting for them in this election.
+  const managed = await checkFeatureFlag('enableElectionManagement');
+  const { data: myNominationRows } =
+    managed && user
+      ? await supabase
+          .from('nominations')
+          .select('id, position, status, rejection_reason')
+          .eq('election_id', id)
+          .eq('nominee_user_id', user.id)
+          .in('status', ['awaiting_acceptance', 'submitted', 'rejected'])
+      : { data: [] };
+  const myNominations = (['draft', 'scheduled'].includes(election.status) ? (myNominationRows ?? []) : []).filter(
+    (n) => n.status !== 'awaiting_acceptance' || isNominationOpen
+  );
 
   const supportsUnopposed = supportsUnopposedCandidates(election.type as ElectionType);
 
   // The ballot is offered only to approved, active members (BUG-007), the same
   // check the vote pages and endpoints make.
-  const canVote = !!user && (await currentUserIsActiveMember());
+  const activeMember = !!user && (await currentUserIsActiveMember());
+  // The voter roll is taken when the ballot is locked (B11): members who joined
+  // after the cutoff, or after the lock, can't vote in this election.
+  const { data: rollRow } =
+    activeMember && isVotingOpen
+      ? await supabase.from('election_voters').select('user_id').eq('election_id', id).eq('user_id', user!.id).maybeSingle()
+      : { data: null };
+  const offRoll = activeMember && isVotingOpen && !rollRow;
+  const canVote = activeMember && !offRoll;
 
   // What is still open to this member.
   const { offerCandidates, offerInitiatives } = ballotOffer({
@@ -178,15 +197,7 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           : ([vote.initiatives?.title ?? '', vote.vote_value === 'yes' ? 'Support' : vote.vote_value === 'no' ? 'Oppose' : 'Abstain'] as const)
       );
 
-  const phase = isNominationOpen
-    ? { label: 'Nominations open', tone: 'blue' as const }
-    : isVotingOpen
-      ? { label: 'Voting open', tone: 'green' as const }
-      : isClosed
-        ? { label: 'Completed', tone: 'neutral' as const }
-        : isUpcoming
-          ? { label: 'Upcoming', tone: 'neutral' as const }
-          : { label: 'Closed', tone: 'neutral' as const };
+  const phase = { label: windows.label.member, tone: windows.label.tone };
 
   return (
     <div className="flex flex-col gap-6">
@@ -196,21 +207,14 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         back={{ href: '/elections', label: 'Elections' }}
         title={election.title}
         description={election.description}
-        actions={
-          isVotingOpen ? (
-            <Link href={`/elections/${election.id}/results`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-              View live results
-            </Link>
-          ) : undefined
-        }
       />
 
       <PhaseTimeline
         election={election}
         windows={windows}
         nominationsOpen={!!isNominationOpen}
-        // W16: shows whenever candidate_voting_end is set.
-        candidateVotingEnd={election.candidate_voting_end}
+        // Only when separate periods are on, so candidate_voting_end applies (W16).
+        candidateVotingEnd={windows.separate ? election.candidate_voting_end : null}
       />
 
       {supportsUnopposed && candidatesElectedUnopposed && (
@@ -219,19 +223,51 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         </Banner>
       )}
 
+      {election.status === 'cancelled' && (
+        <Banner tone="attention" title="This election was cancelled">
+          {election.cancel_reason ?? 'Nothing from it will be counted.'}
+        </Banner>
+      )}
+      {windows.phase === 'draft' && (
+        <Banner tone="info" title="Preview">
+          This is how members will see the election once it’s published. Only admins can see a draft.
+        </Banner>
+      )}
       {isNominationOpen && (
         <Banner
           tone="info"
           title="Nominations are open"
           action={
             <Link href={`/elections/${election.id}/nominate`} className={buttonVariants({ size: 'sm' })}>
-              Nominate yourself
+              {managed ? 'Nominate' : 'Nominate yourself'}
             </Link>
           }
         >
-          Submit your nomination for this election.
+          {managed
+            ? `Nominate yourself or another approved member by ${formatDeadline(election.nomination_end!)}.`
+            : 'Submit your nomination for this election.'}
         </Banner>
       )}
+      {myNominations.map((n) => (
+        <Banner
+          key={n.id}
+          tone={n.status === 'awaiting_acceptance' ? 'attention' : 'info'}
+          title={
+            n.status === 'awaiting_acceptance'
+              ? `You’ve been nominated for ${n.position}`
+              : n.status === 'submitted'
+                ? `Your nomination for ${n.position} is waiting for review`
+                : `Your nomination for ${n.position} wasn’t approved`
+          }
+          action={
+            <Link href={`/elections/${election.id}/nominations/${n.id}`} className={buttonVariants({ size: 'sm', variant: 'outline' })}>
+              {n.status === 'awaiting_acceptance' ? 'Accept or decline' : 'View'}
+            </Link>
+          }
+        >
+          {n.status === 'rejected' ? n.rejection_reason : n.status === 'awaiting_acceptance' ? 'Answer before nominations close.' : 'You can change your details until the ballot is locked.'}
+        </Banner>
+      ))}
 
       {isVotingOpen && !user && (
         <Banner
@@ -250,7 +286,23 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         </Banner>
       )}
 
-      {isVotingOpen && user && !canVote && (
+      {offRoll && (
+        <Banner tone="attention" title="You aren’t on the voter roll for this election">
+          The roll was set when the ballot was locked
+          {election.eligibility_cutoff ? `, from members who had joined by ${formatDeadline(election.eligibility_cutoff)}` : ''}. If you think this is wrong, contact BCS Seattle.
+        </Banner>
+      )}
+      {windows.lockOverdue && (
+        <Banner tone="info" title="Voting will open soon">
+          The ballot is being finalised. Check back shortly.
+        </Banner>
+      )}
+      {windows.phase === 'ballot_ready' && (
+        <Banner tone="info" title={`Voting opens ${formatDeadline(windows.candidateWindow.start < election.start_date ? windows.candidateWindow.start : election.start_date)}`}>
+          The ballot is final. You’ll be able to vote here then.
+        </Banner>
+      )}
+      {isVotingOpen && user && !activeMember && (
         <Banner tone="attention" title="Only approved members with active membership can vote">
           If you think this is wrong, contact BCS Seattle.
         </Banner>
@@ -296,7 +348,14 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         </div>
       )}
 
-      {isClosed && (
+      {isClosed && ['ballot_locked', 'certified'].includes(election.status) && (
+        <Banner tone="info" title="Voting has closed">
+          {election.results_date
+            ? `Results are expected ${formatDeadline(election.results_date)}, once the votes are certified.`
+            : 'Results are published once the votes are certified.'}
+        </Banner>
+      )}
+      {isClosed && ['completed', 'archived'].includes(election.status) && (
         <Banner
           tone="info"
           title="This election is complete"

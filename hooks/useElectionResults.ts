@@ -10,6 +10,9 @@ interface CandidateResult {
   percentage: number;
   photoUrl?: string;
   bio?: string;
+  /** From the certified results, once there are any. */
+  outcome?: string;
+  note?: string | null;
 }
 
 interface InitiativeResult {
@@ -27,6 +30,8 @@ interface InitiativeResult {
     no: number;
     abstain: number;
   };
+  outcome?: string;
+  note?: string | null;
 }
 
 export interface ElectionResults {

@@ -1,5 +1,5 @@
-import { currentUserIsActiveMember } from '@/utils/election-config';
 import { createClient } from '@/utils/supabase/server';
+import { ballotRefusal } from '@/utils/elections/access';
 import { notFound, redirect } from 'next/navigation';
 import VotingClient from '@/components/elections/voting-client';
 
@@ -33,20 +33,19 @@ export default async function VotePage(props: Props) {
     notFound();
   }
 
-  // Check if voting is open
-  const now = new Date();
-  const start = new Date(election.start_date);
-  const end = new Date(election.end_date);
-  const isVotingOpen = now >= start && now <= end;
-
-  if (!isVotingOpen) {
+  // Locked ballot, window open, approved active member on the roll: the same
+  // check the vote handlers make (BUG-007, BUG-060).
+  if (await ballotRefusal(supabase, id, user.id, 'any')) {
     redirect(`/elections/${id}`);
   }
 
-  // Only approved, active members get a ballot (BUG-007).
-  if (!(await currentUserIsActiveMember())) {
-    redirect(`/elections/${id}`);
-  }
+  // One choice per position here; more seats are voted on in the election page's ballot.
+  const { count: multiSeat } = await supabase
+    .from('ballot_positions')
+    .select('id', { count: 'exact', head: true })
+    .eq('election_id', id)
+    .gt('seats', 1);
+  if (multiSeat) redirect(`/elections/${id}`);
 
   // Check if user has already voted
   const { data: existingVotes } = await supabase

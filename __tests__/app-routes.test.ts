@@ -7,16 +7,31 @@
 import { NextRequest } from 'next/server';
 import { redirect } from 'next/navigation';
 
-const mockDb: { user: { id: string; email: string } | null; rows: Record<string, unknown>; verifyOtp: jest.Mock } = {
+const mockDb: {
+  user: { id: string; email: string } | null;
+  rows: Record<string, unknown>;
+  verifyOtp: jest.Mock;
+  rpc: jest.Mock;
+  managed: boolean;
+} = {
   user: null,
   rows: {},
-  verifyOtp: jest.fn()
+  verifyOtp: jest.fn(),
+  rpc: jest.fn(),
+  managed: false
 };
 jest.mock('@/utils/supabase/server', () => ({
   createClient: async () => ({
     auth: {
       getUser: async () => ({ data: { user: mockDb.user } }),
       verifyOtp: (...args: unknown[]) => mockDb.verifyOtp(...args)
+    },
+    rpc: (...args: unknown[]) => mockDb.rpc(...args),
+    storage: {
+      from: () => ({
+        upload: async () => ({ error: null }),
+        getPublicUrl: (path: string) => ({ data: { publicUrl: `https://photos.example/${path}` } })
+      })
     },
     from: (table: string) => {
       const query = {
@@ -39,6 +54,8 @@ jest.mock('@/utils/donation/handlers', () => ({ submitDonation: jest.fn() }));
 jest.mock('@/utils/fundraisers/handlers', () => ({ submitDonation: jest.fn() }));
 jest.mock('@/utils/membership/handlers', () => ({ registerMember: jest.fn() }));
 jest.mock('@/utils/elections/handlers', () => ({ nominateCandidate: jest.fn() }));
+// enableElectionManagement: off unless a test turns it on.
+jest.mock('@/utils/server-feature-flags', () => ({ checkFeatureFlag: async () => mockDb.managed }));
 jest.mock('@/utils/supabase/admin', () => ({
   getStripePayments: jest.fn(),
   getTotalCustomerSpent: jest.fn(),
@@ -69,6 +86,7 @@ import { POST as donate } from '@/app/api/app/donations/route';
 import { POST as giveToFundraiser } from '@/app/api/app/fundraisers/[id]/donations/route';
 import { POST as register } from '@/app/api/app/register/route';
 import { POST as nominate } from '@/app/api/app/elections/[id]/nominate/route';
+import { POST as answerNomination } from '@/app/api/app/nominations/[id]/route';
 import { GET as fundsPayments } from '@/app/api/app/community-funds/payments/route';
 import { GET as fundsSummary } from '@/app/api/app/community-funds/summary/route';
 import { GET as memberTotal } from '@/app/api/app/members/[id]/total/route';
@@ -88,6 +106,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockDb.user = USER;
   mockDb.rows = {};
+  mockDb.managed = false;
+  mockDb.rpc.mockResolvedValue({ data: null, error: null });
 });
 
 describe('every route needs a signed-in user', () => {
@@ -98,6 +118,7 @@ describe('every route needs a signed-in user', () => {
     ['fundraiser gift', () => giveToFundraiser(json('/x', {}), id('f1'))],
     ['register', () => register(json('/api/app/register', {}))],
     ['nominate', () => nominate(new NextRequest('http://localhost/x', { method: 'POST' }), id('e1'))],
+    ['answer a nomination', () => answerNomination(new NextRequest('http://localhost/x', { method: 'POST' }), id('n1'))],
     ['funds payments', () => fundsPayments(new NextRequest('http://localhost/x'))],
     ['funds summary', () => fundsSummary()],
     ['member total', () => memberTotal(new Request('http://localhost/x'), id('m1'))],
@@ -270,6 +291,72 @@ describe('POST /api/app/elections/[id]/nominate', () => {
     mocked(nominateCandidate).mockResolvedValue('/elections/e1/nominate?error=Nominations%20are%20not%20open%20for%20this%20election.');
     const res = await nominate(form({ fullName: 'Amina Baloch', position: 'President' }), id('e1'));
     expect(await res.json()).toEqual({ error: 'Nominations are not open for this election.' });
+  });
+
+  describe('with election management on', () => {
+    beforeEach(() => {
+      mockDb.managed = true;
+      mockDb.rows.ballot_positions = { id: 'pos-president' };
+    });
+
+    it('sends the nomination to review, as the signed-in user, with the position found by title', async () => {
+      const photo = new Blob(['img'], { type: 'image/jpeg' });
+      const res = await nominate(form({ fullName: 'Amina Baloch', position: 'President', bio: 'Hi', photoFile: photo }), id('e1'));
+      expect(await res.json()).toEqual({ status: 'submitted' });
+      expect(nominateCandidate).not.toHaveBeenCalled();
+      expect(mockDb.rpc).toHaveBeenCalledWith('nomination_create', {
+        p_election: 'e1',
+        p_position: 'pos-president',
+        p_nominee: 'u1',
+        p_full_name: 'Amina Baloch',
+        p_bio: 'Hi',
+        p_manifesto: undefined,
+        p_photo_url: expect.stringMatching(/^https:\/\/photos\.example\/u1\//)
+      });
+    });
+
+    it('refuses a position that isn’t on the ballot', async () => {
+      mockDb.rows.ballot_positions = undefined;
+      const res = await nominate(form({ fullName: 'Amina Baloch', position: 'Pope' }), id('e1'));
+      expect(res.status).toBe(400);
+      expect(mockDb.rpc).not.toHaveBeenCalled();
+    });
+
+    it('passes on the database’s reason', async () => {
+      mockDb.rpc.mockResolvedValue({ data: null, error: { code: '22023', message: "Nominations aren't open for this election." } });
+      const res = await nominate(form({ fullName: 'Amina Baloch', position: 'President' }), id('e1'));
+      expect(await res.json()).toEqual({ error: "Nominations aren't open for this election." });
+    });
+  });
+});
+
+describe('POST /api/app/nominations/[id]', () => {
+  const form = (fields: Record<string, string>) => {
+    const data = new FormData();
+    Object.entries(fields).forEach(([k, v]) => data.append(k, v));
+    return new NextRequest('http://localhost/x', { method: 'POST', body: data });
+  };
+  beforeEach(() => {
+    mockDb.managed = true;
+  });
+
+  it('accepts with the nominee’s details', async () => {
+    const res = await answerNomination(form({ action: 'accept', fullName: 'Bilal K', manifesto: 'Ten characters at least' }), id('n1'));
+    expect(await res.json()).toEqual({ status: 'accepted' });
+    expect(mockDb.rpc).toHaveBeenCalledWith('nomination_respond', expect.objectContaining({ p_nomination: 'n1', p_accept: true, p_full_name: 'Bilal K' }));
+  });
+
+  it('declines and withdraws', async () => {
+    expect(await (await answerNomination(form({ action: 'decline' }), id('n1'))).json()).toEqual({ status: 'declined' });
+    expect(await (await answerNomination(form({ action: 'withdraw' }), id('n1'))).json()).toEqual({ status: 'withdrawn' });
+    expect(mockDb.rpc).toHaveBeenCalledWith('nomination_withdraw', { p_nomination: 'n1' });
+  });
+
+  it('refuses anything else, and stays off while the flag is off', async () => {
+    expect((await answerNomination(form({ action: 'approve' }), id('n1'))).status).toBe(400);
+    mockDb.managed = false;
+    expect((await answerNomination(form({ action: 'accept' }), id('n1'))).status).toBe(404);
+    expect(mockDb.rpc).not.toHaveBeenCalled();
   });
 });
 

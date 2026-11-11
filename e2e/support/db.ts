@@ -161,7 +161,11 @@ export async function getMember(userId: string) {
 
 // ---------------------------------------------------------------- elections
 
-export type ElectionWindow = 'open' | 'closed' | 'upcoming' | 'nominations';
+/**
+ * review: nominations have closed and the ballot isn't locked yet.
+ * counting: the ballot is locked and voting has just closed, not yet certified.
+ */
+export type ElectionWindow = 'open' | 'closed' | 'upcoming' | 'nominations' | 'review' | 'counting';
 
 export async function createElection(
   cleanup: Cleanup,
@@ -170,33 +174,58 @@ export async function createElection(
     title?: string;
     candidates?: { full_name: string; position: string; user_id?: string }[];
     initiatives?: string[];
+    /** Seats per position (1 unless given). */
+    seats?: Record<string, number>;
   }
 ) {
-  const dates = {
-    open: { start_date: hoursFromNow(-1), end_date: hoursFromNow(24), status: 'voting_open' },
+  // Status holds what an admin decided; the dates decide what is open. The ballot
+  // is filled while scheduled, then moved to its final status (it freezes once locked).
+  const { status, ...dates } = {
+    open: { start_date: hoursFromNow(-1), end_date: hoursFromNow(24), status: 'ballot_locked' },
     closed: { start_date: hoursFromNow(-48), end_date: hoursFromNow(-24), status: 'completed' },
-    upcoming: { start_date: hoursFromNow(48), end_date: hoursFromNow(72), status: 'draft' },
+    upcoming: { start_date: hoursFromNow(48), end_date: hoursFromNow(72), status: 'ballot_locked' },
     nominations: {
       start_date: hoursFromNow(48),
       end_date: hoursFromNow(72),
       nomination_start: hoursFromNow(-1),
       nomination_end: hoursFromNow(24),
-      status: 'nominations_open',
+      status: 'scheduled',
     },
-  }[opts.window];
+    counting: { start_date: hoursFromNow(-48), end_date: hoursFromNow(-1), status: 'ballot_locked' },
+    review: {
+      start_date: hoursFromNow(48),
+      end_date: hoursFromNow(72),
+      nomination_start: hoursFromNow(-48),
+      nomination_end: hoursFromNow(-1),
+      status: 'scheduled',
+    },
+  }[opts.window] as { status: 'ballot_locked' | 'completed' | 'scheduled'; start_date: string; end_date: string };
   const title = opts.title ?? `E2E Election ${randomUUID().slice(0, 6)}`;
   const election = must(
     await admin
       .from('elections')
-      .insert({ title, type: 'leadership', description: 'Created by the e2e suite', is_active: true, ...dates })
+      .insert({ title, type: 'leadership', description: 'Created by the e2e suite', status: 'scheduled', ...dates })
       .select('id')
       .single(),
     'create election'
   );
   cleanup.push(async () => {
-    await admin.from('candidates').delete().eq('election_id', election.id); // no FK cascade
-    await admin.from('elections').delete().eq('id', election.id);
+    await admin.from('elections').delete().eq('id', election.id); // takes its ballot and votes with it
   });
+
+  // The seeded type template has President, Secretary and Treasurer; any other
+  // position a scenario uses is added to this election's ballot.
+  const titles = Array.from(new Set([...(opts.candidates ?? []).map((c) => c.position), ...Object.keys(opts.seats ?? {})]));
+  for (const title of titles) {
+    const seats = opts.seats?.[title] ?? 1;
+    const { data: existing } = await admin.from('ballot_positions').select('id').eq('election_id', election.id).eq('title', title).maybeSingle();
+    must(
+      existing
+        ? await admin.from('ballot_positions').update({ seats }).eq('id', existing.id).select('id').single()
+        : await admin.from('ballot_positions').insert({ election_id: election.id, title, seats, display_order: 10 }).select('id').single(),
+      'ballot position'
+    );
+  }
 
   const candidates = opts.candidates?.length
     ? must(
@@ -216,7 +245,38 @@ export async function createElection(
         'create initiatives'
       )
     : [];
+  if (status !== 'scheduled') {
+    // Locking takes the voter roll (approved, active members); members created
+    // later in the scenario are added by addToVoterRoll.
+    must(await admin.from('elections').update({ status }).eq('id', election.id).select('id').single(), 'set election status');
+  }
   return { id: election.id, title, candidates, initiatives };
+}
+
+/**
+ * Test setup only: changes the ballot of a locked election by reopening it for
+ * the change (the ballot freezes at lock for every role, the service role included).
+ */
+export async function whileBallotOpen<T>(electionId: string, change: () => PromiseLike<T>): Promise<T> {
+  const { status } = must(await admin.from('elections').select('status').eq('id', electionId).single(), 'read status');
+  if (status === 'scheduled' || status === 'draft') return change();
+  must(await admin.from('elections').update({ status: 'scheduled' }).eq('id', electionId).select('id').single(), 'reopen ballot');
+  try {
+    return await change();
+  } finally {
+    await admin.from('elections').update({ status }).eq('id', electionId);
+  }
+}
+
+/**
+ * Puts a member on an election's voter roll, as if they had been an approved,
+ * active member when its ballot was locked (the roll is taken then).
+ */
+export async function addToVoterRoll(userId: string, electionId: string) {
+  must(
+    await admin.from('election_voters').upsert({ election_id: electionId, user_id: userId }).select('user_id').single(),
+    'add to voter roll'
+  );
 }
 
 /** Records a completed candidate ballot directly, as the vote API would. */

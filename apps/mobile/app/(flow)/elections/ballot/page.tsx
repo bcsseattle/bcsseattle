@@ -206,6 +206,7 @@ function Ballot({
                   position={p.position}
                   description={p.description}
                   candidates={p.candidates}
+                  seats={p.seats}
                   value={candidateVotes[p.position]}
                   onValueChange={(v) =>
                     b.setCandidateVotes((s) => ({ ...s, [p.position]: v }))

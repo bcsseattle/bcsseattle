@@ -1,5 +1,5 @@
 import { Given, Then, When } from '@cucumber/cucumber';
-import { admin, castCandidateVotes, createElection, createUser, type ElectionWindow } from '../support/db';
+import { admin, castCandidateVotes, createElection, createUser, whileBallotOpen, type ElectionWindow } from '../support/db';
 import { expect } from '../support/expect';
 import type { E2EWorld } from '../support/world';
 
@@ -29,14 +29,14 @@ Given('I have already voted for {string}', async function (this: E2EWorld, name:
 });
 
 /** The election page's ballot: Review votes, Submit ballot, then confirm in the dialog. */
-async function submitBallot(page: E2EWorld['page']) {
+export async function submitBallot(page: E2EWorld['page']) {
   await page.getByRole('button', { name: 'Review votes' }).click();
   await page.getByRole('button', { name: 'Submit ballot' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Submit ballot' }).click();
   await expect(page.getByRole('heading', { name: 'Your ballot is in' })).toBeVisible();
 }
 
-function candidate(world: E2EWorld, name: string) {
+export function candidate(world: E2EWorld, name: string) {
   const c = world.election!.candidates.find((x) => x.full_name === name);
   if (!c) throw new Error(`No candidate "${name}" in this scenario's election`);
   return c;
@@ -181,17 +181,15 @@ When('I open the nomination page', async function (this: E2EWorld) {
 
 When('I nominate myself for {string} with the platform {string}', async function (this: E2EWorld, position: string, platform: string) {
   await this.page.goto(`/elections/${this.election!.id}/nominate`);
-  const form = this.page.getByRole('button', { name: 'Submit Nomination' });
-  // The page first shows "Checking nomination status...", then the form or a refusal.
-  const refused = this.page.getByText(/Already Nominated|Nominations (are )?Closed|not (currently )?open/i);
-  await expect(form.or(refused).first()).toBeVisible({ timeout: 20_000 });
-  if (!(await form.isVisible())) return; // refused up front: nothing to submit
-  await this.page.getByRole('combobox').click();
-  await this.page.getByRole('option', { name: position, exact: true }).click();
-  await this.page.getByLabel(/Short Bio/).fill('Long-time volunteer at community events.');
-  await this.page.getByLabel(/Your Platform/).fill(platform);
-  await form.click();
-  await this.page.waitForURL((url) => !url.pathname.endsWith('/nominate') || url.searchParams.has('error'), { timeout: 20_000 }).catch(() => {});
+  const submit = this.page.getByRole('button', { name: 'Submit my nomination' });
+  const refused = this.page.getByText(/aren’t open|already standing/);
+  await expect(submit.or(refused).first()).toBeVisible();
+  if (!(await submit.isVisible())) return; // refused up front: nothing to submit
+  await this.page.getByLabel('Position').selectOption({ label: position });
+  await this.page.getByLabel('Statement').fill('Long-time volunteer at community events.');
+  await this.page.getByLabel('Platform').fill(platform);
+  await submit.click();
+  await this.page.waitForURL(/\/account\/nominations/).catch(() => {});
 });
 
 Given('I have already nominated myself for {string}', async function (this: E2EWorld, position: string) {
@@ -230,11 +228,13 @@ Given(/^"([^"]+)" received (\d+) votes? and "([^"]+)" received (\d+) votes?$/, a
 });
 
 Given(/^"([^"]+)" is the only candidate for "([^"]+)" and received (\d+) votes$/, async function (this: E2EWorld, name: string, position: string, n: string) {
-  const { data, error } = await admin
-    .from('candidates')
-    .insert({ election_id: this.election!.id, full_name: name, position })
-    .select('id, full_name, position')
-    .single();
+  const { data, error } = await whileBallotOpen(this.election!.id, () =>
+    admin
+      .from('candidates')
+      .insert({ election_id: this.election!.id, full_name: name, position })
+      .select('id, full_name, position')
+      .single()
+  );
   if (error) throw new Error(error.message);
   this.election!.candidates.push(data);
   await giveVotes(this, data.id, Number(n));

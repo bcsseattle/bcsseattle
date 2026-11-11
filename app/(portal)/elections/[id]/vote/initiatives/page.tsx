@@ -1,5 +1,5 @@
-import { currentUserIsActiveMember } from '@/utils/election-config';
 import { createClient } from '@/utils/supabase/server';
+import { ballotRefusal } from '@/utils/elections/access';
 import { notFound, redirect } from 'next/navigation';
 import InitiativeVotingClient from '@/components/elections/initiative-voting-client';
 
@@ -33,18 +33,9 @@ export default async function InitiativeVotePage(props: Props) {
     notFound();
   }
 
-  // Check if voting is open
-  const now = new Date();
-  const start = new Date(election.start_date);
-  const end = new Date(election.end_date);
-  const isVotingOpen = now >= start && now <= end;
-
-  if (!isVotingOpen) {
-    redirect(`/elections/${id}`);
-  }
-
-  // Only approved, active members get a ballot (BUG-007).
-  if (!(await currentUserIsActiveMember())) {
+  // Locked ballot, window open, approved active member on the roll: the same
+  // check the vote handlers make (BUG-007, BUG-060).
+  if (await ballotRefusal(supabase, id, user.id, 'initiatives')) {
     redirect(`/elections/${id}`);
   }
 

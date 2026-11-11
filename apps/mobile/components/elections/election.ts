@@ -2,8 +2,8 @@ import type { Tables } from '@/types_db';
 import {
   ballotOffer,
   electedUnopposed as unopposed,
-  positionOrder,
-  votingWindows
+  electionPhase as sharedPhase,
+  positionOrder
 } from '@/utils/elections/rules';
 import { must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
@@ -11,28 +11,13 @@ import { supabase } from '~/lib/supabase';
 export type Election = Tables<'elections'>;
 
 /**
- * Where an election stands: the shared voting windows, plus the app's own
- * nomination window and phase words. Nominations are open from start to end
- * inclusive, as the server accepts them (the website differs, W15).
+ * Where an election stands, by the shared rule the website and the server
+ * use (status plus dates, windows inclusive; voting only once the ballot is
+ * locked). `phase` is the member wording and its tone; `stage` the phase itself.
  */
 export function electionPhase(e: Election, now = Date.now()) {
-  const w = votingWindows(e, now);
-  const nominationsOpen =
-    !!e.nomination_start &&
-    !!e.nomination_end &&
-    now >= Date.parse(e.nomination_start) &&
-    now <= Date.parse(e.nomination_end);
-
-  // Status in words, never colour alone. Same precedence as the website's detail page.
-  const phase = nominationsOpen
-    ? { label: 'Nominations open', tone: 'orange' as const }
-    : w.votingOpen
-      ? { label: 'Voting open', tone: 'green' as const }
-      : w.closed
-        ? { label: 'Closed', tone: 'neutral' as const }
-        : { label: 'Upcoming', tone: 'neutral' as const };
-
-  return { ...w, nominationsOpen, phase };
+  const p = sharedPhase(e, now);
+  return { ...p, stage: p.phase, phase: { label: p.label.member, tone: p.label.tone } };
 }
 
 /** A list query's rows, never null; errors thrown as their message. */
@@ -43,16 +28,16 @@ export async function rows<T>(
 }
 
 /**
- * An election's type tags, as on the website's list: Leadership when
- * positions are defined for its type (BUG-059), Initiatives when it has any.
+ * An election's type tags, as on the website's list: Leadership when it has
+ * positions on its ballot, Initiatives when it has any.
  */
 export function typeTags(
-  e: Pick<Election, 'id' | 'type'>,
-  positions: { election_type: string | null }[],
+  e: Pick<Election, 'id'>,
+  positions: { election_id: string }[],
   initiatives: { election_id: string | null }[]
 ) {
   return [
-    ...(positions.some((p) => p.election_type === e.type) ? ['Leadership'] : []),
+    ...(positions.some((p) => p.election_id === e.id) ? ['Leadership'] : []),
     ...(initiatives.some((i) => i.election_id === e.id) ? ['Initiatives'] : [])
   ];
 }
@@ -73,7 +58,7 @@ export async function loadElection(id: string, userId: string) {
     supabase.from('elections').select('*').eq('id', id).maybeSingle()
   );
   if (!election) throw new Error('This election was not found.');
-  const [candidates, initiatives, dbPositions, sessions, confirmations, votes] =
+  const [candidates, initiatives, dbPositions, sessions, confirmations, votes, nominations, roll] =
     await Promise.all([
       rows(
         supabase
@@ -91,9 +76,9 @@ export async function loadElection(id: string, userId: string) {
       ),
       rows(
         supabase
-          .from('election_positions')
-          .select('position, description, display_order')
-          .eq('election_type', election.type ?? 'leadership')
+          .from('ballot_positions')
+          .select('position:title, description, display_order, seats, vacant, unopposed_decision')
+          .eq('election_id', id)
           .order('display_order')
       ),
       rows(
@@ -118,6 +103,22 @@ export async function loadElection(id: string, userId: string) {
           )
           .eq('user_id', userId)
           .eq('election_id', id)
+      ),
+      // The member's own nominations (RLS shows them to the nominee).
+      rows(
+        supabase
+          .from('nominations')
+          .select('id, position, status, rejection_reason')
+          .eq('election_id', id)
+          .eq('nominee_user_id', userId)
+      ),
+      // On the voter roll taken at lock (B11)? RLS shows members their own row.
+      rows(
+        supabase
+          .from('election_voters')
+          .select('user_id')
+          .eq('election_id', id)
+          .eq('user_id', userId)
       )
     ]);
   const positions = positionOrder(
@@ -135,11 +136,13 @@ export async function loadElection(id: string, userId: string) {
   const votedInitiatives =
     !!session('initiatives') || votes.some((v) => v.initiative_id);
 
-  // Elected only once candidate voting has closed. The website's rule also
-  // says so before voting opens (during nominations); the app doesn't.
+  // Decided at lock, position by position (then it holds during voting too);
+  // otherwise only once candidate voting has closed. The website's old rule
+  // also said so before voting opened (during nominations); the app doesn't.
+  const decided = positions.some((x) => x.unopposed_decision || x.vacant);
   const electedUnopposed =
-    unopposed(election, candidates, p.candidateVotingOpen) &&
-    p.now > Date.parse(p.candidateWindow.end);
+    unopposed(election, candidates, p.candidateVotingOpen, positions) &&
+    (decided || p.now > Date.parse(p.candidateWindow.end));
   const { offerCandidates, offerInitiatives } = ballotOffer({
     windows: p,
     votedCandidates,
@@ -166,7 +169,12 @@ export async function loadElection(id: string, userId: string) {
     votedInitiatives,
     offerCandidates,
     offerInitiatives,
-    myCandidacy: candidates.find((c) => c.user_id === userId) ?? null
+    myCandidacy: candidates.find((c) => c.user_id === userId) ?? null,
+    myNominations: nominations,
+    onRoll: roll.length > 0,
+    /** A nomination the member has accepted (waiting for review, or approved). */
+    myAcceptedNomination:
+      nominations.find((n) => n.status === 'submitted' || n.status === 'approved') ?? null
   };
 }
 

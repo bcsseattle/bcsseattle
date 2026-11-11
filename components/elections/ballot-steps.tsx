@@ -3,7 +3,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 
-import { SKIP } from '@/components/elections/ballot-position';
 import { INITIATIVE_CHOICES, type InitiativeVote } from '@/components/elections/initiative-card';
 import { ReviewRow } from '@/components/elections/review-row';
 import { ActionBar } from '@/components/ui/action-bar';
@@ -17,7 +16,9 @@ export type BallotPart = 'candidates' | 'initiatives';
 export type BallotPositionData = {
   position: string;
   description?: string | null;
-  candidates: { id: string; name: string; detail?: string | null }[];
+  /** How many candidates a voter may choose. */
+  seats?: number;
+  candidates: { id: string; name: string; detail?: string | null; withdrawn?: boolean }[];
 };
 export type BallotInitiativeData = {
   id: string;
@@ -52,7 +53,8 @@ export function useBallot({
   /** Which screen shows, so Change/Answer can focus its question once the ballot is back. */
   step: string;
 }) {
-  const [candidateVotes, setCandidateVotes] = React.useState<Record<string, string>>({});
+  // Chosen candidate ids per position: missing = unanswered, [] = skipped.
+  const [candidateVotes, setCandidateVotes] = React.useState<Record<string, string[]>>({});
   const [initiativeVotes, setInitiativeVotes] = React.useState<Record<string, InitiativeVote>>({});
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [pending, setPending] = React.useState(false);
@@ -60,7 +62,7 @@ export function useBallot({
   const [submittedAt, setSubmittedAt] = React.useState<Date | null>(null);
   const [focusQuestion, setFocusQuestion] = React.useState<string | null>(null);
 
-  const answeredPositions = positions.filter((p) => candidateVotes[p.position] && candidateVotes[p.position] !== SKIP);
+  const answeredPositions = positions.filter((p) => (candidateVotes[p.position]?.length ?? 0) > 0);
   const answeredInitiatives = initiatives.filter((i) => initiativeVotes[i.id]);
   const total = positions.length + initiatives.length;
   const answered = answeredPositions.length + answeredInitiatives.length;
@@ -83,7 +85,9 @@ export function useBallot({
     post(
       'candidates',
       {
-        candidateVotes: answeredPositions.map((p) => ({ candidateId: candidateVotes[p.position], position: p.position }))
+        candidateVotes: answeredPositions.flatMap((p) =>
+          candidateVotes[p.position].map((candidateId) => ({ candidateId, position: p.position }))
+        )
       },
       answeredPositions.length
     );
@@ -185,13 +189,13 @@ export function BallotReview({
           <Heading className="text-section text-foreground">Leadership positions</Heading>
           <div className="overflow-hidden rounded-lg border">
             {positions.map((p) => {
-              const id = b.candidateVotes[p.position];
-              const chosen = id && id !== SKIP;
+              const ids = b.candidateVotes[p.position] ?? [];
+              const chosen = ids.length > 0;
               return (
                 <ReviewRow
                   key={p.position}
                   question={p.position}
-                  answer={chosen ? b.candidateName(id) : null}
+                  answer={chosen ? ids.map(b.candidateName).join(', ') : null}
                   actionLabel={chosen ? 'Change' : 'Answer'}
                   onAction={() => goTo(`q-position-${p.position}`)}
                 />

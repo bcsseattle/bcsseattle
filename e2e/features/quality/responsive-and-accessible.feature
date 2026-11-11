@@ -46,13 +46,12 @@ Feature: The site works on phones and with assistive technology
       | /admin/members          |
       | /admin/expenses         |
       | /admin/elections        |
-      | /admin/voting-config    |
-      | /admin/election-types   |
       | /fundraisers/admin/new  |
 
   @P2 @mobile
   Scenario: An election, its candidates and its results fit a phone screen
-    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    # A finished election: results are shown only once published, never during voting.
+    Given there is a closed election with candidates "Hani" and "Nazir" for "President"
     And I am signed in as an admin
     When I open the election
     Then the page should fit the screen width

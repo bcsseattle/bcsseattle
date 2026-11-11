@@ -9,16 +9,17 @@ Feature: Standing for election and seeing the results
     Given there is an election accepting nominations
     And I am signed in as an approved member
     When I nominate myself for "Treasurer" with the platform "Transparent budgets and a quarterly report to every member."
-    Then I should see the message "Success!"
-    And I should be listed as a candidate for "Treasurer"
+    Then I should see the message "Nomination submitted."
+    And my nomination for "Treasurer" should be waiting for review
+    And I should not be listed as a candidate
 
   @P1
-  Scenario: A member who already stood is told so instead of seeing the form again
+  Scenario: A member who already stands is told so and can only nominate someone else
     Given there is an election accepting nominations
     And I am signed in as an approved member
     And I have already nominated myself for "President"
     When I open the nomination page
-    Then I should see "Already Nominated"
+    Then I should see "You’re already standing for President"
 
   @P1 @security @BUG-006
   Scenario: Nominations are refused outside the nomination period

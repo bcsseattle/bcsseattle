@@ -5,7 +5,7 @@ const election = (id: string, overrides: Record<string, unknown> = {}) => ({
   id,
   title: `Election ${id}`,
   type: 'initiative',
-  status: 'voting_open',
+  status: 'ballot_locked',
   is_active: true,
   start_date: hours(-100),
   end_date: hours(100),
@@ -24,6 +24,8 @@ const data = {
 };
 const sendPush = jest.fn(async () => ({ devices: 0, removed: 0 }));
 jest.mock('@/utils/push', () => ({ sendPush: (...args: unknown[]) => sendPush(...(args as [])) }));
+const notify = jest.fn(async () => 0);
+jest.mock('@/utils/elections/notify', () => ({ notify: (...args: unknown[]) => notify(...(args as [])) }));
 jest.mock('@/utils/supabase/admin', () => ({
   supabaseAdmin: {
     from: (table: string) => {
@@ -87,7 +89,7 @@ it('counts the candidate window when voting periods are separate', async () => {
 
 it('announces nominations that opened in the last day', async () => {
   data.elections = [
-    election('noms', { status: 'nominations_open', start_date: hours(200), end_date: hours(300), nomination_start: hours(-1), nomination_end: hours(72) })
+    election('noms', { status: 'scheduled', start_date: hours(200), end_date: hours(300), nomination_start: hours(-1), nomination_end: hours(72) })
   ];
   await cron();
   expect(sendPush).toHaveBeenCalledWith(['u1', 'u2', 'u3'], {
@@ -102,4 +104,24 @@ it('sends nothing for inactive elections or quiet days', async () => {
   const body = await (await cron()).json();
   expect(sendPush).not.toHaveBeenCalled();
   expect(body).toEqual({ sent: [] });
+});
+
+it('says nothing about voting while the ballot is unlocked, or about nominations after it is', async () => {
+  data.elections = [
+    election('unlocked', { status: 'scheduled', start_date: hours(-3), end_date: hours(10) }),
+    election('locked-noms', { nomination_start: hours(-1), nomination_end: hours(72), start_date: hours(100) })
+  ];
+  await cron();
+  expect(sendPush).not.toHaveBeenCalled();
+});
+
+it('hands the new notices to notify(), which sends nothing until it is turned on', async () => {
+  notify.mockClear();
+  data.elections = [
+    election('noms', { status: 'scheduled', start_date: hours(200), end_date: hours(300), nomination_start: hours(-1), nomination_end: hours(72) }),
+    election('closing', { status: 'scheduled', start_date: hours(200), end_date: hours(300), nomination_start: hours(-100), nomination_end: hours(10) })
+  ];
+  await cron();
+  expect(notify).toHaveBeenCalledWith(expect.objectContaining({ electionId: 'noms', kind: 'nominations_open' }));
+  expect(notify).toHaveBeenCalledWith(expect.objectContaining({ electionId: 'closing', kind: 'nominations_closing' }));
 });
