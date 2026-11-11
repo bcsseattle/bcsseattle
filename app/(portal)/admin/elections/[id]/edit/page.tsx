@@ -9,7 +9,7 @@ import { BallotForm } from '@/components/admin/elections/ballot-form';
 import { BasicsForm } from '@/components/admin/elections/basics-form';
 import { SettingsForm } from '@/components/admin/elections/settings-form';
 import { StepNav } from '@/components/admin/elections/steps';
-import { STEPS, type StepKey } from '@/components/admin/elections/step-list';
+import { editableSteps, type StepKey } from '@/components/admin/elections/step-list';
 import { TimelineForm } from '@/components/admin/elections/timeline-form';
 import { PublishButton } from '@/components/admin/elections/transition-buttons';
 import { createClient } from '@/utils/supabase/server';
@@ -48,18 +48,16 @@ export default async function EditElectionPage(props: {
   const { election, positions, initiatives, actions } = data;
   const isDraft = election.status === 'draft';
 
-  // Once published, only the title and description are edited here; dates move
-  // with Extend and the ballot with the Ballot tab (later phases).
-  const step: StepKey =
-    isDraft && STEPS.some((s) => s.key === rawStep)
-      ? (rawStep as StepKey)
-      : 'basics';
-  if (!isDraft && rawStep && rawStep !== 'basics')
-    redirect(`/admin/elections/${id}`);
+  // What can still change depends on the status (editableSteps); a step that
+  // can't (or the step after the last one) goes back to the overview.
+  const allowed = editableSteps(election.status);
+  const step: StepKey = allowed.includes(rawStep as StepKey) ? (rawStep as StepKey) : 'basics';
+  if (rawStep && !allowed.includes(rawStep as StepKey)) redirect(`/admin/elections/${id}`);
 
   const type = (election.type ?? 'leadership') as ElectionType;
   // A run-off has positions but no nominations (its candidates are the tied ones).
-  const hasPositions = positions.length > 0 && !election.runoff_of;
+  // No nominations window for a run-off, or once the ballot is locked (nominations are over).
+  const hasPositions = positions.length > 0 && !election.runoff_of && election.status !== 'ballot_locked';
 
   let body: React.ReactNode;
   if (step === 'basics') {
@@ -71,7 +69,7 @@ export default async function EditElectionPage(props: {
           description: election.description ?? '',
           type
         }}
-        typeLocked={!isDraft}
+        typeLocked={!['draft', 'scheduled'].includes(election.status)}
       />
     );
   } else if (step === 'ballot') {
@@ -151,14 +149,18 @@ export default async function EditElectionPage(props: {
       <BreadcrumbName id={election.id} name={election.title} />
       <PageHeader
         back={{ href: `/admin/elections/${id}`, label: election.title }}
-        title={isDraft ? 'Set up the election' : 'Edit title and description'}
+        title={isDraft ? 'Set up the election' : 'Edit the election'}
         description={
           isDraft
             ? 'Only admins can see a draft. Each step saves as you go.'
-            : undefined
+            : election.status === 'ballot_locked'
+              ? 'The ballot is locked, so only the title, description and voting dates and times can change. Changes show to members straight away and are recorded in the activity log.'
+              : election.status === 'scheduled'
+                ? 'Changes show to members straight away and are recorded in the activity log.'
+                : 'Voting is over, so only the title and description can change.'
         }
       />
-      {isDraft && <StepNav current={step} electionId={id} />}
+      {allowed.length > 1 && <StepNav current={step} electionId={id} keys={allowed} />}
       {body}
       {step === 'review' && (
         <div className="flex flex-wrap gap-3">

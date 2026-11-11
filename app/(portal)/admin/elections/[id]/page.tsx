@@ -169,7 +169,7 @@ export default async function AdminElectionPage(props: {
           <div className="flex flex-col gap-4 p-4">
             <div className="flex flex-wrap gap-3">
               <Link href={`/admin/elections/${id}/edit?step=basics`} className={buttonVariants({ variant: 'outline' })}>
-                {election.status === 'draft' ? 'Edit the draft' : 'Edit title and description'}
+                {election.status === 'draft' ? 'Edit the draft' : 'Edit the election'}
               </Link>
             </div>
             <div className="flex flex-col gap-2 border-t pt-4">
@@ -247,7 +247,17 @@ function Overview({ data }: { data: AdminElection }) {
         </Panel>
       )}
 
-      <Panel title="Key dates" subtitle="Pacific time. Each window includes its start and end.">
+      <Panel
+        title="Key dates"
+        subtitle="Pacific time. Each window includes its start and end."
+        actions={
+          ['draft', 'scheduled', 'ballot_locked'].includes(election.status) && (
+            <Link href={`/admin/elections/${election.id}/edit?step=timeline`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+              Edit dates
+            </Link>
+          )
+        }
+      >
         <dl className="m-0 divide-y">
           {positions.length > 0 && !election.runoff_of && row('Nominations', `${date(election.nomination_start)} to ${date(election.nomination_end)}`)}
           {row(separate ? 'Initiative voting' : 'Voting', `${date(election.start_date)} to ${date(election.end_date)}`)}
