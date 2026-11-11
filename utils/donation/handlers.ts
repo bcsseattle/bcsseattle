@@ -1,12 +1,19 @@
 'use server';
 import { z } from 'zod';
 import { createDonation, getOrCreateDonor } from '../supabase/admin';
+import { createClient } from '@/utils/supabase/server';
 import { Donation, DonationFormSchema, Donor } from '@/types';
 
 export async function submitDonation(
   values: z.infer<typeof DonationFormSchema>
 ) {
   try {
+    // Who is giving comes from the session (website cookie or app token), never
+    // the form, which a browser can change (W12).
+    const supabase = await createClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
     const donorDetails: Omit<Donor, 'id'> = {
       donor_type: values.donorType || 'individual',
       full_name: values.donorName || null,
@@ -20,10 +27,10 @@ export async function submitDonation(
       country: values.country || null,
       registration_date: new Date().toISOString(),
       stripe_customer_id: null,
-      user_id: values.userId || null
+      user_id: user?.id ?? null
     };
 
-    const { data: donor, error } = await getOrCreateDonor(donorDetails);
+    const { data: donor, error } = await getOrCreateDonor(donorDetails, user ? { id: user.id, email: user.email } : undefined);
     if (error) {
       return {
         donation: null,

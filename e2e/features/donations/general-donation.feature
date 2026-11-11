@@ -32,6 +32,13 @@ Feature: General donations
     And I should see "Download receipt (PDF)"
     And the receipt PDF should download
 
+  @P1 @W12
+  Scenario: A member's gift is filed under their own donor record, whatever email they type
+    Given another donor has given before
+    And I am signed in as an approved member
+    When I donate $100 once by card giving that donor's email
+    Then my donation should be filed under my own donor record
+
   @P1
   Scenario: A monthly donation is set up as a subscription
     Given I am signed in as an approved member

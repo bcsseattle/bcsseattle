@@ -829,10 +829,45 @@ const createInvoice = async (
   }
 };
 
+/**
+ * The donor record a gift is filed under. A signed-in giver (`account`, from
+ * the session, never the form) gets their own record: the one linked to their
+ * account, else the guest record under their own account email (which is then
+ * linked), else a new one. Their gift is never filed under someone else's
+ * record because they typed that person's email (W12). Guests are matched by
+ * email, as before.
+ */
 export const getOrCreateDonor = async (
-  donorDetails: Partial<Donor>
+  donorDetails: Partial<Donor>,
+  account?: { id: string; email?: string | null }
 ): Promise<{ data: Donor | null; error: PostgrestError | null | string }> => {
   try {
+    if (account) {
+      const { data: linked } = await supabaseAdmin.from('donors').select('*').eq('user_id', account.id).limit(1).maybeSingle();
+      if (linked) return { data: linked, error: null };
+      const own = account.email?.toLowerCase();
+      if (own) {
+        const { data: guest } = await supabaseAdmin.from('donors').select('*').ilike('email', own).is('user_id', null).maybeSingle();
+        if (guest) {
+          const { data: claimed, error } = await supabaseAdmin
+            .from('donors')
+            .update({ user_id: account.id })
+            .eq('id', guest.id)
+            .select()
+            .single();
+          return { data: claimed, error };
+        }
+      }
+      // A new record for this account; under the typed email unless another donor has it.
+      const { data: taken } = await supabaseAdmin.from('donors').select('id').eq('email', donorDetails.email!).maybeSingle();
+      const { data: donor, error } = await supabaseAdmin
+        .from('donors')
+        .insert({ ...(donorDetails as Donor), email: taken && own ? own : donorDetails.email!, user_id: account.id })
+        .select()
+        .single();
+      return { data: donor, error };
+    }
+
     const { data, error: donorError } = await supabaseAdmin
       .from('donors')
       .select('*')
