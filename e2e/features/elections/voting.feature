@@ -80,6 +80,15 @@ Feature: Voting in member elections
     When I go to "/elections"
     Then the elections list should mark the election as "Leadership"
 
+  @P1
+  Scenario: A closed election is listed under Past, with its results
+    Given there is a closed election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an approved member
+    When I go to "/elections"
+    And I open the "Past" tab
+    And I follow the election's "Results" link
+    Then I should be on the election results
+
   @P1 @api @BUG-060
   Scenario: Candidate voting doesn't open before its own start date
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
