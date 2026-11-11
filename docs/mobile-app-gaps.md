@@ -10,7 +10,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 |---|---|---|---|---|
 | W4 | **`/members/[id]` returns a 500** for a signed-in non-member. It has no access check, and throws on `member!.created_at` when RLS returns nothing. Nothing leaks. | `app/(portal)/members/[id]` | Error page instead of a "members only" message. | Check access first and show the same "members only" state as the directory. |
 | W5 | **Placeholder pages** that the app's Resources tab links to: `/resources`, `/youth-programs`, `/get-help` ("Under construction" or a bare heading). `/resources/immigration` requires a website sign-in, so the app leaves it out. | `app/(site)/*` | Thin content; App Review may notice. | Write the content, or drop the rows from the app until it exists. |
-| W7 | **Confusing column name:** `members.stripe_customer_id` holds `customers.id` (the user's UUID), not the Stripe ID. The Stripe ID is `customers.stripe_customer_id`. | schema | Easy to misread; already caught one draft of the deletion migration. | Rename to `customer_id` in a migration, or at least add a column comment. *Schema change: needs approval.* |
 
 ## Production settings and accounts (yours to do)
 
@@ -60,6 +59,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Gap | Fixed in |
 |---|---|---|
+| W7 | members.stripe_customer_id looked like the Stripe id; it now carries a column comment (a rename would break older app builds) | branch `gaps/website-fixes` |
 | W9 | Payments with no matching member showed a blank name (and a broken link) on Funds; now "Not in the directory", as in the app | branch `gaps/website-fixes` |
 | W13 | The app's receipt routes reported problems as redirects; they now return 404 JSON with the message, which the app shows | branch `gaps/website-fixes` |
 | W25 | Member status wording and rules differed; the website now uses the app's rule (utils/membership/state.ts), the directory says "No contribution plan yet", and /register shows an application's state | branch `gaps/website-fixes` |
