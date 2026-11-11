@@ -8,7 +8,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Gap | Where | Impact | Proposed fix |
 |---|---|---|---|---|
-| W3 | **Any active member can download another member's contribution receipt** by changing the ID in the URL. Receipts include the name and address from Stripe. | `app/(portal)/account/[memberId]/contributions/pdf` | Privacy leak between members. The app's route only returns your own receipt. | One check: the member must be the signed-in user, or an admin. Found in Phase 1, deferred. |
 | W4 | **`/members/[id]` returns a 500** for a signed-in non-member. It has no access check, and throws on `member!.created_at` when RLS returns nothing. Nothing leaks. | `app/(portal)/members/[id]` | Error page instead of a "members only" message. | Check access first and show the same "members only" state as the directory. |
 | W5 | **Placeholder pages** that the app's Resources tab links to: `/resources`, `/youth-programs`, `/get-help` ("Under construction" or a bare heading). `/resources/immigration` requires a website sign-in, so the app leaves it out. | `app/(site)/*` | Thin content; App Review may notice. | Write the content, or drop the rows from the app until it exists. |
 | W7 | **Confusing column name:** `members.stripe_customer_id` holds `customers.id` (the user's UUID), not the Stripe ID. The Stripe ID is `customers.stripe_customer_id`. | schema | Easy to misread; already caught one draft of the deletion migration. | Rename to `customer_id` in a migration, or at least add a column comment. *Schema change: needs approval.* |
@@ -75,6 +74,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Gap | Fixed in |
 |---|---|---|
+| W3 | Any member could download another member's contribution receipt; now only the member and admins | branch `gaps/website-fixes` |
 | W27 | Anonymous fundraiser gifts were readable by anyone; now only the donor and admins read them, and the donor list leaves out anonymous names and messages | branch `gaps/website-fixes` |
 | — | Privacy page was "Under construction" | PR #21 |
 | — | App links named `bcsseattle.org`, which redirects; now `www.bcsseattle.org` | `da1cdb8`, Phase 3 |
