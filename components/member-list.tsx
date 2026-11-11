@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-import { MemberStatusBadge } from '@/components/portal/member-row';
+import { MembershipBadge } from '@/components/portal/member-row';
 
 import { Member } from '@/types';
 import { currentPlan, priceLabel, type PlanSubscription } from '@/utils/membership/plan';
@@ -66,7 +66,7 @@ export default function MemberList({
                   </TableCell>
                   <TableCell>{member.city}</TableCell>
                   <TableCell>
-                    <MemberStatusBadge status={member.status} />
+                    <MembershipBadge member={member} />
                   </TableCell>
                   <TableCell>{member.membershipType}</TableCell>
                   <TableCell>{member.totalMembersInFamily}</TableCell>
@@ -74,9 +74,7 @@ export default function MemberList({
                     {plan ? (
                       priceLabel(plan.price, plan.quantity)
                     ) : (
-                      <span className="text-badge-red-text">
-                        Yet to choose contribution plan
-                      </span>
+                      <span className="text-muted-foreground">No contribution plan yet</span>
                     )}
                   </TableCell>
                 </TableRow>

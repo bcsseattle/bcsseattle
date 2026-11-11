@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import { FundraiserProgress } from './fundraiser-progress';
 import { FundraiserUpdates } from './fundraiser-updates';
 import { Fundraiser } from '@/types';
+import { isOpen } from '@/utils/giving';
+import { formatDate } from '@/utils/format';
 
 interface FundraiserDetailsProps {
   fundraiser: Fundraiser;
@@ -33,9 +35,13 @@ export function FundraiserDetails({
     }
   }, [success]);
 
-  const timeLeft = fundraiser.ends_at 
-    ? formatDistanceToNow(new Date(fundraiser.ends_at), { addSuffix: true })
-    : 'No end date';
+  // Closed fundraisers say when they ended and offer no Donate (W22).
+  const open = isOpen(fundraiser);
+  const timeLeft = !fundraiser.ends_at
+    ? 'No end date'
+    : Date.parse(fundraiser.ends_at) < Date.now()
+      ? `Ended ${formatDate(fundraiser.ends_at)}`
+      : `Ends ${formatDistanceToNow(new Date(fundraiser.ends_at), { addSuffix: true })}`;
 
   return (
     <div className="space-y-8">
@@ -46,7 +52,7 @@ export function FundraiserDetails({
             <div className="flex items-center gap-2">
               <Badge variant="outline">{fundraiser.category}</Badge>
               <span className="text-sm text-muted-foreground">
-                Ends {timeLeft}
+                {timeLeft}
               </span>
             </div>
           </div>
@@ -79,13 +85,15 @@ export function FundraiserDetails({
           <p className="font-serif text-doc-lead text-foreground">{fundraiser.description}</p>
         </div>
 
-        <div className="flex justify-center">
-          <Button size="lg" asChild>
-            <Link href={`/fundraisers/${fundraiser.id}/donate`}>
-              Donate Now
-            </Link>
-          </Button>
-        </div>
+        {open ? (
+          <div className="flex justify-center">
+            <Button size="lg" asChild>
+              <Link href={`/fundraisers/${fundraiser.id}/donate`}>Donate Now</Link>
+            </Button>
+          </div>
+        ) : (
+          <p className="mt-0 text-center text-muted-foreground">This fundraiser has closed. Thank you to everyone who gave.</p>
+        )}
       </div>
 
       <div className="space-y-8">

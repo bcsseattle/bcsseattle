@@ -6,6 +6,8 @@ import { getTotalCustomerSpent } from '@/utils/supabase/admin';
 import RecentFunds from '@/components/recent-funds';
 import { individualColumns } from '@/components/payments/columns';
 import { BreadcrumbName } from '@/components/ui/breadcrumbs';
+import { StatePanel } from '@/components/ui/state-panel';
+import { redirect } from 'next/navigation';
 
 type SearchParams = Promise<{ [key: string]: string | undefined }>;
 
@@ -23,11 +25,24 @@ export default async function Page(props: {
     data: { user }
   } = await supabase.auth.getUser();
 
+  if (!user) return redirect(`/signin?redirectTo=${encodeURIComponent(`/members/${params.id}`)}`);
+
   const { data: member } = await supabase
     .from('members')
     .select('*, customers(stripe_customer_id)')
     .eq('id', params?.id)
     .maybeSingle();
+
+  // RLS shows member rows only to approved, active members (and admins), so
+  // anyone else finds nothing: say so instead of failing with a 500 (W4).
+  if (!member) {
+    return (
+      <StatePanel title="Members only">
+        Member pages are shown to approved members with an active membership. If you’re a member, check your
+        membership under My account.
+      </StatePanel>
+    );
+  }
 
   const stripeCustomerId = member?.customers?.stripe_customer_id ?? '';
 
@@ -41,7 +56,7 @@ export default async function Page(props: {
   const cards = [
     {
       title: 'Member since',
-      value: formatDate(member!.created_at)
+      value: formatDate(member.created_at)
     },
     {
       title: 'Total Family Members',

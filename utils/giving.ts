@@ -27,6 +27,16 @@ export const FREQUENCIES: { value: Frequency; label: string }[] = [
   { value: 'month', label: 'Monthly' },
   { value: 'year', label: 'Yearly' }
 ];
+/**
+ * The price to charge for a gift of this frequency: the one-time price for a
+ * one-time gift, otherwise the recurring price with the same interval. (Not
+ * "the first price that matches either", which could charge a monthly gift once.)
+ */
+export const priceForFrequency = <P extends { type?: string | null; interval?: string | null }>(
+  prices: P[] | null | undefined,
+  frequency: string
+) => prices?.find((p) => (frequency === 'one_time' ? p.type === 'one_time' : p.type === 'recurring' && p.interval === frequency));
+
 export const PRESET_AMOUNTS = ['100', '200', '250', '500'];
 
 export const ZELLE_EMAIL = 'billing@bcsseattle.org';

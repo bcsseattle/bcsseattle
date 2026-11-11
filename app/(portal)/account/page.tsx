@@ -6,7 +6,7 @@ import ReceiptForm from '@/components/ui/AccountForms/ReceiptForm';
 import { Donation } from '@/types';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { MemberStatusBadge } from '@/components/portal/member-row';
+import { MembershipBadge } from '@/components/portal/member-row';
 import { PageHeader } from '@/components/portal/page-header';
 import { SignOutButton } from '@/components/portal/sign-out-button';
 import { PersonRow } from '@/components/ui/person-row';
@@ -100,7 +100,7 @@ export default async function Account(props: { searchParams: SearchParams }) {
       <PageHeader title="My account" />
       <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3">
         <PersonRow className="flex-1" name={name} secondary={user.email} />
-        <MemberStatusBadge status={member.status} />
+        <MembershipBadge member={member} />
       </div>
       {group(
         'Membership',

@@ -311,3 +311,37 @@ Then('the fundraiser should name {string} as its beneficiary', async function (t
   const { data } = await admin.from('fundraisers').select('beneficiary').eq('id', this.data.createdFundraiserId).single();
   expect(data?.beneficiary).toBe(beneficiary);
 });
+
+Given(
+  'a guest named {string} has given ${int} to the fundraiser anonymously with the message {string}',
+  async function (this: E2EWorld, name: string, dollars: number, message: string) {
+    const { data, error } = await admin
+      .from('fundraiser_donations')
+      .insert({ fundraiser_id: this.fundraiser!.id, amount: dollars, donor_name: name, message, is_anonymous: true, payment_status: 'completed' })
+      .select('id')
+      .single();
+    if (error) throw new Error(error.message);
+    this.data.giftId = data.id;
+    this.cleanup.push(async () => {
+      await admin.from('fundraiser_donations').delete().eq('id', data.id);
+    });
+  }
+);
+
+When("an anonymous visitor reads the fundraiser's gifts through the public API", async function (this: E2EWorld) {
+  this.rows = await anonClient().from('fundraiser_donations').select('donor_name, message').eq('fundraiser_id', this.fundraiser!.id);
+});
+
+Then("the fundraiser's donor list should show the ${int} gift without a name or message", async function (this: E2EWorld, dollars: number) {
+  const { data, error } = await anonClient().rpc('fundraiser_supporters', { p_fundraiser: this.fundraiser!.id });
+  expect(error).toBeNull();
+  expect(data).toEqual([expect.objectContaining({ amount: dollars, donor_name: null, message: null, is_anonymous: true })]);
+});
+
+Given('there is a fundraiser {string} that ended yesterday', async function (this: E2EWorld, title: string) {
+  this.fundraiser = await createFundraiser(this.cleanup, await organiser(this), {
+    title: `${title} ${Math.random().toString(36).slice(2, 6)}`,
+    ends_at: new Date(Date.now() - 86_400_000).toISOString()
+  });
+  this.data[title] = this.fundraiser.id;
+});

@@ -76,6 +76,14 @@ Feature: Personal data is protected at the database and API level
     When an anonymous visitor records a paid $500 donation to the fundraiser through the public API
     Then the fundraiser's total should be $0
 
+  @P0 @api @W27
+  Scenario: Nobody else can read who gave an anonymous fundraiser gift
+    Given there is an active fundraiser "Help the Rahimi family" with a goal of $1,000
+    And a guest named "Farah" has given $50 to the fundraiser anonymously with the message "From the Khan family"
+    When an anonymous visitor reads the fundraiser's gifts through the public API
+    Then no record should be returned
+    And the fundraiser's donor list should show the $50 gift without a name or message
+
   @P0 @api @BUG-080
   Scenario: Someone who isn't signed in cannot read fundraiser donors' contact details
     Given a guest has left their contact details with a fundraiser donation

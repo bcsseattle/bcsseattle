@@ -7,7 +7,8 @@ import {
   manageSubscriptionStatusChange,
   deleteProductRecord,
   deletePriceRecord,
-  updateDonation
+  updateDonation,
+  expireUnpaidGift
 } from '@/utils/supabase/admin';
 import { updateFundraiserDonation } from '@/utils/supabase/fundraiser';
 import { sendPaymentFailedEmail } from '@/utils/membership/handlers';
@@ -24,6 +25,7 @@ const relevantEvents = new Set([
   'checkout.session.completed',
   'checkout.session.async_payment_succeeded',
   'checkout.session.async_payment_failed',
+  'checkout.session.expired',
   'customer.subscription.created',
   'customer.subscription.updated',
   'customer.subscription.deleted',
@@ -129,6 +131,12 @@ export async function POST(req: Request) {
             );
           }
           break;
+        case 'checkout.session.expired': {
+          // The giver left Checkout without paying (W11): the pending row is closed as failed.
+          const expired = event.data.object as Stripe.Checkout.Session;
+          await expireUnpaidGift(expired.metadata);
+          break;
+        }
         case 'charge.failed':
           const charge = event.data.object as Stripe.Charge;
           await sendPaymentFailedEmail(charge);
@@ -148,7 +156,6 @@ export async function POST(req: Request) {
         case 'balance.available':
         case 'billing_portal.session.created':
         case 'charge.succeeded':
-        case 'checkout.session.expired':
         case 'customer.created':
         case 'customer.deleted':
         case 'customer.discount.created':

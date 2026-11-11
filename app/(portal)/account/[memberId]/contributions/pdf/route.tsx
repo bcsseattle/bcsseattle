@@ -8,6 +8,7 @@ import {
   getTotalCustomerSpent
 } from '@/utils/supabase/admin';
 import { getErrorRedirect } from '@/utils/helpers';
+import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
 import Stripe from 'stripe';
 import InvoicePDF from '@/components/ui/receipts/invoice-pdf';
 
@@ -38,7 +39,12 @@ export async function GET(
       .eq('id', memberId)
       .maybeSingle();
 
-    if (!member) {
+    // The receipt carries the member's name and address from Stripe: only the
+    // member themselves, or an admin, may have it (W3).
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+    if (!member || !user || (member.user_id !== user.id && !(await isCurrentUserAdmin()))) {
       return NextResponse.redirect(
         getErrorRedirect(
           `${requestUrl.origin}/account`,

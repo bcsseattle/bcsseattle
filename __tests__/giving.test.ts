@@ -1,4 +1,4 @@
-import { categoryLabel, dollars, isOpen, paidWith, percentRaised, viaStripe } from '@/utils/giving';
+import { categoryLabel, dollars, isOpen, paidWith, percentRaised, priceForFrequency, viaStripe } from '@/utils/giving';
 
 const nb = (s: string) => s.replace(/ /g, '\u00a0');
 
@@ -40,5 +40,24 @@ describe('gifts', () => {
     expect(dollars('19.999')).toBe(nb('USD 20.00'));
     expect(dollars('')).toBe('—');
     expect(dollars('abc')).toBe('—');
+  });
+});
+
+describe('priceForFrequency (W10)', () => {
+  const once = { id: 'once', type: 'one_time', interval: null };
+  const monthly = { id: 'monthly', type: 'recurring', interval: 'month' };
+  const yearly = { id: 'yearly', type: 'recurring', interval: 'year' };
+  it.each([
+    [[once, monthly, yearly]],
+    [[yearly, monthly, once]],
+    [[monthly, once, yearly]]
+  ])('picks the matching price whatever order the prices come in', (prices) => {
+    expect(priceForFrequency(prices, 'month')?.id).toBe('monthly');
+    expect(priceForFrequency(prices, 'year')?.id).toBe('yearly');
+    expect(priceForFrequency(prices, 'one_time')?.id).toBe('once');
+  });
+  it('finds nothing when there is no price for the frequency', () => {
+    expect(priceForFrequency([once], 'month')).toBeUndefined();
+    expect(priceForFrequency(undefined, 'month')).toBeUndefined();
   });
 });

@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { User } from '@supabase/supabase-js';
 import {
+  DONATION_PURPOSES,
   DonationFormSchema,
   Donor,
   ProductWithPrices,
@@ -53,6 +54,7 @@ import {
   PRESET_AMOUNTS,
   dollars,
   frequencyLabel as frequencyLabelOf,
+  priceForFrequency,
   viaStripe as paysViaStripe
 } from '@/utils/giving';
 import { getStripe } from '@/utils/stripe/client';
@@ -67,6 +69,10 @@ interface DonateFormProps {
 }
 
 export default function DonateForm({ user, product, donor, programs, defaultPurpose }: DonateFormProps) {
+  // Only what can be accepted and charged, as the app offers (W21): frequencies
+  // with an active price, and the purposes DonationFormSchema allows.
+  const frequencies = FREQUENCIES.filter((f) => priceForFrequency(product?.prices, f.value));
+  const purposes = (programs ?? []).filter((p) => (DONATION_PURPOSES as readonly string[]).includes(p.key ?? ''));
   const router = useRouter();
   const [donationLoading, setDonationLoading] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
@@ -155,15 +161,13 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
         getStatusRedirect(
           currentPath,
           'Thank you!',
-          'Your donation is recorded. Please complete it as shown; we will send your receipt once it arrives.'
+          'Your donation is recorded. Please complete it as shown; your receipt is ready to download once it arrives.'
         )
       );
     }
     if (donation) {
-      const price = product?.prices?.find(
-        (price) =>
-          price.interval === values.frequency || price.type === 'one_time'
-      );
+      // The price matching the gift's frequency (W10).
+      const price = priceForFrequency(product?.prices, values.frequency);
       if (price) {
         price.unit_amount = Math.round(Number(values.amount) * 100); // whole cents (BUG-014)
         const { errorRedirect, sessionId } =
@@ -252,7 +256,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
                 aria-labelledby="frequency-label"
                 value={field.value}
                 onValueChange={setFrequency}
-                options={FREQUENCIES}
+                options={frequencies}
               />
             </div>
             <FormMessage />
@@ -268,8 +272,8 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
             <RadioGroup
               aria-labelledby="amount-label"
               value={PRESET_AMOUNTS.includes(field.value) ? field.value : OTHER}
-              // "Other amount" starts from 1,000, as the Custom button did.
-              onValueChange={(v) => form.setValue('amount', v === OTHER ? '1000.00' : v)}
+              // "Other amount" starts empty for the giver to fill in (W21).
+              onValueChange={(v) => form.setValue('amount', v === OTHER ? '' : v)}
               className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3"
             >
               {PRESET_AMOUNTS.map((amount) => (
@@ -315,7 +319,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {programs?.map((program) => (
+                {purposes.map((program) => (
                   <SelectItem key={program.id} value={program.key}>
                     {program.value}
                   </SelectItem>
@@ -332,7 +336,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
         </Button>
       </ActionBar>
       <p className="mt-0 text-caption text-muted-foreground lg:hidden">
-        BCS Seattle is a 501(c)(3) nonprofit, EIN 99-2495973. We email a receipt after each payment.
+        BCS Seattle is a 501(c)(3) nonprofit, EIN 99-2495973. You can download a receipt for each payment once it’s through.
       </p>
     </div>
   );
@@ -488,7 +492,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
       {viaStripe && (
         <p className="mt-0 text-caption text-muted-foreground">
           {values.paymentMethod === 'card' ? 'Card' : 'Bank'} details are entered in Stripe&apos;s secure payment
-          sheet. BCS Seattle is a 501(c)(3) nonprofit; we email a tax receipt for every gift.
+          sheet. BCS Seattle is a 501(c)(3) nonprofit; every gift gets a tax receipt to download.
         </p>
       )}
       <ActionBar summary={viaStripe ? 'Step 3 of 3 · You confirm payment details with Stripe' : 'Step 3 of 3'}>
@@ -537,7 +541,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
           </CardContent>
         </Card>
         <Banner tone="info" title="A receipt for every gift">
-          BCS Seattle is a 501(c)(3) nonprofit, EIN 99-2495973. We email a receipt after each payment.
+          BCS Seattle is a 501(c)(3) nonprofit, EIN 99-2495973. You can download a receipt for each payment once it’s through.
         </Banner>
       </aside>
     </div>

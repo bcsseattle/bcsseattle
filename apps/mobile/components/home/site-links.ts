@@ -1,4 +1,4 @@
-import { AlertCircle, Banknote, BookOpen, FileText, Info, Mail, Palette, ScrollText, Shield, Target, type LucideIcon } from 'lucide-react';
+import { Banknote, BookOpen, Info, Mail, ScrollText, Shield, Target, type LucideIcon } from 'lucide-react';
 
 export type SiteLink = { label: string; path: string; icon: LucideIcon };
 
@@ -7,11 +7,12 @@ export type SiteLink = { label: string; path: string; icon: LucideIcon };
  * groups them: the home page's "Programs & services", then the footer's
  * Organization, Get help and Legal columns. Donate, Fundraisers and
  * Become a member are left out because the app has its own screens for them.
+ *
+ * Youth programs, Immigration & resources and Get help are left out while
+ * their website pages are placeholders (W5); add them back once they have content.
  */
 export const PROGRAMS: SiteLink[] = [
   { label: 'Funeral & burial fund', path: '/funeral-burials', icon: Banknote },
-  { label: 'Youth programs', path: '/youth-programs', icon: Palette },
-  { label: 'Immigration & resources', path: '/resources', icon: FileText }
 ];
 
 export const SITE_SECTIONS: { title: string; links: SiteLink[] }[] = [
@@ -27,7 +28,6 @@ export const SITE_SECTIONS: { title: string; links: SiteLink[] }[] = [
   {
     title: 'Get help',
     links: [
-      { label: 'Get help', path: '/get-help', icon: AlertCircle },
       { label: 'Contact us', path: '/contact-us', icon: Mail }
     ]
   },

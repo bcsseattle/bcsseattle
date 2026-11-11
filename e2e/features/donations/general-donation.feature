@@ -32,6 +32,28 @@ Feature: General donations
     And I should see "Download receipt (PDF)"
     And the receipt PDF should download
 
+  @P1 @W12
+  Scenario: A member's gift is filed under their own donor record, whatever email they type
+    Given another donor has given before
+    And I am signed in as an approved member
+    When I donate $100 once by card giving that donor's email
+    Then my donation should be filed under my own donor record
+
+  @P1 @W11
+  Scenario: An abandoned checkout closes the pending donation
+    Given I am signed in as an approved member
+    And I have started a one-time $100 card donation
+    When Stripe reports that checkout for the donation expired
+    Then the donation should be failed
+
+  @P1 @W11
+  Scenario: An expired checkout leaves a paid donation alone
+    Given I am signed in as an approved member
+    And I have started a one-time $100 card donation
+    And Stripe confirms the payment for my donation
+    When Stripe reports that checkout for the donation expired
+    Then the donation should be completed
+
   @P1
   Scenario: A monthly donation is set up as a subscription
     Given I am signed in as an approved member
@@ -73,6 +95,14 @@ Feature: General donations
     And I am a visitor who is not signed in
     When I open the receipt for that donation
     Then I should see "Your gift of USD 50.00"
+
+  @P1 @W20
+  Scenario: A refunded donation says so, instead of confirming for ever
+    Given a refunded $50 donation by a guest donor
+    And I am signed in as an approved member
+    When I open the receipt for that donation
+    Then I should see "This gift was refunded"
+    And I should not see "confirming your payment"
 
   @P1 @BUG-042
   Scenario: No receipt is issued for a donation that was never paid

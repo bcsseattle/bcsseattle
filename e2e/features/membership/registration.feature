@@ -62,3 +62,17 @@ Feature: Membership registration
     Given I am signed in as an approved member
     When I submit my registration form again
     Then I should still be an approved member
+
+  @P1 @W25
+  Scenario: Someone who has applied sees their application, not the form again
+    Given I am signed in as a pending applicant
+    When I go to "/register"
+    Then I should see "Membership Status: Pending"
+    And I should not see a "Register as member" button
+
+  @P2 @W25
+  Scenario: A rejected applicant is told so on the registration page
+    Given I am signed in as a rejected applicant
+    When I go to "/register"
+    Then I should see "Your application wasn’t approved"
+    And I should not see a "Register as member" button

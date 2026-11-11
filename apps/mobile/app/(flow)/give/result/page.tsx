@@ -35,18 +35,17 @@ const first = (name?: string | null) => name?.trim().split(/\s+/)[0] || undefine
 async function loadGift(kind: string, id: string): Promise<Gift | null> {
   if (!id) return null;
   if (kind === 'fundraiser') {
-    const row = await must(
-      supabase.from('fundraiser_donations').select('*, fundraisers(title)').eq('id', id).maybeSingle()
-    );
+    // By its id, which only whoever made the gift has; no name for an anonymous gift (W27).
+    const row = (await must(supabase.rpc('fundraiser_gift', { p_donation: id })))?.[0];
     if (!row) return null;
     return {
       status: row.payment_status ?? 'pending',
       cents: Math.round(row.amount * 100),
       forLabel: 'Fundraiser',
-      forValue: row.fundraisers?.title ?? 'Fundraiser',
+      forValue: row.fundraiser_title ?? 'Fundraiser',
       method: 'card',
       date: row.created_at,
-      firstName: row.is_anonymous ? undefined : first(row.donor_name),
+      firstName: first(row.donor_name),
       retry: `/give/fundraisers/donate/?id=${row.fundraiser_id}`
     };
   }

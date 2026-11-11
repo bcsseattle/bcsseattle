@@ -3,6 +3,7 @@ import { submitDonation } from '@/utils/donation/handlers';
 import { checkoutWithStripeForDonation } from '@/utils/stripe/server';
 import { appReturn, currentUser, fail, redirectError, unauthorized } from '@/utils/app-api';
 import { DonationFormSchema, type Price } from '@/types';
+import { priceForFrequency } from '@/utils/giving';
 
 /**
  * A gift from the Give tab: the same steps as the /donate wizard. Zelle, check
@@ -35,9 +36,7 @@ export async function POST(request: NextRequest) {
     .eq('name', 'BCS Donation')
     .eq('prices.active', true)
     .maybeSingle();
-  const price = (product?.prices as Price[] | undefined)?.find((p) =>
-    values.frequency === 'one_time' ? p.type === 'one_time' : p.type === 'recurring' && p.interval === values.frequency
-  );
+  const price = priceForFrequency(product?.prices as Price[] | undefined, values.frequency);
   if (!price) return fail('Giving is not available right now.', 502);
 
   const { url, errorRedirect } = await checkoutWithStripeForDonation(

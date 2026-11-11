@@ -65,7 +65,7 @@ export default async function CommunityFunds(props: {
     .from('expenses')
     .select('*')
     .eq('is_private', false)
-    .order('created_at', { ascending: false });
+    .order('date', { ascending: false });
 
   const { data: funds } = await supabase
     .from('funds')
@@ -147,7 +147,8 @@ export default async function CommunityFunds(props: {
       </Panel>
       <Panel title="Recent donations" subtitle="Completed gifts from members and the public">
         <Suspense fallback={<Loading><SkeletonRows /></Loading>}>
-          <RecentDonations donations={donations || []} showTitle={false} />
+          {/* Completed gifts only, as the subtitle says and the app shows (W23). */}
+          <RecentDonations donations={(donations ?? []).filter((d) => d.donation_status === 'completed')} showTitle={false} />
         </Suspense>
       </Panel>
       <Panel title="Administrative expenses" subtitle="Public expenses recorded by the board">

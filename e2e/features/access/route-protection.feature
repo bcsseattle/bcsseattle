@@ -52,8 +52,8 @@ Feature: Members-only and admin-only pages are protected
     When I request the contribution statement of "Amina" without choosing a year
     Then I should receive a PDF document
 
-  # Statements are open to approved members (community transparency, confirmed
-  # 2026-11-08); since the BUG-003 fix, RLS keeps everyone else out.
+  # A statement carries the member's name and address from Stripe, so only the
+  # member and admins can download it (W3, 13 Nov 2026).
   @P0 @security @BUG-009
   Scenario: Someone without a membership cannot download a member's contribution statement
     Given there is an approved member named "Amina"
@@ -63,12 +63,20 @@ Feature: Members-only and admin-only pages are protected
     When I request the contribution statement of "Amina" for this year
     Then I should not receive a PDF document
 
-  @P1
-  Scenario: An approved member can download another member's contribution statement
+  @P0 @security @W3
+  Scenario: An approved member cannot download another member's contribution statement
     Given there is an approved member named "Amina"
     And "Amina" has paid a contribution this year
     And there is an approved member named "Bilal"
     And I am signed in as "Bilal"
+    When I request the contribution statement of "Amina" for this year
+    Then I should not receive a PDF document
+
+  @P1 @W3
+  Scenario: An admin can download a member's contribution statement
+    Given there is an approved member named "Amina"
+    And "Amina" has paid a contribution this year
+    And I am signed in as an admin
     When I request the contribution statement of "Amina" for this year
     Then I should receive a PDF document
 
@@ -89,3 +97,10 @@ Feature: Members-only and admin-only pages are protected
     And I am signed in as an approved member
     When I open the member details page of "Amina"
     Then I should see "Amina"'s details and total contributions
+
+  @P1 @W4
+  Scenario: Someone without a membership is told a member's page is for members
+    Given there is an approved member named "Amina"
+    And I am signed in as a user with no membership
+    When I open the member page of "Amina"
+    Then I should see "Members only"

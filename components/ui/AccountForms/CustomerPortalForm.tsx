@@ -1,6 +1,6 @@
 'use client';
 
-import { formatMoney } from '@/utils/format';
+import { priceLabel } from '@/utils/membership/plan';
 import { Button } from '@/components/ui/button';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -37,9 +37,8 @@ export default function CustomerPortalForm({ subscription }: Props) {
   const currentPath = usePathname();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const subscriptionPrice =
-    subscription &&
-    formatMoney(subscription?.prices?.unit_amount || 0);
+  // What the member pays: the price times the family size (the subscription's quantity) (W24).
+  const subscriptionPrice = subscription && priceLabel(subscription.prices, subscription.quantity);
 
   const handleStripePortalRequest = async () => {
     setIsSubmitting(true);
@@ -62,7 +61,7 @@ export default function CustomerPortalForm({ subscription }: Props) {
         <p className="pb-4 sm:pb-0">Manage your subscription on Stripe.</p>
         <div className="mt-8 mb-4 text-xl font-semibold">
           {subscription ? (
-            `${subscriptionPrice}/${subscription?.prices?.interval}`
+            subscriptionPrice
           ) : (
             <Link href="/">Choose your plan</Link>
           )}

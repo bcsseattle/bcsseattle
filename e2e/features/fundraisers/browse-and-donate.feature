@@ -104,3 +104,12 @@ Feature: Supporting a fundraiser
     And I am signed in as an approved member
     When I open the donation page of "Ongoing zakat fund"
     Then I should see the heading "Make a Donation"
+
+  @P1 @W22
+  Scenario: A closed fundraiser says it has ended and offers no Donate
+    Given there is a fundraiser "Eid food drive" that ended yesterday
+    And I am signed in as an approved member
+    When I open the fundraiser
+    Then I should see "This fundraiser has closed"
+    And I should see "Ended"
+    And I should not see a "Donate Now" button
