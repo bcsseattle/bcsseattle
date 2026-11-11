@@ -45,7 +45,8 @@ const nextConfig = {
       { source: '/fundraisers/admin', destination: '/fundraisers', permanent: false },
       { source: `/fundraisers/admin/:id${uuid}`, destination: '/fundraisers/admin/:id/edit', permanent: false },
       { source: '/fundraisers/:id/donations', destination: '/fundraisers/:id', permanent: false },
-      { source: '/fundraisers/:id/donations/:donationId', destination: '/fundraisers/:id/donations/:donationId/confirmation', permanent: false }
+      { source: '/fundraisers/:id/donations/:donationId', destination: '/fundraisers/:id/donations/:donationId/confirmation', permanent: false },
+      { source: '/elections/:id/nominations', destination: '/account/nominations', permanent: false }
     ];
   }
 };

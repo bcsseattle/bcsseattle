@@ -181,17 +181,15 @@ When('I open the nomination page', async function (this: E2EWorld) {
 
 When('I nominate myself for {string} with the platform {string}', async function (this: E2EWorld, position: string, platform: string) {
   await this.page.goto(`/elections/${this.election!.id}/nominate`);
-  const form = this.page.getByRole('button', { name: 'Submit Nomination' });
-  // The page first shows "Checking nomination status...", then the form or a refusal.
-  const refused = this.page.getByText(/Already Nominated|Nominations (are )?Closed|not (currently )?open/i);
-  await expect(form.or(refused).first()).toBeVisible({ timeout: 20_000 });
-  if (!(await form.isVisible())) return; // refused up front: nothing to submit
-  await this.page.getByRole('combobox').click();
-  await this.page.getByRole('option', { name: position, exact: true }).click();
-  await this.page.getByLabel(/Short Bio/).fill('Long-time volunteer at community events.');
-  await this.page.getByLabel(/Your Platform/).fill(platform);
-  await form.click();
-  await this.page.waitForURL((url) => !url.pathname.endsWith('/nominate') || url.searchParams.has('error'), { timeout: 20_000 }).catch(() => {});
+  const submit = this.page.getByRole('button', { name: 'Submit my nomination' });
+  const refused = this.page.getByText(/aren’t open|already standing/);
+  await expect(submit.or(refused).first()).toBeVisible();
+  if (!(await submit.isVisible())) return; // refused up front: nothing to submit
+  await this.page.getByLabel('Position').selectOption({ label: position });
+  await this.page.getByLabel('Statement').fill('Long-time volunteer at community events.');
+  await this.page.getByLabel('Platform').fill(platform);
+  await submit.click();
+  await this.page.waitForURL(/\/account\/nominations/).catch(() => {});
 });
 
 Given('I have already nominated myself for {string}', async function (this: E2EWorld, position: string) {

@@ -9,6 +9,7 @@ import { checkFeatureFlag } from '@/utils/server-feature-flags';
 import { getStatusRedirect } from '@/utils/helpers';
 import { defaultTimeline, fromLocalInput, validateTimeline } from '@/utils/elections/rules';
 import type { ElectionType } from '@/types';
+import { dbMessage, photoFrom, uploadCandidatePhoto } from '@/utils/elections/photos';
 
 /**
  * Admin › Elections actions. Each checks the caller on the server, then writes
@@ -39,9 +40,6 @@ const valuesOf = (formData: FormData) =>
 const fieldErrors = (error: z.ZodError) =>
   Object.fromEntries(error.issues.map((i) => [String(i.path[0]), i.message]));
 
-/** Database refusals arrive as plain sentences (the election_* functions and triggers); others get a generic line. */
-const dbMessage = (error: { message: string; code?: string }) =>
-  ['P0001', '22023', '42501', '23514', 'P0002'].includes(error.code ?? '') ? error.message : 'Something went wrong. Please try again.';
 
 const editPath = (id: string, step: string) => `/admin/elections/${id}/edit?step=${step}`;
 
@@ -294,4 +292,80 @@ export async function cancelElection(id: string, reason: string): Promise<FormSt
   if (error) return { error: dbMessage(error) };
   revalidatePath('/admin/elections');
   redirect(getStatusRedirect(`/admin/elections/${id}`, 'Election cancelled.', 'Members see it as cancelled, with your reason.'));
+}
+
+// ---------------------------------------------------------------- nominations
+
+const nominationsTab = (id: string) => `/admin/elections/${id}?tab=nominations`;
+
+export async function approveNomination(id: string, nominationId: string): Promise<FormState> {
+  const { supabase } = await guard();
+  const { error } = await supabase.rpc('nomination_decide', { p_nomination: nominationId, p_approve: true });
+  if (error) return { error: dbMessage(error) };
+  revalidatePath(`/admin/elections/${id}`);
+  redirect(getStatusRedirect(nominationsTab(id), 'Nomination approved.', 'The candidate is on the ballot.'));
+}
+
+export async function rejectNomination(id: string, nominationId: string, reason: string): Promise<FormState> {
+  const { supabase } = await guard();
+  const { error } = await supabase.rpc('nomination_decide', { p_nomination: nominationId, p_approve: false, p_reason: reason });
+  if (error) return { error: dbMessage(error) };
+  revalidatePath(`/admin/elections/${id}`);
+  redirect(getStatusRedirect(nominationsTab(id), 'Nomination not approved.', 'The nominee sees your reason.'));
+}
+
+/** The candidate's details from a form, with a new photo stored first. */
+async function candidateDetails(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, formData: FormData) {
+  const photo = photoFrom(formData);
+  let photoUrl: string | undefined;
+  if (photo) {
+    const uploaded = await uploadCandidatePhoto(supabase, userId, photo);
+    if ('error' in uploaded) return { error: uploaded.error };
+    photoUrl = uploaded.url;
+  }
+  const text = (name: string) => String(formData.get(name) ?? '').trim();
+  return { full_name: text('full_name'), bio: text('bio') || null, manifesto: text('manifesto') || null, photo_url: photoUrl };
+}
+
+/** Adds a candidate directly: a member, or a name only (election_add_candidate). */
+export async function addCandidate(id: string, _: FormState, formData: FormData): Promise<FormState> {
+  const { supabase, userId } = await guard();
+  const values = valuesOf(formData);
+  if (!values.position) return { error: 'Choose a position.', values };
+  const d = await candidateDetails(supabase, userId, formData);
+  if ('error' in d) return { error: d.error, values };
+  const { error } = await supabase.rpc('election_add_candidate', {
+    p_election: id,
+    p_position: values.position,
+    p_user: values.member || null, // null: a name only (the argument has no default)
+    p_full_name: d.full_name,
+    p_bio: d.bio ?? undefined,
+    p_manifesto: d.manifesto ?? undefined,
+    p_photo_url: d.photo_url
+  } as never);
+  if (error) return { error: dbMessage(error), values };
+  revalidatePath(`/admin/elections/${id}`);
+  redirect(getStatusRedirect(nominationsTab(id), 'Candidate added.', ''));
+}
+
+/**
+ * Fixes a candidate's name, statement or photo. Before the lock anything
+ * goes; after it the database allows exactly these fields (B14). Logged.
+ */
+export async function editCandidate(id: string, candidateId: string, _: FormState, formData: FormData): Promise<FormState> {
+  const { supabase, userId } = await guard();
+  const values = valuesOf(formData);
+  const d = await candidateDetails(supabase, userId, formData);
+  if ('error' in d) return { error: d.error, values };
+  if (d.full_name.length < 2) return { error: 'Give the name to show on the ballot.', values };
+  if (d.manifesto && (d.manifesto.length < 10 || d.manifesto.length > 1000))
+    return { error: 'The platform must be 10 to 1,000 characters, or left empty.', values };
+  const { error } = await supabase
+    .from('candidates')
+    .update({ full_name: d.full_name, bio: d.bio, manifesto: d.manifesto, ...(d.photo_url ? { photo_url: d.photo_url } : {}) })
+    .eq('id', candidateId)
+    .eq('election_id', id);
+  if (error) return { error: dbMessage(error), values };
+  revalidatePath(`/admin/elections/${id}`);
+  redirect(getStatusRedirect(nominationsTab(id), 'Candidate updated.', ''));
 }

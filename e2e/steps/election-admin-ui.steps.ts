@@ -133,7 +133,7 @@ Then(
   }
 );
 
-async function seriousProblems(page: Page) {
+export async function seriousProblems(page: Page) {
   await page.waitForLoadState('networkidle');
   const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
   return violations
@@ -151,6 +151,7 @@ Given(
     const base = `/admin/elections/${this.election!.id}`;
     const paths = [
       base,
+      `${base}?tab=nominations`,
       `${base}?tab=activity`,
       `${base}?tab=settings`,
       ...['basics', 'ballot', 'timeline', 'settings', 'review'].map((s) => `${base}/edit?step=${s}`)

@@ -2,7 +2,8 @@ import {
   safeRedirectPath,
   getPriceString,
   formatPhoneNumber,
-  getSubscriptionInterval
+  getSubscriptionInterval,
+  getStatusRedirect
 } from '@/utils/helpers';
 
 describe('safeRedirectPath (BUG-032)', () => {
@@ -57,5 +58,14 @@ describe('getSubscriptionInterval', () => {
     [price('week', 1), 'Unknown']
   ])('%o → %p', (p, expected) => {
     expect(getSubscriptionInterval(p)).toBe(expected);
+  });
+});
+
+describe('getStatusRedirect', () => {
+  it('adds the message to a path with or without a query', () => {
+    expect(getStatusRedirect('/admin/elections', 'Done.')).toBe('/admin/elections?status=Done.');
+    expect(getStatusRedirect('/admin/elections/e1?tab=nominations', 'Nomination approved.', 'On the ballot.')).toBe(
+      '/admin/elections/e1?tab=nominations&status=Nomination%20approved.&status_description=On%20the%20ballot.'
+    );
   });
 });

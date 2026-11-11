@@ -1674,6 +1674,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      election_add_candidate: {
+        Args: {
+          p_bio?: string
+          p_election: string
+          p_full_name: string
+          p_manifesto?: string
+          p_photo_url?: string
+          p_position: string
+          p_user: string
+        }
+        Returns: string
+      }
       election_archive: {
         Args: { p_election: string }
         Returns: undefined
@@ -1726,6 +1738,21 @@ export type Database = {
       election_lock_ballot: {
         Args: { p_election: string }
         Returns: undefined
+      }
+      election_member_eligible: {
+        Args: { p_election: string; p_user: string }
+        Returns: boolean
+      }
+      election_nominations_open: {
+        Args: { e: Database["public"]["Tables"]["elections"]["Row"] }
+        Returns: boolean
+      }
+      election_nominees: {
+        Args: { p_election: string }
+        Returns: {
+          user_id: string
+          full_name: string
+        }[]
       }
       election_publish: {
         Args: { p_election: string }
@@ -1842,6 +1869,56 @@ export type Database = {
           votes_per_user_avg: number
           suspicious_activity_count: number
         }[]
+      }
+      nomination_check_details: {
+        Args: { p_bio: string; p_full_name: string; p_manifesto: string }
+        Returns: undefined
+      }
+      nomination_create: {
+        Args: {
+          p_bio?: string
+          p_election: string
+          p_full_name?: string
+          p_manifesto?: string
+          p_message?: string
+          p_nominee: string
+          p_photo_url?: string
+          p_position: string
+        }
+        Returns: string
+      }
+      nomination_decide: {
+        Args: { p_approve: boolean; p_nomination: string; p_reason?: string }
+        Returns: undefined
+      }
+      nomination_log: {
+        Args: { p_action: string }
+        Returns: undefined
+      }
+      nomination_respond: {
+        Args: {
+          p_accept: boolean
+          p_bio?: string
+          p_full_name?: string
+          p_manifesto?: string
+          p_nomination: string
+          p_photo_url?: string
+        }
+        Returns: undefined
+      }
+      nomination_update: {
+        Args: {
+          p_bio?: string
+          p_full_name: string
+          p_manifesto?: string
+          p_nomination: string
+          p_photo_url?: string
+        }
+        Returns: undefined
+      }
+      nomination_withdraw: {
+        Args: { p_nomination: string }
+        Returns: undefined
       }
       register_device: {
         Args: { p_platform: string; p_token: string }
