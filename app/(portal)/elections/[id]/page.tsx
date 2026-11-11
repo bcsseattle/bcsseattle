@@ -18,7 +18,7 @@ import { checkFeatureFlag } from '@/utils/server-feature-flags';
 import {
   ballotOffer,
   ballotQuestions,
-  electedUnopposed,
+  electedUnopposedNow,
   electionPhase,
   positionOrder as orderPositions
 } from '@/utils/elections/rules';
@@ -66,6 +66,7 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
   let userVotes = null;
   let candidateSession = null;
   let initiativeSession = null;
+  let combined: { confirmation_code: string; confirmed_at: string | null } | null = null;
 
   if (user) {
     // Check for candidate votes
@@ -92,8 +93,9 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
     hasInitiativeVotes = !!initiativeSessionData?.completed_at;
     initiativeSession = initiativeSessionData;
 
-    // Get all user votes for display
-    if (hasCandidateVotes || hasInitiativeVotes) {
+    // The member's own votes. Having any of a kind counts as voted, whichever
+    // ballot cast them, as the vote handlers decide (W8).
+    {
       const { data: userVotesData } = await supabase
         .from('votes')
         .select(
@@ -112,6 +114,19 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         .eq('election_id', id);
 
       userVotes = userVotesData;
+      hasCandidateVotes ||= !!userVotes?.some((v) => v.candidate_id);
+      hasInitiativeVotes ||= !!userVotes?.some((v) => v.initiative_id);
+      // The election page's own (combined) ballot records one confirmation, not sessions.
+      if (userVotes?.length) {
+        const { data } = await supabase
+          .from('vote_confirmations')
+          .select('confirmation_code, confirmed_at')
+          .eq('user_id', user.id)
+          .eq('election_id', id)
+          .eq('session_type', 'combined')
+          .maybeSingle();
+        combined = data;
+      }
     }
   }
 
@@ -128,13 +143,8 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
   const windows = electionPhase(election);
   const { candidateVotingOpen, votingOpen: isVotingOpen, votingOver: isClosed } = windows;
 
-  // Determine if candidates were elected unopposed
-  // Decided at lock position by position; for elections locked before that,
-  // only once candidate voting has closed (not during nominations), as the app does.
-  const decided = positionOrder.some((p) => p.unopposed_decision || p.vacant);
-  const candidatesElectedUnopposed =
-    electedUnopposed(election, candidates ?? [], candidateVotingOpen, positionOrder) &&
-    (decided || Date.now() > Date.parse(windows.candidateWindow.end));
+  // Elected unopposed: decided at lock, or once candidate voting has closed (W26).
+  const candidatesElectedUnopposed = electedUnopposedNow(election, candidates ?? [], positionOrder);
 
   // Edges included, as the server accepts nominations (W15).
   const isNominationOpen = windows.nominationsOpen;
@@ -149,11 +159,23 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           .select('id, position, status, rejection_reason')
           .eq('election_id', id)
           .eq('nominee_user_id', user.id)
-          .in('status', ['awaiting_acceptance', 'submitted', 'rejected'])
+          .in('status', ['awaiting_acceptance', 'submitted', 'approved', 'rejected'])
       : { data: [] };
   const myNominations = (['draft', 'scheduled'].includes(election.status) ? (myNominationRows ?? []) : []).filter(
     (n) => n.status !== 'awaiting_acceptance' || isNominationOpen
   );
+  // The member's own initiative proposals, until the ballot is locked.
+  const { data: myProposalRows } =
+    managed && user && ['draft', 'scheduled'].includes(election.status)
+      ? await supabase
+          .from('initiative_proposals')
+          .select('id, title, status, rejection_reason')
+          .eq('election_id', id)
+          .eq('proposed_by', user.id)
+          .in('status', ['submitted', 'approved', 'rejected'])
+          .order('created_at')
+      : { data: [] };
+  const myProposals = myProposalRows ?? [];
 
   const supportsUnopposed = supportsUnopposedCandidates(election.type as ElectionType);
 
@@ -190,7 +212,8 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
 
   const votedRows = (kind: 'candidates' | 'initiatives') =>
     (userVotes ?? [])
-      .filter((vote) => (kind === 'candidates' ? vote.candidate_id && vote.vote_type === 'candidates' : vote.initiative_id && vote.vote_type === 'initiatives'))
+      // Whichever ballot cast them: separate (candidates, initiatives) or the combined one (W8).
+      .filter((vote) => (kind === 'candidates' ? vote.candidate_id : vote.initiative_id))
       .map((vote) =>
         kind === 'candidates'
           ? ([vote.candidates?.position ?? '', vote.candidates?.full_name ?? ''] as const)
@@ -233,21 +256,56 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           This is how members will see the election once it’s published. Only admins can see a draft.
         </Banner>
       )}
-      {isNominationOpen && (
+      {isNominationOpen && (managed || positionOrder.length > 0) && (
         <Banner
           tone="info"
-          title="Nominations are open"
+          title={positionOrder.length > 0 ? 'Nominations are open' : 'Initiative proposals are open'}
           action={
-            <Link href={`/elections/${election.id}/nominate`} className={buttonVariants({ size: 'sm' })}>
-              {managed ? 'Nominate' : 'Nominate yourself'}
+            <div className="flex flex-wrap gap-2">
+              {positionOrder.length > 0 && (
+                <Link href={`/elections/${election.id}/nominate`} className={buttonVariants({ size: 'sm' })}>
+                  {managed ? 'Nominate' : 'Nominate yourself'}
+                </Link>
+              )}
+              {managed && (
+                <Link
+                  href={`/elections/${election.id}/propose`}
+                  className={buttonVariants({ size: 'sm', variant: positionOrder.length > 0 ? 'outline' : 'default' })}
+                >
+                  Propose an initiative
+                </Link>
+              )}
+            </div>
+          }
+        >
+          {!managed
+            ? 'Submit your nomination for this election.'
+            : positionOrder.length > 0
+              ? `Nominate yourself or another approved member, or propose a question for members to vote on, by ${formatDeadline(election.nomination_end!)}.`
+              : `Propose a question for members to vote on by ${formatDeadline(election.nomination_end!)}.`}
+        </Banner>
+      )}
+      {myProposals.map((p) => (
+        <Banner
+          key={p.id}
+          tone={p.status === 'rejected' ? 'attention' : 'info'}
+          title={
+            p.status === 'approved'
+              ? 'Your initiative is on the ballot'
+              : p.status === 'submitted'
+                ? 'Your initiative is waiting for review'
+                : 'Your initiative wasn’t approved'
+          }
+          action={
+            <Link href={`/elections/${election.id}/proposals/${p.id}`} className={buttonVariants({ size: 'sm', variant: 'outline' })}>
+              View
+              <span className="sr-only">: {p.title}</span>
             </Link>
           }
         >
-          {managed
-            ? `Nominate yourself or another approved member by ${formatDeadline(election.nomination_end!)}.`
-            : 'Submit your nomination for this election.'}
+          {p.status === 'rejected' ? `“${p.title}”: ${p.rejection_reason}` : `“${p.title}”`}
         </Banner>
-      )}
+      ))}
       {myNominations.map((n) => (
         <Banner
           key={n.id}
@@ -255,7 +313,9 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           title={
             n.status === 'awaiting_acceptance'
               ? `You’ve been nominated for ${n.position}`
-              : n.status === 'submitted'
+              : n.status === 'approved'
+                ? `You’re on the ballot for ${n.position}`
+                : n.status === 'submitted'
                 ? `Your nomination for ${n.position} is waiting for review`
                 : `Your nomination for ${n.position} wasn’t approved`
           }
@@ -265,7 +325,7 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
             </Link>
           }
         >
-          {n.status === 'rejected' ? n.rejection_reason : n.status === 'awaiting_acceptance' ? 'Answer before nominations close.' : 'You can change your details until the ballot is locked.'}
+          {n.status === 'rejected' ? n.rejection_reason : n.status === 'awaiting_acceptance' ? 'Answer before nominations close.' : n.status === 'approved' ? 'You can change your details or withdraw until the ballot is locked.' : 'You can change your details until the ballot is locked.'}
         </Banner>
       ))}
 
@@ -327,22 +387,34 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
 
       {(hasCandidateVotes || hasInitiativeVotes) && (
         <div className="grid gap-4 md:grid-cols-2">
-          {hasCandidateVotes && candidateSession && (
+          {hasCandidateVotes && (
             <VotedCard title="Your leadership votes" rows={votedRows('candidates')}>
-              <ConfirmationLink
-                code={candidateSession.confirmation_code}
-                href={`/elections/${election.id}/vote/candidates/confirmation?code=${candidateSession.confirmation_code}`}
-                when={candidateSession.completed_at}
-              />
+              {candidateSession?.completed_at ? (
+                <ConfirmationLink
+                  code={candidateSession.confirmation_code}
+                  href={`/elections/${election.id}/vote/candidates/confirmation?code=${candidateSession.confirmation_code}`}
+                  when={candidateSession.completed_at}
+                />
+              ) : (
+                combined && (
+                  <ConfirmationLink code={combined.confirmation_code} href={`/elections/${election.id}/vote/confirmation`} when={combined.confirmed_at} />
+                )
+              )}
             </VotedCard>
           )}
-          {hasInitiativeVotes && initiativeSession && (
+          {hasInitiativeVotes && (
             <VotedCard title="Your initiative votes" rows={votedRows('initiatives')}>
-              <ConfirmationLink
-                code={initiativeSession.confirmation_code}
-                href={`/elections/${election.id}/vote/initiatives/confirmation?code=${initiativeSession.confirmation_code}`}
-                when={initiativeSession.completed_at}
-              />
+              {initiativeSession?.completed_at ? (
+                <ConfirmationLink
+                  code={initiativeSession.confirmation_code}
+                  href={`/elections/${election.id}/vote/initiatives/confirmation?code=${initiativeSession.confirmation_code}`}
+                  when={initiativeSession.completed_at}
+                />
+              ) : (
+                combined && (
+                  <ConfirmationLink code={combined.confirmation_code} href={`/elections/${election.id}/vote/confirmation`} when={combined.confirmed_at} />
+                )
+              )}
             </VotedCard>
           )}
         </div>

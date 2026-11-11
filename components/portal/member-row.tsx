@@ -3,6 +3,7 @@ import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { PersonRow } from '@/components/ui/person-row';
 import { TableCell, TableRow } from '@/components/ui/table';
+import { memberState } from '@/utils/membership/state';
 
 // Member statuses with their words and tones (Figma 3:412). "Rejected" isn't in
 // the mock; it follows the same pattern in red.
@@ -55,4 +56,10 @@ export function MemberRow({
       </TableCell>
     </TableRow>
   );
+}
+
+/** A member's standing in words, by the rule the app uses (approval and status together, W25). */
+export function MembershipBadge({ member }: { member: Parameters<typeof memberState>[0] }) {
+  const { label, tone } = memberState(member);
+  return <Badge tone={tone}>{label}</Badge>;
 }

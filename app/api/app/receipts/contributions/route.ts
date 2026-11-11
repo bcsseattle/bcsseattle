@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { GET as contributionsPdf } from '@/app/(portal)/account/[memberId]/contributions/pdf/route';
-import { currentUser, fail, unauthorized } from '@/utils/app-api';
+import { currentUser, fail, pdfOrError, unauthorized } from '@/utils/app-api';
 
 /**
  * The signed-in member's own contribution receipt for ?taxYear=, as a PDF.
@@ -14,5 +14,6 @@ export async function GET(request: NextRequest) {
   const { data: member } = await supabase.from('members').select('id').eq('user_id', user.id).maybeSingle();
   if (!member) return fail('No membership found for this account.', 404);
 
-  return contributionsPdf(request, { params: Promise.resolve({ memberId: member.id }) });
+  // Problems come back as JSON the app can show, not a redirect (W13).
+  return pdfOrError(await contributionsPdf(request, { params: Promise.resolve({ memberId: member.id }) }));
 }

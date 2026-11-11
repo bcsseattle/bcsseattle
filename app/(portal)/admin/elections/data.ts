@@ -13,7 +13,6 @@ export async function requireElectionManagement() {
   if (!(await electionManagementEnabled())) notFound();
 }
 
-const STANDING = ['awaiting_acceptance', 'submitted', 'approved'];
 const UNDECIDED = ['awaiting_acceptance', 'submitted'];
 
 /**
@@ -29,18 +28,18 @@ export async function loadAdminElection(id: string) {
   const { data: election } = await supabase.from('elections').select('*').eq('id', id).maybeSingle();
   if (!election || !user) notFound();
 
-  const [{ data: positions }, { data: initiatives }, { data: candidates }, { data: nominations }] = await Promise.all([
+  const [{ data: positions }, { data: initiatives }, { data: candidates }, { data: nominations }, { data: proposals }] = await Promise.all([
     supabase.from('ballot_positions').select('*').eq('election_id', id).order('display_order'),
     supabase.from('initiatives').select('*').eq('election_id', id).order('ballot_order'),
     supabase.from('candidates').select('id, user_id, full_name, ballot_position_id, withdrawn_at').eq('election_id', id),
-    supabase.from('nominations').select('id, nominee_user_id, status').eq('election_id', id)
+    supabase.from('nominations').select('id, nominee_user_id, status').eq('election_id', id),
+    supabase.from('initiative_proposals').select('id, status').eq('election_id', id)
   ]);
+  const proposalsToReview = (proposals ?? []).filter((p) => p.status === 'submitted').length;
 
   const ctx: AdminContext = {
-    adminIsStanding:
-      (candidates ?? []).some((c) => c.user_id === user.id) ||
-      (nominations ?? []).some((n) => n.nominee_user_id === user.id && STANDING.includes(n.status)),
     undecidedNominations: (nominations ?? []).filter((n) => UNDECIDED.includes(n.status)).length,
+    undecidedProposals: proposalsToReview,
     emptyPositions: (positions ?? [])
       .filter((p) => !p.vacant && !(candidates ?? []).some((c) => c.ballot_position_id === p.id))
       .map((p) => p.title),
@@ -60,6 +59,7 @@ export async function loadAdminElection(id: string) {
   const next = nextAction(phase.phase, {
     canPublish: actions.publish === true,
     nominationsToReview: (nominations ?? []).filter((n) => n.status === 'submitted').length,
+    proposalsToReview,
     ties: ctx.unresolvedTies
   });
 

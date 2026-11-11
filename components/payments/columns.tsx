@@ -36,12 +36,14 @@ export const columns: ColumnDef<Data>[] = [
     },
     cell: ({ row }) => {
       const member: Member = row.getValue('member');
+      // A payment with no matching member says so, as in the app (W9).
+      if (!member?.id) return <span className="text-muted-foreground">Not in the directory</span>;
       return (
         <Link
-          href={`/members/${member?.id}`}
+          href={`/members/${member.id}`}
           className="text-accent hover:text-foreground focus:text-foreground active:text-foreground"
         >
-          {member?.fullName}
+          {member.fullName || 'Unnamed member'}
         </Link>
       );
     }

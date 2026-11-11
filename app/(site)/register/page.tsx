@@ -11,6 +11,8 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getServerFeatureFlag } from '@/utils/server-feature-flags';
 import { FEATURE_FLAGS, createFeatureFlagArray } from '@/utils/feature-flag-constants';
+import { membershipOf } from '@/utils/membership/state';
+import { StatePanel } from '@/components/ui/state-panel';
 interface Props {
   searchParams: Promise<{ configoverride?: string }>;
 }
@@ -66,6 +68,25 @@ export default async function Register(props: Props) {
 
   if (subscription && member?.status === 'active') {
     return redirect('/community-funds');
+  }
+
+  // Someone who has already applied sees where their application stands, not
+  // the form again (W25). A lapsed (inactive) membership can apply again.
+  const membership = membershipOf(member);
+  if (membership === 'pending') return redirect(`/members/${member!.id}/pending`);
+  if (membership === 'active') return redirect('/account');
+  if (membership === 'rejected') {
+    return (
+      <section className="mx-auto my-8 max-w-[600px]">
+        <StatePanel title="Your application wasn’t approved">
+          If you think this is a mistake, or your circumstances have changed, please contact us at{' '}
+          <a href="mailto:info@bcsseattle.org" className="underline underline-offset-2">
+            info@bcsseattle.org
+          </a>
+          .
+        </StatePanel>
+      </section>
+    );
   }
 
   return (

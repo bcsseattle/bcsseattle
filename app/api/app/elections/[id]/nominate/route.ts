@@ -4,6 +4,7 @@ import { currentUser, fail, redirectError, unauthorized } from '@/utils/app-api'
 import { NominateFormSchema } from '@/types';
 import { checkFeatureFlag } from '@/utils/server-feature-flags';
 import { dbMessage, uploadCandidatePhoto } from '@/utils/elections/photos';
+import { notifyNominated } from '@/utils/elections/notify';
 
 /**
  * Nominate yourself, as /elections/[id]/nominate does. Multipart form: fullName,
@@ -19,6 +20,32 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!user) return unauthorized();
 
   const form = await request.formData().catch(() => null);
+
+  // Nominating another member (the website's "Another member"): position (its
+  // title), nominee (their user id) and an optional message. They accept or
+  // decline under My nominations, and are told by notifyNominated.
+  const nominee = String(form?.get('nominee') ?? '');
+  if (nominee && nominee !== user.id) {
+    if (!(await checkFeatureFlag('enableElectionManagement'))) return fail('Nominating another member isn’t available yet.');
+    const { id } = await params;
+    const { data: position } = await supabase
+      .from('ballot_positions')
+      .select('id')
+      .eq('election_id', id)
+      .eq('title', String(form?.get('position') ?? ''))
+      .maybeSingle();
+    if (!position) return fail('Choose a position on this election’s ballot.');
+    const { data: created, error } = await supabase.rpc('nomination_create', {
+      p_election: id,
+      p_position: position.id,
+      p_nominee: nominee,
+      p_message: String(form?.get('message') ?? '').trim() || undefined
+    });
+    if (error) return fail(dbMessage(error));
+    if (created) await notifyNominated(created);
+    return NextResponse.json({ status: 'awaiting_acceptance' });
+  }
+
   const photo = form?.get('photoFile');
   const parsed = NominateFormSchema.safeParse({
     fullName: form?.get('fullName') ?? '',

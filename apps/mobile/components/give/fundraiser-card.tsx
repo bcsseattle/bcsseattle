@@ -16,7 +16,6 @@ export function AppFundraiserCard({ fundraiser, donateHref }: { fundraiser: Fund
       fundraiser={fundraiser}
       href={fundraiserHref(fundraiser.id)}
       donateHref={donateHref ?? `/give/fundraisers/donate/?id=${fundraiser.id}`}
-      hideDonateWhenClosed
       size="lg"
     />
   );

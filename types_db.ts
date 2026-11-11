@@ -992,6 +992,69 @@ export type Database = {
         }
         Relationships: []
       }
+      initiative_proposals: {
+        Row: {
+          additional_info_url: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          description: string
+          election_id: string
+          id: string
+          initiative_id: string | null
+          proposed_by: string
+          rejection_reason: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          additional_info_url?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          description: string
+          election_id: string
+          id?: string
+          initiative_id?: string | null
+          proposed_by: string
+          rejection_reason?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          additional_info_url?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          description?: string
+          election_id?: string
+          id?: string
+          initiative_id?: string | null
+          proposed_by?: string
+          rejection_reason?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "initiative_proposals_election_id_fkey"
+            columns: ["election_id"]
+            isOneToOne: false
+            referencedRelation: "elections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "initiative_proposals_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       initiatives: {
         Row: {
           additional_info_url: string | null
@@ -1848,6 +1911,28 @@ export type Database = {
           issue: string
         }[]
       }
+      fundraiser_gift: {
+        Args: { p_donation: string }
+        Returns: {
+          payment_status: string | null
+          amount: number
+          fundraiser_id: string
+          fundraiser_title: string | null
+          created_at: string
+          donor_name: string | null
+        }[]
+      }
+      fundraiser_supporters: {
+        Args: { p_fundraiser: string }
+        Returns: {
+          id: string
+          amount: number
+          donor_name: string | null
+          message: string | null
+          created_at: string
+          is_anonymous: boolean
+        }[]
+      }
       get_election_vote_count: {
         Args: { election_uuid: string }
         Returns: {
@@ -1896,6 +1981,36 @@ export type Database = {
           votes_per_user_avg: number
           suspicious_activity_count: number
         }[]
+      }
+      initiative_proposal_check: {
+        Args: { p_description: string; p_title: string; p_url: string }
+        Returns: undefined
+      }
+      initiative_proposal_decide: {
+        Args: { p_approve: boolean; p_proposal: string; p_reason?: string }
+        Returns: undefined
+      }
+      initiative_proposal_update: {
+        Args: {
+          p_description: string
+          p_proposal: string
+          p_title: string
+          p_url?: string
+        }
+        Returns: undefined
+      }
+      initiative_proposal_withdraw: {
+        Args: { p_proposal: string }
+        Returns: undefined
+      }
+      initiative_propose: {
+        Args: {
+          p_description: string
+          p_election: string
+          p_title: string
+          p_url?: string
+        }
+        Returns: string
       }
       nomination_check_details: {
         Args: { p_bio: string; p_full_name: string; p_manifesto: string }

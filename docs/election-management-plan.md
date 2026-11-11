@@ -147,8 +147,7 @@ The bylaws say nothing on any of these. **Decided:** B4 (plurality), B5 (run-off
 **Recommendation:** any admin (`users.is_admin`), with one rule. **An admin who is a nominee or candidate in an election can't review, lock, certify, publish, resolve ties, cancel or extend that election.** They can still see it.
 
 - The rule is checked on the server and inside the database functions.
-- **Changed 12 Nov 2026:** an admin who is standing may review the election's nominations, their own included. Each decision is logged with who made it. The other actions still need an admin who isn't standing.
-- If every admin is a candidate, the board needs to make someone else an admin (B10).
+- **Changed 12 Nov 2026:** the rule is dropped. Any admin runs any election, including one they are standing in: reviewing nominations (their own included), locking, extending, cancelling, certifying, publishing and run-offs. Every action is logged with who did it. (Migrations `20261112090000`, `20261112110000`.)
 - A separate election-officer role isn't worth building until the board asks for one. It would be a new flag on `users`, plus the same checks.
 
 ### D8. Certification
@@ -156,7 +155,7 @@ The bylaws say nothing on any of these. **Decided:** B4 (plurality), B5 (run-off
 **Recommendation:**
 
 - **Closing and certifying are separate steps.** Voting closes at its end time, and admins can extend it before then.
-- **Certify** is open to any admin who isn't a candidate in the election. It needs every voting window closed and every tie resolved.
+- **Certify** is open to any admin (D7). It needs every voting window closed and every tie resolved.
   - It freezes the tally into `election_results`, which holds aggregates only.
   - From then on, members and exports read that table, never `votes`.
 - **Undo** ("Reopen certification", with a required reason) works until results are published. It deletes the frozen rows and puts the status back to `ballot_locked`.
@@ -166,6 +165,14 @@ The bylaws say nothing on any of these. **Decided:** B4 (plurality), B5 (run-off
   - Admins see the totals once every voting window has ended, before they certify. Nobody sees totals while voting is open.
 
 ---
+
+### Initiative proposals (B17-B20, added 13 Nov)
+
+- Table `initiative_proposals` (migration `20261113090000`): title, description, link, `submitted → approved | rejected`, or `withdrawn`. Readable by the proposer and admins; written only through `initiative_propose`, `initiative_proposal_update`, `initiative_proposal_withdraw` and `initiative_proposal_decide`. Every change is in the activity log.
+- Approving creates the `initiatives` row and links it. Withdrawing an approved one deletes it; if an admin removes that initiative from the ballot, the proposal shows as not approved ("Taken off the ballot by an admin").
+- The ballot can't be locked while a proposal waits for review (trigger on `elections`), and the admin's next action counts proposals with nominations.
+- Member pages: **Propose an initiative** (`/elections/[id]/propose`, with four sample questions to start from) and the proposal's own page (`/elections/[id]/proposals/[proposalId]`) to edit or withdraw. Admins review under the Nominations tab. The proposer gets an email on the decision (when notifications are on).
+- **In the app** (A10): a Propose screen with the same examples, the member's proposals on the election screen (withdraw there; editing is on the website), and Propose instead of Nominate for an election without positions.
 
 ## 3. Schema changes
 
@@ -285,10 +292,10 @@ Migrations are listed in order. All of them are additive or backfilled, and none
 | `draft` | *(deleted)* | Admin "Delete draft" | Never published. Logged |
 | `draft` | `scheduled` | Admin **Publish** | Title set. At least 1 position with ≥1 seat, or at least 1 initiative. Timeline valid (below). Voting start in the future |
 | `scheduled` | `scheduled` | Admin **Extend nominations** | Before lock. New end is after the old end and before voting start (otherwise the voting dates move too). Reason required |
-| `scheduled` | `ballot_locked` | Admin **Lock ballot** | Nominations window over (or none). No nominations left in `awaiting_acceptance` or `submitted`. Each position has candidates ≥ 1, is marked vacant, or has an unopposed decision. The admin isn't a candidate. The voter roll is snapshotted |
+| `scheduled` | `ballot_locked` | Admin **Lock ballot** | Nominations window over (or none). No nominations left in `awaiting_acceptance` or `submitted`. Each position has candidates ≥ 1, is marked vacant, or has an unopposed decision. The voter roll is snapshotted |
 | `ballot_locked` | `ballot_locked` | Admin **Extend voting** | A voting window hasn't ended yet. New end > old end. Reason required |
 | `ballot_locked` | `ballot_locked` | Admin **Start run-off** | Every voting window has ended. A tie exists on a position. Creates a linked draft run-off election |
-| `ballot_locked` | `certified` | Admin **Certify** | Every voting window has ended. Every tie has a certified run-off. The admin isn't a candidate |
+| `ballot_locked` | `certified` | Admin **Certify** | Every voting window has ended. Every tie has a certified run-off. |
 | `certified` | `ballot_locked` | Admin **Reopen certification** | Results not published. Reason required. Frozen results deleted |
 | `certified` | `completed` | Admin **Publish results** | — |
 | `completed` | `archived` | Admin **Archive** | — |
@@ -494,7 +501,7 @@ Each phase is one PR into `develop`, branched from the previous phase. Following
    - `elections.cancel_reason` is added, so members can see why an election was cancelled. The activity log is admin-only.
    - A new draft starts from a default timeline 45 days out, because the voting dates are required columns.
 3. **Nominations:** the member nominate, accept, decline and withdraw flow, plus My nominations (website and app); admin review and manual add. *As built, it differs from the plan in two ways:*
-   - The app nominates yourself only, and accepts, declines and withdraws. Nominating someone else, editing details and a full My nominations list are on the website.
+   - The app nominates yourself or another member (added 13 Nov), and accepts, declines and withdraws. Editing details and a full My nominations list are on the website.
    - Being on the ballot already (a candidate row from older elections, or one an admin added) counts as an accepted nomination, so nobody can stand twice.
 4. **Ballot and voting:** lock and preview; seats on the ballot (handlers, website, app); turnout; extend and cancel; member pages reading the new state. *As built, it differs from the plan in three ways:*
    - Initiatives can still be edited only in a draft, not up to the lock.
@@ -541,10 +548,14 @@ Each phase is one PR into `develop`, branched from the previous phase. Following
 | B14 | Fixes after lock | **Name, statement and photo can be fixed,** and each change is logged |
 | B15 | Two-person certification | **No.** One admin certifies |
 | B16 | Admin tally before certifying | **Yes,** once every voting window has ended |
+| B17 | Members propose initiatives (13 Nov) | **Yes, admins approve.** A proposal waits for review; approving puts it on the ballot (majority; admins can change the wording or make it ⅔ until the lock), rejecting needs a reason the member sees |
+| B18 | When proposals are open | **The nominations window.** An election without positions can now have one (optional in Timeline) just for proposals; without it, members can't propose |
+| B19 | Support needed | **None.** Any approved, active member can propose; review is the filter |
+| B20 | Limit | **Up to 3** active proposals per member per election |
 | D2 | Status | **Dates plus admin gates.** One shared phase rule, no scheduled job |
 | D3 | Positions | **Per election,** with seats. `position_enum` is dropped |
 | D6 | Notifications | **Email and push, chosen per event** (§2 D6). Sends need separate approval |
-| D7 | Who runs elections | **Any admin,** except in an election where they're a candidate. **Changed 12 Nov:** a standing admin may still review nominations, their own included (logged) |
+| D7 | Who runs elections | **Any admin. Changed 12 Nov:** including an admin who is standing in the election (every action logged) |
 | D8 | Undoing certification | **Allowed until results are published** |
 
 ### Operational

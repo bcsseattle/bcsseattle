@@ -49,3 +49,15 @@ export function lastSignIn(token: string) {
     return 0;
   }
 }
+
+/**
+ * The website's PDF routes answer a problem with a redirect to a page that
+ * shows it (?error=…&error_description=…). The app wants JSON it can show, so
+ * a redirect becomes a 404 with the message; a PDF passes through (W13).
+ */
+export function pdfOrError(res: Response): Response {
+  if (res.status < 300 || res.status >= 400) return res;
+  const location = res.headers.get('location') ?? '';
+  const params = new URL(location, 'http://localhost').searchParams;
+  return fail(params.get('error_description') || params.get('error') || 'There’s no receipt to show yet.', 404);
+}

@@ -36,7 +36,7 @@ Then('the call should be refused with {string}', async function (this: E2EWorld,
   expect(this.apiError, `returned ${JSON.stringify(this.rows?.data)}`).toContain(message);
 });
 
-Then('the election status should still be {string}', async function (this: E2EWorld, status: string) {
+Then('the election status should (still )be {string}', async function (this: E2EWorld, status: string) {
   const { data } = await admin.from('elections').select('status').eq('id', this.election!.id).single();
   expect(data?.status).toBe(status);
 });

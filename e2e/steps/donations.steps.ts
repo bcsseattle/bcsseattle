@@ -122,7 +122,7 @@ Then('my donation should be marked as completed', async function (this: E2EWorld
   expect(data?.stripe_payment_id).toMatch(/^pi_/);
 });
 
-Given(/^a (completed|pending) \$(\d+) donation by a guest donor$/, async function (this: E2EWorld, status: 'completed' | 'pending', dollars: string) {
+Given(/^a (completed|pending|refunded) \$(\d+) donation by a guest donor$/, async function (this: E2EWorld, status: 'completed' | 'pending' | 'refunded', dollars: string) {
   this.donation = await createDonation(this.cleanup, { amountCents: Number(dollars) * 100, status });
 });
 
@@ -244,4 +244,44 @@ When('I continue past my donor details without a name', async function (this: E2
 
 Then('I should still be on the donor details step', async function (this: E2EWorld) {
   await expect(this.page.getByRole('button', { name: 'Continue to payment' })).toBeVisible();
+});
+
+// W12: a signed-in giver's gift is filed under their own donor record.
+Given('another donor has given before', async function (this: E2EWorld) {
+  const email = uniqueEmail('other-donor');
+  const { data, error } = await admin.from('donors').insert({ email, full_name: 'Other Donor', donor_type: 'individual' }).select('id').single();
+  if (error) throw new Error(error.message);
+  this.data.otherDonorId = data.id;
+  this.data.otherDonorEmail = email;
+  this.cleanup.push(async () => {
+    await admin.from('donations').delete().eq('donor_id', data.id);
+    await admin.from('donors').delete().eq('id', data.id);
+  });
+});
+
+When("I donate $100 once by card giving that donor's email", async function (this: E2EWorld) {
+  await chooseDonation(this.page, '100', 'once');
+  await enterDonor(this, this.data.otherDonorEmail as string);
+  await this.page.getByRole('button', { name: /^Donate USD/ }).click();
+  await this.page.waitForURL(/checkout\.stripe\.com/, { waitUntil: 'commit', timeout: 30_000 });
+});
+
+Then('my donation should be filed under my own donor record', async function (this: E2EWorld) {
+  const { data: mine } = await admin.from('donors').select('id').eq('user_id', this.me!.id);
+  expect(mine ?? [], 'a donor record linked to my account').toHaveLength(1);
+  const { count: theirs } = await admin
+    .from('donations')
+    .select('id', { count: 'exact', head: true })
+    .eq('donor_id', this.data.otherDonorId as string);
+  expect(theirs).toBe(0);
+  const { count: ours } = await admin.from('donations').select('id', { count: 'exact', head: true }).eq('donor_id', mine![0].id);
+  expect(ours).toBe(1);
+});
+
+When('Stripe reports that checkout for the donation expired', async function (this: E2EWorld) {
+  const event = checkoutCompleted({ type: 'donation', donation_id: this.donation!.id }, 10_000);
+  event.type = 'checkout.session.expired';
+  (event.data.object as Record<string, unknown>).payment_status = 'unpaid';
+  const res = await postWebhook(event);
+  expect(res.status, res.body).toBe(200);
 });

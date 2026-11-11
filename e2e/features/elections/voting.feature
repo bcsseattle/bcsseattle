@@ -66,6 +66,16 @@ Feature: Voting in member elections
     When I submit the combined ballot with a vote for "Hani"
     Then my vote for "Hani" should be recorded
 
+  @P1 @W8
+  Scenario: After voting on the election page's ballot, the page shows the votes, not the ballot
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an approved member
+    When I submit the combined ballot with a vote for "Hani"
+    And I open the election
+    Then I should see "Your leadership votes"
+    And I should see "Hani"
+    And I should not see a "Review votes" button
+
   @P1 @BUG-052
   Scenario: An initiative vote on the combined ballot is recorded
     Given there is an open election with the initiative "Build a community garden"
@@ -79,6 +89,15 @@ Feature: Voting in member elections
     And I am signed in as an approved member
     When I go to "/elections"
     Then the elections list should mark the election as "Leadership"
+
+  @P1
+  Scenario: A closed election is listed under Past, with its results
+    Given there is a closed election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an approved member
+    When I go to "/elections"
+    And I open the "Past" tab
+    And I follow the election's "Results" link
+    Then I should be on the election results
 
   @P1 @api @BUG-060
   Scenario: Candidate voting doesn't open before its own start date

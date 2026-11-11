@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
-import { isCandidateVotingOpen, shouldShowUnopposedStatus } from '@/utils/election-config';
+import { isCandidateVotingOpen } from '@/utils/election-config';
 import dayjs from '@/libs/dayjs';
-import { electionPhase } from '@/utils/elections/rules';
+import { electedUnopposedNow, electionPhase, positionOrder } from '@/utils/elections/rules';
 
 interface CandidateResult {
   id: string;
@@ -140,7 +140,20 @@ export async function GET(
     const candidateVotingOpen = await isCandidateVotingOpen(id, nowUtc);
     const initiativeVotingOpen = nowUtc.isAfter(dayjs.utc(election.start_date)) && 
                                 nowUtc.isBefore(dayjs.utc(election.end_date));
-    const candidatesElectedUnopposed = await shouldShowUnopposedStatus(id, candidateVotingOpen, true); // We'll check if candidates exist later
+    // The same rule as the election page: never during nominations (W26).
+    const [{ data: ballotPositions }, { data: standing }] = await Promise.all([
+      supabase
+        .from('ballot_positions')
+        .select('position:title, description, display_order, seats, vacant, unopposed_decision')
+        .eq('election_id', id)
+        .order('display_order'),
+      supabase.from('candidates').select('position').eq('election_id', id)
+    ]);
+    const candidatesElectedUnopposed = electedUnopposedNow(
+      election,
+      standing ?? [],
+      positionOrder(election.type, ballotPositions, standing ?? [])
+    );
 
     // Get overall vote statistics using the database function
     const { data: voteStats, error: statsError } = await supabase

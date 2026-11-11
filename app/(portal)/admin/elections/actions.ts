@@ -14,6 +14,7 @@ import {
   notifyCancelled,
   notifyDatesChanged,
   notifyDecided,
+  notifyProposalDecided,
   notifyExtended,
   notifyPublished,
   notifyResultsPublished
@@ -353,6 +354,24 @@ export async function rejectNomination(id: string, nominationId: string, reason:
   await notifyDecided(nominationId);
   revalidatePath(`/admin/elections/${id}`);
   redirect(getStatusRedirect(nominationsTab(id), 'Nomination not approved.', 'The nominee sees your reason.'));
+}
+
+export async function approveProposal(id: string, proposalId: string): Promise<FormState> {
+  const { supabase } = await guard();
+  const { error } = await supabase.rpc('initiative_proposal_decide', { p_proposal: proposalId, p_approve: true });
+  if (error) return { error: dbMessage(error) };
+  await notifyProposalDecided(proposalId);
+  revalidatePath(`/admin/elections/${id}`);
+  redirect(getStatusRedirect(nominationsTab(id), 'Initiative approved.', 'It’s on the ballot. You can change its wording or threshold under Ballot until the lock.'));
+}
+
+export async function rejectProposal(id: string, proposalId: string, reason: string): Promise<FormState> {
+  const { supabase } = await guard();
+  const { error } = await supabase.rpc('initiative_proposal_decide', { p_proposal: proposalId, p_approve: false, p_reason: reason });
+  if (error) return { error: dbMessage(error) };
+  await notifyProposalDecided(proposalId);
+  revalidatePath(`/admin/elections/${id}`);
+  redirect(getStatusRedirect(nominationsTab(id), 'Initiative not approved.', 'The member sees your reason.'));
 }
 
 /** The candidate's details from a form, with a new photo stored first. */
