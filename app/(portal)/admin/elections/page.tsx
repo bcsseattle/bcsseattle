@@ -1,14 +1,13 @@
 import Link from 'next/link';
+import { LegacyElectionsTable } from '@/components/admin/elections/legacy-elections-table';
 import { Plus } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PageHeader } from '@/components/portal/page-header';
 import { ElectionsList, type ElectionListRow } from '@/components/admin/elections/elections-list';
 import { createClient } from '@/utils/supabase/server';
 import dayjs from '@/libs/dayjs';
-import { formatDate, formatDeadline } from '@/utils/format';
+import { formatDeadline } from '@/utils/format';
 import { ADMIN_TAB, electionPhase, keyDate, nextAction, validateTimeline, type NextAction } from '@/utils/elections/rules';
 import { electionManagementEnabled } from './data';
 
@@ -97,33 +96,7 @@ async function LegacyElections() {
       </CardHeader>
       <CardContent>
         {elections?.length ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Election</TableHead>
-                <TableHead>Voting period</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Links</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {elections.map((e) => (
-                <TableRow key={e.id}>
-                  <TableCell className="font-medium">{e.title}</TableCell>
-                  <TableCell>
-                    {formatDate(e.start_date)} – {formatDate(e.end_date)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={status(e) === 'Open' ? 'default' : 'secondary'}>{status(e)}</Badge>
-                  </TableCell>
-                  <TableCell className="space-x-3 text-right">
-                    <Link className="underline" href={`/elections/${e.id}`}>View</Link>
-                    <Link className="underline" href={`/elections/${e.id}/results`}>Results</Link>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <LegacyElectionsTable elections={elections.map((e) => ({ ...e, status: status(e) }))} />
         ) : (
           <p className="text-sm text-muted-foreground">No elections yet.</p>
         )}
