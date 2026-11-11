@@ -229,11 +229,6 @@ function Overview({ data }: { data: AdminElection }) {
           {notice}
         </Banner>
       )}
-      {ctx.adminIsStanding && (
-        <Banner tone="info" title="You’re standing in this election">
-          You can review its nominations, your own included; each decision is logged with your name. Another admin has to lock, extend, cancel, certify and publish it.
-        </Banner>
-      )}
 
       {election.status !== 'cancelled' && (
         <Panel title="Where it stands">
@@ -343,11 +338,6 @@ async function Nominations({ data }: { data: AdminElection }) {
             : 'The ballot is locked. Candidates’ names, statements and photos can still be corrected.'}
         </Banner>
       )}
-      {ctx.adminIsStanding && (
-        <Banner tone="info" title="You’re standing in this election">
-          You can still approve or reject its nominations, your own included. Each decision is recorded with your name in the activity log.
-        </Banner>
-      )}
       {positions.map((p) => {
         const here = (nominations ?? []).filter((n) => n.ballot_position_id === p.id && n.status !== 'approved');
         const onBallot = (candidates ?? []).filter((c) => c.ballot_position_id === p.id);
@@ -407,7 +397,7 @@ async function Nominations({ data }: { data: AdminElection }) {
           </Panel>
         );
       })}
-      {['draft', 'scheduled'].includes(election.status) && !ctx.adminIsStanding && (
+      {['draft', 'scheduled'].includes(election.status) && (
         <Panel title="Add a candidate" subtitle="For a nomination made on paper or at a meeting. It’s recorded in the activity log.">
           <AddCandidateForm
             action={addCandidate.bind(null, election.id)}
@@ -430,7 +420,6 @@ async function BallotTab({ data }: { data: AdminElection }) {
   const { election, positions, initiatives, candidates, ctx, actions } = data;
   const id = election.id;
   const open = election.status === 'scheduled' || election.status === 'draft';
-  const canAct = !ctx.adminIsStanding;
   const electByDefault =
     election.show_unopposed_status ?? ELECTION_TYPE_CONFIGS[(election.type ?? 'leadership') as ElectionType].defaultShowUnopposedStatus;
   const standing = (p: (typeof positions)[number]) => candidates.filter((c) => c.ballot_position_id === p.id);
@@ -503,7 +492,7 @@ async function BallotTab({ data }: { data: AdminElection }) {
                           {c.full_name}
                           {c.withdrawn_at && <span className="text-muted-foreground"> (withdrawn)</span>}
                         </span>
-                        {election.status === 'ballot_locked' && !data.phase.votingOver && !c.withdrawn_at && canAct && (
+                        {election.status === 'ballot_locked' && !data.phase.votingOver && !c.withdrawn_at && (
                           <WithdrawCandidateButton run={withdrawCandidate.bind(null, id, c.id)} name={c.full_name} />
                         )}
                       </li>
@@ -515,7 +504,7 @@ async function BallotTab({ data }: { data: AdminElection }) {
                     <span className="text-muted-foreground">
                       {open ? 'On the ballot?' : p.decision === 'elect' ? 'Elected unopposed' : 'Kept on the ballot'}
                     </span>
-                    {open && canAct && (
+                    {open && (
                       <>
                         <DecisionButton pressed={p.decision === 'elect'} run={decidePosition.bind(null, id, p.id, 'elect')}>
                           Elect unopposed
@@ -527,7 +516,7 @@ async function BallotTab({ data }: { data: AdminElection }) {
                     )}
                   </div>
                 )}
-                {(state === 'No candidates' || state === 'Vacant') && open && canAct && (
+                {(state === 'No candidates' || state === 'Vacant') && open && (
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="text-muted-foreground">
                       {p.vacant ? 'The Board fills it later (Art. VI §4 for officers).' : 'Mark it vacant, or extend nominations below.'}
@@ -738,9 +727,7 @@ async function ResultsTab({ data }: { data: AdminElection }) {
                     </Link>
                   </>
                 ) : (
-                  !ctx.adminIsStanding && (
-                    <StartRunoffButton run={startRunoff.bind(null, id, p.id)} position={p.title} names={tied.map((r) => name(r.candidate_id))} />
-                  )
+                  <StartRunoffButton run={startRunoff.bind(null, id, p.id)} position={p.title} names={tied.map((r) => name(r.candidate_id))} />
                 )}
               </div>
             )}

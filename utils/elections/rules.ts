@@ -301,8 +301,6 @@ export type AdminAction =
   | 'archive';
 
 export type AdminContext = {
-  /** The admin is a nominee or candidate in this election (D7). */
-  adminIsStanding: boolean;
   /** Nominations still awaiting acceptance or review. */
   undecidedNominations: number;
   /** Positions with no candidate that aren't marked vacant. */
@@ -322,8 +320,7 @@ export type AdminContext = {
  */
 export function adminActions(e: PhaseInput, ctx: AdminContext, now = Date.now()): Record<AdminAction, true | string> {
   const p = electionPhase(e, now);
-  const standing = ctx.adminIsStanding ? 'You’re standing in this election, so another admin has to do this.' : null;
-  const guard = (ok: boolean, reason: string): true | string => (standing ?? (ok ? true : reason)) as true | string;
+  const guard = (ok: boolean, reason: string): true | string => (ok ? true : reason);
   const scheduledOrLocked = e.status === 'scheduled' || e.status === 'ballot_locked';
   const timeline = validateTimeline(e, { hasPositions: ctx.positionCount > 0 && !ctx.isRunoff, now });
   const firstError = Object.values(timeline.errors)[0];

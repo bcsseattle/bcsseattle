@@ -148,7 +148,6 @@ describe('electionPhase', () => {
 
 describe('adminActions', () => {
   const ready: AdminContext = {
-    adminIsStanding: false,
     undecidedNominations: 0,
     emptyPositions: [],
     candidateCount: 3,
@@ -213,13 +212,6 @@ describe('adminActions', () => {
     expect(adminActions({ ...base, status: 'completed' }, ready, now).reopen_certification).toMatch(/aren’t published/);
   });
 
-  it('blocks an admin who is standing in the election (D7)', () => {
-    const standing = { ...ready, adminIsStanding: true };
-    const actions = adminActions(locked, standing, at(base.end_date) + ms);
-    expect(actions.certify).toMatch(/standing in this election/);
-    expect(actions.cancel).toMatch(/standing in this election/);
-    expect(adminActions(base, standing, at(base.nomination_end!) + ms).lock_ballot).toMatch(/standing/);
-  });
 });
 
 describe('validateTimeline', () => {
