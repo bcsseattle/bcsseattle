@@ -172,7 +172,7 @@ The bylaws say nothing on any of these. **Decided:** B4 (plurality), B5 (run-off
 - Approving creates the `initiatives` row and links it. Withdrawing an approved one deletes it; if an admin removes that initiative from the ballot, the proposal shows as not approved ("Taken off the ballot by an admin").
 - The ballot can't be locked while a proposal waits for review (trigger on `elections`), and the admin's next action counts proposals with nominations.
 - Member pages: **Propose an initiative** (`/elections/[id]/propose`, with four sample questions to start from) and the proposal's own page (`/elections/[id]/proposals/[proposalId]`) to edit or withdraw. Admins review under the Nominations tab. The proposer gets an email on the decision (when notifications are on).
-- **Not in the app yet:** members propose on the website only (app gap A10).
+- **In the app** (A10): a Propose screen with the same examples, the member's proposals on the election screen (withdraw there; editing is on the website), and Propose instead of Nominate for an election without positions.
 
 ## 3. Schema changes
 

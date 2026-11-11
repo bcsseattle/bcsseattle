@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ChevronRight, UserPlus } from 'lucide-react';
+import { ChevronRight, MessageSquarePlus, UserPlus } from 'lucide-react';
 import { PhaseTimeline } from '@/components/elections/phase-timeline';
 import { VotedCard } from '@/components/elections/voted-card';
 import { ListGroup, ListRow } from '@/components/portal/list-row';
@@ -18,6 +18,7 @@ import {
   type ElectionData
 } from '~/components/elections/election';
 import { MyNominations } from '~/components/elections/my-nominations';
+import { MyProposals } from '~/components/elections/my-proposals';
 import { useMember } from '~/lib/member';
 import { useSession } from '~/lib/session';
 import { useData } from '~/lib/use-data';
@@ -44,7 +45,10 @@ function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; 
   const { election: e, phase: p } = d;
   const canBallot =
     p.votingOpen && !!isActive && d.onRoll && (d.offerCandidates || d.offerInitiatives);
-  const canNominate = p.nominationsOpen && !d.myCandidacy && !d.myAcceptedNomination;
+  const canNominate = p.nominationsOpen && d.hasPositions && !d.myCandidacy && !d.myAcceptedNomination;
+  // Initiative proposals share the nominations window, up to 3 each (A10, B18, B20).
+  const canPropose = p.nominationsOpen && !!isActive && d.myProposals.filter((x) => x.status !== 'rejected').length < 3;
+  const propose = { label: 'Propose an initiative', href: `/elections/propose/?id=${e.id}` };
   const results = `/elections/results/?id=${e.id}`;
 
   // One primary action: vote, else nominate, else results once closed.
@@ -52,7 +56,9 @@ function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; 
     ? { label: 'Vote', href: `/elections/ballot/?id=${e.id}` }
     : canNominate
       ? { label: 'Nominate yourself', href: `/elections/nominate/?id=${e.id}` }
-      : p.stage === 'results_published' || p.stage === 'archived'
+      : canPropose && !d.hasPositions
+        ? propose
+        : p.stage === 'results_published' || p.stage === 'archived'
         ? { label: 'View results', href: results }
         : null;
 
@@ -77,6 +83,7 @@ function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; 
       />
 
       <MyNominations d={d} reload={reload} />
+      <MyProposals d={d} reload={reload} />
       {d.electedUnopposed && (
         <Banner tone="success" title="Candidates elected unopposed">
           Every position had one candidate, so they are elected without a vote.
@@ -118,16 +125,12 @@ function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; 
           Results are published once the votes are certified.
         </Banner>
       )}
-      {canNominate && primary?.label !== 'Nominate yourself' && (
+      {((canNominate && primary?.label !== 'Nominate yourself') || (canPropose && primary !== propose)) && (
         <ListGroup>
           {canNominate && primary?.label !== 'Nominate yourself' && (
-            <ListRow
-              label="Nominate yourself"
-              icon={UserPlus}
-              href={`/elections/nominate/?id=${e.id}`}
-            />
+            <ListRow label="Nominate yourself" icon={UserPlus} href={`/elections/nominate/?id=${e.id}`} />
           )}
-
+          {canPropose && primary !== propose && <ListRow label={propose.label} icon={MessageSquarePlus} href={propose.href} />}
         </ListGroup>
       )}
 

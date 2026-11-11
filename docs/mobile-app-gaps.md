@@ -71,12 +71,12 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | A5 | **Browser testing needs a workaround for CORS.** The website sends CORS headers only to the app's native origins (`capacitor://localhost`, `https://localhost`), so testing the app in a desktop browser needs `--disable-web-security` or a relay. | Add a dev-only origin (for example `http://localhost:3200`) to `APP_ORIGINS` when `NODE_ENV !== 'production'`. Website change. |
 | A6 | **Local Checkout can't complete.** The e2e stack's active prices have fake Stripe IDs (`price_e2e_*`). | Seed real Stripe test-mode price IDs into the e2e stack. |
 | A9 | **Not yet checked live:** the contribution receipt PDF itself (no local member has Stripe payments), the portal return URL in Stripe, and the native share sheet. | The share code is the same path the donation receipt used successfully. Check on device in the manual checklist. |
-| A10 | **Members can't propose initiative questions in the app** (B17-B20); the website has it. The app doesn't break: it doesn't read `initiative_proposals`. One quirk: for an initiative-only election with a nominations window, the app's list offers **Nominate**, which opens a nominate screen with no positions. | Add a propose screen calling `initiative_propose`, and offer **Propose** instead of **Nominate** when the election has no positions. |
 
 ## Done
 
 | # | Gap | Fixed in |
 |---|---|---|
+| A10 | The app couldn't propose initiatives and offered Nominate on initiative-only elections; it now has a Propose screen with the examples, lists your proposals (withdraw in the app) and offers Propose instead | branch `elections/initiative-proposals` |
 | — | Privacy page was "Under construction" | PR #21 |
 | — | App links named `bcsseattle.org`, which redirects; now `www.bcsseattle.org` | `da1cdb8`, Phase 3 |
 | — | The app's donation route could charge a monthly gift once | `2578bb8`, Phase 3 |

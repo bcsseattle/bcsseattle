@@ -58,7 +58,7 @@ export async function loadElection(id: string, userId: string) {
     supabase.from('elections').select('*').eq('id', id).maybeSingle()
   );
   if (!election) throw new Error('This election was not found.');
-  const [candidates, initiatives, dbPositions, sessions, confirmations, votes, nominations, roll] =
+  const [candidates, initiatives, dbPositions, sessions, confirmations, votes, nominations, roll, proposals] =
     await Promise.all([
       rows(
         supabase
@@ -119,6 +119,16 @@ export async function loadElection(id: string, userId: string) {
           .select('user_id')
           .eq('election_id', id)
           .eq('user_id', userId)
+      ),
+      // The member's own initiative proposals (B17-B20); RLS shows them to the proposer.
+      rows(
+        supabase
+          .from('initiative_proposals')
+          .select('id, title, status, rejection_reason')
+          .eq('election_id', id)
+          .eq('proposed_by', userId)
+          .neq('status', 'withdrawn')
+          .order('created_at')
       )
     ]);
   const positions = positionOrder(
@@ -171,6 +181,9 @@ export async function loadElection(id: string, userId: string) {
     offerInitiatives,
     myCandidacy: candidates.find((c) => c.user_id === userId) ?? null,
     myNominations: nominations,
+    myProposals: proposals,
+    /** The election has positions of its own (nominations); without, its window is for proposals only. */
+    hasPositions: dbPositions.length > 0,
     onRoll: roll.length > 0,
     /** A nomination the member has accepted (waiting for review, or approved). */
     myAcceptedNomination:
