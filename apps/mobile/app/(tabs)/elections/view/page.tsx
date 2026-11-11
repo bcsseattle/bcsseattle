@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ChevronRight, MessageSquarePlus, UserPlus } from 'lucide-react';
+import { ChevronRight, MessageSquarePlus, UserPlus, Users } from 'lucide-react';
 import { PhaseTimeline } from '@/components/elections/phase-timeline';
 import { VotedCard } from '@/components/elections/voted-card';
 import { ListGroup, ListRow } from '@/components/portal/list-row';
@@ -49,6 +49,8 @@ function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; 
   // Initiative proposals share the nominations window, up to 3 each (A10, B18, B20).
   const canPropose = p.nominationsOpen && !!isActive && d.myProposals.filter((x) => x.status !== 'rejected').length < 3;
   const propose = { label: 'Propose an initiative', href: `/elections/propose/?id=${e.id}` };
+  // Anyone who can take part nominates others too, standing or not (B2).
+  const canNominateOthers = p.nominationsOpen && d.hasPositions && !!isActive;
   const results = `/elections/results/?id=${e.id}`;
 
   // One primary action: vote, else nominate, else results once closed.
@@ -125,10 +127,13 @@ function Detail({ d, isActive, reload }: { d: ElectionData; isActive?: boolean; 
           Results are published once the votes are certified.
         </Banner>
       )}
-      {((canNominate && primary?.label !== 'Nominate yourself') || (canPropose && primary !== propose)) && (
+      {((canNominate && primary?.label !== 'Nominate yourself') || canNominateOthers || (canPropose && primary !== propose)) && (
         <ListGroup>
           {canNominate && primary?.label !== 'Nominate yourself' && (
             <ListRow label="Nominate yourself" icon={UserPlus} href={`/elections/nominate/?id=${e.id}`} />
+          )}
+          {canNominateOthers && (
+            <ListRow label="Nominate a member" icon={Users} href={`/elections/nominate-member/?id=${e.id}`} />
           )}
           {canPropose && primary !== propose && <ListRow label={propose.label} icon={MessageSquarePlus} href={propose.href} />}
         </ListGroup>

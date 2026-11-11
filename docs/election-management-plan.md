@@ -501,7 +501,7 @@ Each phase is one PR into `develop`, branched from the previous phase. Following
    - `elections.cancel_reason` is added, so members can see why an election was cancelled. The activity log is admin-only.
    - A new draft starts from a default timeline 45 days out, because the voting dates are required columns.
 3. **Nominations:** the member nominate, accept, decline and withdraw flow, plus My nominations (website and app); admin review and manual add. *As built, it differs from the plan in two ways:*
-   - The app nominates yourself only, and accepts, declines and withdraws. Nominating someone else, editing details and a full My nominations list are on the website.
+   - The app nominates yourself or another member (added 13 Nov), and accepts, declines and withdraws. Editing details and a full My nominations list are on the website.
    - Being on the ballot already (a candidate row from older elections, or one an admin added) counts as an accepted nomination, so nobody can stand twice.
 4. **Ballot and voting:** lock and preview; seats on the ballot (handlers, website, app); turnout; extend and cancel; member pages reading the new state. *As built, it differs from the plan in three ways:*
    - Initiatives can still be edited only in a draft, not up to the lock.
