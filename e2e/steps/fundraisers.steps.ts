@@ -337,3 +337,11 @@ Then("the fundraiser's donor list should show the ${int} gift without a name or 
   expect(error).toBeNull();
   expect(data).toEqual([expect.objectContaining({ amount: dollars, donor_name: null, message: null, is_anonymous: true })]);
 });
+
+Given('there is a fundraiser {string} that ended yesterday', async function (this: E2EWorld, title: string) {
+  this.fundraiser = await createFundraiser(this.cleanup, await organiser(this), {
+    title: `${title} ${Math.random().toString(36).slice(2, 6)}`,
+    ends_at: new Date(Date.now() - 86_400_000).toISOString()
+  });
+  this.data[title] = this.fundraiser.id;
+});

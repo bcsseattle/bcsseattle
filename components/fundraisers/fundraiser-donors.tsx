@@ -44,7 +44,7 @@ export async function FundraiserDonors({ fundraiserId }: FundraiserDonorsProps) 
             <div key={donor.id} className="space-y-1">
               <div className="flex items-center justify-between">
                 <p className="font-medium">
-                  {donor.is_anonymous ? 'Anonymous Donor' : donor.donor_name}
+                  {donor.is_anonymous ? 'Anonymous donor' : donor.donor_name || 'Anonymous donor'}
                 </p>
                 <p className="font-medium">{formatMoney((donor.amount ?? 0) * 100)}</p>
               </div>

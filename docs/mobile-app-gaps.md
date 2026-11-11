@@ -13,7 +13,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | W7 | **Confusing column name:** `members.stripe_customer_id` holds `customers.id` (the user's UUID), not the Stripe ID. The Stripe ID is `customers.stripe_customer_id`. | schema | Easy to misread; already caught one draft of the deletion migration. | Rename to `customer_id` in a migration, or at least add a column comment. *Schema change: needs approval.* |
 | W9 | **Payments with no matching member** show a blank name on the website's Funds page. The app shows "Not in the directory". | `app/(portal)/community-funds` | Cosmetic. | Use the same wording on the website. |
 | W13 | **The app's receipt routes report problems as redirects to website pages**, not `{ error }` JSON, because they wrap the website's PDF routes. The app shows a general "no receipt" message. | `app/api/app/receipts/contributions`, `app/api/app/donations/[donationId]/pdf` | Members don't see the real reason (for example, no payments that year). | Return 4xx JSON with the message from the app routes. |
-| W22 | **Closed fundraisers still show Donate** on the card and "Donate Now" on the detail page (the donate page then refuses). The detail page says "Ends 2 days ago". An unnamed donor shows a blank name. | `components/fundraisers/fundraiser-card.tsx`, `fundraiser-details.tsx:82-88` | Confusing dead ends. | Hide Donate when closed and say "Ended {date}", as the app does. |
 | W25 | **Member status wording and rules differ:** the website badge uses `status` only ("Active", "Pending", "Rejected"), while the app also requires `isApproved` for active. The directory says "Yet to choose contribution plan" in red. `/register` shows the form again to people who already applied. | `components/portal/member-row.tsx:9-21`, `components/member-list.tsx`, `app/(site)/register` | Inconsistent states across website and app. | One shared member-state rule, and show the application's state on `/register`. |
 
 ## Production settings and accounts (yours to do)
@@ -64,6 +63,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Gap | Fixed in |
 |---|---|---|
+| W22 | Closed fundraisers still offered Donate and said "Ends 2 days ago"; now no Donate, "Ended {date}", and unnamed donors show as anonymous | branch `gaps/website-fixes` |
 | W21 | The donate form offered purposes and frequencies it couldn't accept or charge, and pre-filled "Other amount" with 1000; it now offers what the app does | branch `gaps/website-fixes` |
 | W20 | A refunded donation showed "confirming your payment" for ever; it now says it was refunded | branch `gaps/website-fixes` |
 | W19 | The website promised receipt emails that aren't sent; the copy now says the receipt is there to download | branch `gaps/website-fixes` |

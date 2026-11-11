@@ -17,8 +17,6 @@ interface FundraiserCardProps {
   href?: string;
   /** Where Donate goes; the website's donate page by default. */
   donateHref?: string;
-  /** Leave Donate off once the fundraiser has closed (the website still shows it: W22). */
-  hideDonateWhenClosed?: boolean;
   /** Donate's button size: the app passes `lg` for a 44pt target. */
   size?: 'default' | 'lg';
 }
@@ -45,7 +43,8 @@ export function FundraiserImage({ src, className = 'h-[216px]' }: { src: string 
  * progress is ink. The title link covers the card, and Donate is its own link
  * above it, so no control is nested inside another (BUG-066).
  */
-export function FundraiserCard({ fundraiser, href, donateHref, hideDonateWhenClosed, size }: FundraiserCardProps) {
+export function FundraiserCard({ fundraiser, href, donateHref, size }: FundraiserCardProps) {
+  const open = isOpen(fundraiser);
   const raised = fundraiser.current_amount ?? 0;
   const progress = percentRaised(fundraiser);
   const category = categoryLabel(fundraiser.category);
@@ -76,9 +75,12 @@ export function FundraiserCard({ fundraiser, href, donateHref, hideDonateWhenClo
           </span>
         </div>
         {fundraiser.ends_at && (
-          <span className="text-caption text-muted-foreground">Ends {formatDate(fundraiser.ends_at)}</span>
+          <span className="text-caption text-muted-foreground">
+            {Date.parse(fundraiser.ends_at) < Date.now() ? 'Ended' : 'Ends'} {formatDate(fundraiser.ends_at)}
+          </span>
         )}
-        {!(hideDonateWhenClosed && !isOpen(fundraiser)) && (
+        {/* No Donate once it has closed, on the website and in the app (W22). */}
+        {open && (
           <Link
             href={donateHref ?? `/fundraisers/${fundraiser.id}/donate`}
             className={buttonVariants({ variant: 'outline', size, className: 'relative z-10 mt-auto w-full' })}
