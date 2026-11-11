@@ -58,6 +58,8 @@ export default async function EditElectionPage(props: {
   // A run-off has positions but no nominations (its candidates are the tied ones).
   // No nominations window for a run-off, or once the ballot is locked (nominations are over).
   const hasPositions = positions.length > 0 && !election.runoff_of && election.status !== 'ballot_locked';
+  // Without positions the window is optional: it's when members propose initiatives.
+  const nominations = election.runoff_of || election.status === 'ballot_locked' ? 'none' : hasPositions ? 'required' : 'optional';
 
   let body: React.ReactNode;
   if (step === 'basics') {
@@ -109,7 +111,7 @@ export default async function EditElectionPage(props: {
     body = (
       <TimelineForm
         action={saveTimeline.bind(null, id)}
-        hasPositions={hasPositions}
+        nominations={nominations}
         initial={{
           nomination_start: toLocalInput(election.nomination_start),
           nomination_end: toLocalInput(election.nomination_end),

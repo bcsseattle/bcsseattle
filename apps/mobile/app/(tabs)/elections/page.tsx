@@ -7,6 +7,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { StatePanel } from '@/components/ui/state-panel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDate } from '@/utils/format';
+import { isPastElection } from '@/utils/elections/rules';
 import { AppHeader } from '~/components/app-header';
 import { Loaded } from '~/components/screen';
 import {
@@ -48,10 +49,9 @@ export default function ElectionsTab() {
       ...e,
       types: typeTags(e, positions, initiatives)
     }));
-    const now = Date.now();
     return {
-      current: list.filter((e) => Date.parse(e.end_date) >= now),
-      past: list.filter((e) => Date.parse(e.end_date) < now).reverse()
+      current: list.filter((e) => !isPastElection(e)),
+      past: list.filter(isPastElection).reverse()
     };
   });
 
@@ -59,7 +59,7 @@ export default function ElectionsTab() {
     <>
       <AppHeader
         title="Elections"
-        subtitle="Vote once in each election. Results are published when voting closes."
+        subtitle="Vote once in each election. Results are published once the votes are certified."
       />
       <div className="px-4 pb-6 pt-2">
         <Loaded state={state}>
@@ -119,8 +119,11 @@ function List({
       {elections.map((e) => {
         const p = electionPhase(e);
         const view = `/elections/view/?id=${e.id}`;
+        // Without positions, the nominations window is for initiative proposals (A10).
         const action = p.nominationsOpen
-          ? { label: 'Nominate', href: `/elections/nominate/?id=${e.id}` }
+          ? e.types.includes('Leadership')
+            ? { label: 'Nominate', href: `/elections/nominate/?id=${e.id}` }
+            : { label: 'Propose', href: `/elections/propose/?id=${e.id}` }
           : p.votingOpen
             ? { label: 'Vote now', href: view }
             : p.closed

@@ -48,13 +48,12 @@ Feature: Only admins run elections, and a locked ballot stays locked
     Then the call should be refused with "locked"
 
   @P0 @critical
-  Scenario: An admin standing in an election can't run it
+  Scenario: An admin standing in an election can still run it (D7)
     Given there is an open election with candidates "Hani" and "Nazir" for "President"
     And there is an admin named "Ayaan"
     And "Ayaan" is standing as "Hani"
     When "Ayaan" calls "election_cancel" on the election through the public API
-    Then the call should be refused with "standing in this election"
-    And the election status should still be "ballot_locked"
+    Then the election status should be "cancelled"
 
   @P0 @critical
   Scenario: Turnout gives counts only
