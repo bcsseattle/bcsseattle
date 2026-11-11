@@ -53,6 +53,7 @@ import {
   PRESET_AMOUNTS,
   dollars,
   frequencyLabel as frequencyLabelOf,
+  priceForFrequency,
   viaStripe as paysViaStripe
 } from '@/utils/giving';
 import { getStripe } from '@/utils/stripe/client';
@@ -160,10 +161,8 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
       );
     }
     if (donation) {
-      const price = product?.prices?.find(
-        (price) =>
-          price.interval === values.frequency || price.type === 'one_time'
-      );
+      // The price matching the gift's frequency (W10).
+      const price = priceForFrequency(product?.prices, values.frequency);
       if (price) {
         price.unit_amount = Math.round(Number(values.amount) * 100); // whole cents (BUG-014)
         const { errorRedirect, sessionId } =
