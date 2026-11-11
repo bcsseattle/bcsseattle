@@ -196,7 +196,7 @@ export default async function AdminElectionPage(props: {
 }
 
 function Overview({ data }: { data: AdminElection }) {
-  const { election, phase, actions, positions, initiatives, candidates, ctx } = data;
+  const { election, phase, actions, positions, initiatives, candidates } = data;
   const at = LIFECYCLE.findIndex((s) => s.phases.includes(phase.phase));
   const stepState = (i: number): StepState => (i < at ? 'done' : i === at ? 'current' : 'upcoming');
   const separate = separatePeriods(election);
@@ -314,7 +314,7 @@ async function Activity({ electionId }: { electionId: string }) {
  * details and add a candidate directly. Review is open until the ballot is locked.
  */
 async function Nominations({ data }: { data: AdminElection }) {
-  const { election, positions, ctx } = data;
+  const { election, positions } = data;
   const supabase = await createClient();
   const [{ data: nominations }, { data: candidates }, { data: eligible }, { data: proposals }] = await Promise.all([
     supabase.from('nominations').select('*').eq('election_id', election.id).order('created_at'),
@@ -464,7 +464,7 @@ async function Nominations({ data }: { data: AdminElection }) {
  * marked withdrawn (B13).
  */
 async function BallotTab({ data }: { data: AdminElection }) {
-  const { election, positions, initiatives, candidates, ctx, actions } = data;
+  const { election, positions, initiatives, candidates, actions } = data;
   const id = election.id;
   const open = election.status === 'scheduled' || election.status === 'draft';
   const electByDefault =
@@ -683,7 +683,7 @@ async function VotingTab({ data }: { data: AdminElection }) {
  * reopen and archive, and export as CSV or print.
  */
 async function ResultsTab({ data }: { data: AdminElection }) {
-  const { election, positions, initiatives, candidates, outcomes, actions, phase, ctx } = data;
+  const { election, positions, initiatives, candidates, outcomes, actions, phase } = data;
   const id = election.id;
   if (election.status === 'cancelled') {
     return <Banner tone="info" title="Cancelled">Nothing from a cancelled election is counted.</Banner>;

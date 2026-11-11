@@ -80,7 +80,7 @@ export default async function RecentFunds({
 }: {
   /** False inside a Panel that has its own title. */
   showTitle?: boolean;
-  members?: any[];
+  members?: (Pick<import('@/types').Member, 'id' | 'fullName' | 'totalMembersInFamily'> & { customers: { stripe_customer_id: string | null } | null })[];
   columns?: ColumnDef<Data>[];
   stripeCustomerId?: string;
   month?: string;

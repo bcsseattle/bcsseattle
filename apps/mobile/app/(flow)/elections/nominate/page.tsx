@@ -108,7 +108,11 @@ function NominateForm({
       const compressed = await compressImage(file);
       setPhoto(compressed);
       setPreview(URL.createObjectURL(compressed));
-      setErrors(({ photoFile, ...rest }) => rest);
+      setErrors((current) => {
+        const next = { ...current };
+        delete next.photoFile;
+        return next;
+      });
     } catch {
       setErrors((e) => ({
         ...e,

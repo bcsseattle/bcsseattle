@@ -24,7 +24,7 @@ export async function POST(
     let body: InitiativeVoteRequest;
     try {
       body = await request.json();
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         { error: 'Invalid request body' },
         { status: 400 }

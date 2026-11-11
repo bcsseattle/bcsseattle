@@ -21,9 +21,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { getErrorRedirect } from '@/utils/helpers';
 import { formatMoney } from '@/utils/format';
 import { Database } from '@/types_db';
-import { FundraiserDonation } from '@/types/fundraisers';
 import { submitDonation } from '@/utils/fundraisers/handlers';
-import { checkoutWithStripeForDonation, checkoutWithStripeForFundraiser } from '@/utils/stripe/server';
+import { checkoutWithStripeForFundraiser } from '@/utils/stripe/server';
 import { getStripe } from '@/utils/stripe/client';
 
 type Fundraiser = Database['public']['Tables']['fundraisers']['Row'];
@@ -150,13 +149,6 @@ export function DonationForm({ fundraiser }: DonationFormProps) {
       }
 
       // Create metadata for the checkout session
-      const metadata = {
-        type: 'fundraiser_donation',
-        donation_id: result.donation.id,
-        fundraiser_id: fundraiser.id,
-        donor_name: data.isAnonymous ? 'Anonymous' : (data.fullName || 'Anonymous'),
-        is_anonymous: data.isAnonymous.toString()
-      };
 
       // Call the checkout function with donor info and metadata
       const { errorRedirect, sessionId } = await checkoutWithStripeForFundraiser(

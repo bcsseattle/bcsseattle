@@ -79,12 +79,6 @@ export default async function Page() {
     .order('metadata->index')
     .order('unit_amount', { referencedTable: 'prices' });
 
-  const { data: member } = await supabase
-    .from('members')
-    .select('*')
-    .eq('user_id', user?.id)
-    .maybeSingle();
-
   return (
     <section className="pb-8">
       <Plans

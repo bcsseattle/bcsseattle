@@ -22,9 +22,7 @@ import {
   FormLabel,
   FormMessage
 } from '@/components/ui/form';
-import { PersonIcon } from '@radix-ui/react-icons';
 import { Button } from './ui/button';
-import { Link } from 'lucide-react';
 import { FuneralFundFormSchema } from '@/types';
 import { signUpFuneralBurial } from '@/utils/auth-helpers/server';
 import { Input } from '@/components/ui/input';

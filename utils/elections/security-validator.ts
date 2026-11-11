@@ -9,13 +9,13 @@ interface SecurityTestResult {
   test: string;
   passed: boolean;
   message: string;
-  details?: any;
+  details?: unknown;
 }
 
 export class VotingSecurityValidator {
-  private supabase: any;
+  private supabase: typeof supabaseAdmin;
 
-  constructor(supabaseClient: any) {
+  constructor(supabaseClient: typeof supabaseAdmin) {
     this.supabase = supabaseClient;
   }
 
@@ -91,7 +91,7 @@ export class VotingSecurityValidator {
   private async testInitiativeRLSPolicies(): Promise<SecurityTestResult> {
     try {
       // Test public read access to initiatives
-      const { data: initiatives, error } = await this.supabase
+      const { error } = await this.supabase
         .from('initiatives')
         .select('id, title')
         .limit(1);
@@ -124,7 +124,7 @@ export class VotingSecurityValidator {
   private async testConfirmationRLSPolicies(): Promise<SecurityTestResult> {
     try {
       // Test that confirmations are properly restricted
-      const { data: confirmations, error } = await this.supabase
+      const { data: confirmations } = await this.supabase
         .from('vote_confirmations')
         .select('id')
         .limit(1);
@@ -160,7 +160,7 @@ export class VotingSecurityValidator {
         'vote_type_check'
       ];
 
-      const foundConstraints = constraints?.map((c: any) => c.constraint_name) || [];
+      const foundConstraints = constraints?.map((c) => c.constraint_name) || [];
       const missingConstraints = requiredConstraints.filter(
         name => !foundConstraints.includes(name)
       );

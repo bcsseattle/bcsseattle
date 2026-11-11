@@ -28,7 +28,7 @@ export default async function MembershipFeePage() {
     .eq('user_id', user?.id)
     .maybeSingle();
 
-  const { data: subscription }: { data: any } = await supabase
+  const { data: subscription } = await supabase
     .from('subscriptions')
     .select('*')
     .eq('user_id', user?.id)

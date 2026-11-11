@@ -122,7 +122,7 @@ export async function sendWelecomEmail(User: User) {
   }
 }
 
-export async function sendNewMemberJoinedEmail(User: User, memberData?: any) {
+export async function sendNewMemberJoinedEmail(User: User, memberData?: { fullName?: string | null }) {
   const api_url = process.env.NEXT_PUBLIC_SITE_URL + '/api/send-email/new-member-joined';
   // debugger;
   try {
@@ -239,11 +239,11 @@ export async function sendSMS(
       success: true,
       messageId: message.sid
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error('SMS send failed:', error);
     return {
       success: false,
-      error: error?.message
+      error: error instanceof Error ? error.message : 'Unable to send SMS'
     };
   }
 }

@@ -24,7 +24,6 @@ export const PaymentFailedTemplate = ({
   name = '',
   amount = '',
   retryUrl,
-  failureMessage
 }: PaymentFailedTemplateProps) => (
   <Html>
     <Head>
@@ -90,21 +89,12 @@ const box = {
   padding: '0 48px'
 };
 
-const hr = {
-  borderColor: '#e6ebf1',
-  margin: '20px 0'
-};
-
 const paragraph = {
   color: '#525f7f',
 
   fontSize: '16px',
   lineHeight: '24px',
   textAlign: 'left' as const
-};
-
-const anchor = {
-  color: '#556cd6'
 };
 
 const button = {

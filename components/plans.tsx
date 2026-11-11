@@ -8,12 +8,7 @@ import { getErrorRedirect, getSubscriptionInterval } from '@/utils/helpers';
 import { User } from '@supabase/supabase-js';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState } from 'react';
-import {
-  Member,
-  Price,
-  ProductWithPrices,
-  SubscriptionWithProduct
-} from '@/types';
+import { Price, ProductWithPrices, SubscriptionWithProduct } from '@/types';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/portal/page-header';
 import {
@@ -102,7 +97,7 @@ export default function Plans({ user, products, subscription }: Props) {
         <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {products.map((product) => {
             const prices = product?.prices?.filter(
-              (price: any) => price.metadata?.type === 'contribution'
+              (price) => price.metadata && typeof price.metadata === 'object' && !Array.isArray(price.metadata) && price.metadata.type === 'contribution'
             );
             return prices?.map((price) => {
               const priceString = formatMoney(price?.unit_amount || 10000);

@@ -1,7 +1,6 @@
 /**
  * Server-side utility for feature flags in Next.js server components
  */
-
 import { createClient } from '@/utils/supabase/server';
 import { resolveFeatureFlags, logFeatureFlags, FeatureFlags, FeatureFlagContext } from './feature-flags';
 import { FEATURE_FLAGS, FeatureFlagKey } from './feature-flag-constants';
@@ -35,7 +34,7 @@ export async function getServerFeatureFlags(urlOverride?: string): Promise<Featu
   const context: FeatureFlagContext = {
     userId: user?.id,
     userRole,
-    environment: (process.env.NODE_ENV as any) || 'development',
+    environment: process.env.NODE_ENV === 'test' ? 'development' : process.env.NODE_ENV || 'development',
   };
 
   // Resolve feature flags

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface CandidateResult {
   id: string;
@@ -71,7 +71,7 @@ export function useElectionResults(electionId: string) {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
     try {
       const response = await fetch(`/api/elections/${electionId}/results`);
       if (!response.ok) {
@@ -87,11 +87,11 @@ export function useElectionResults(electionId: string) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [electionId]);
 
   useEffect(() => {
     fetchResults();
-  }, [electionId]);
+  }, [fetchResults]);
 
   // Refresh while the page is open. Realtime can't do this: it applies RLS, and
   // voters may only read their own votes, so other people's never arrived
@@ -102,7 +102,7 @@ export function useElectionResults(electionId: string) {
       if (document.visibilityState === 'visible') fetchResults();
     }, 15_000);
     return () => clearInterval(timer);
-  }, [electionId]);
+  }, [fetchResults]);
 
   return {
     results,

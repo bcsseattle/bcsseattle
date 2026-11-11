@@ -9,7 +9,7 @@
     "dev": "NODE_OPTIONS='--inspect' next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next lint --dir app --dir components --dir utils --dir hooks --dir libs --dir apps/mobile/app --dir apps/mobile/components --dir apps/mobile/lib --max-warnings 0",
     "email": "email dev --dir components/email-templates",
     "prettier-fix": "prettier --write .",
     "stripe:login": "stripe login",

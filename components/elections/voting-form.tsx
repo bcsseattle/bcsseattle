@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -10,9 +10,7 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription
+  FormMessage
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { Candidate, Election } from '@/types';
+import { Candidate, Election, Initiative } from '@/types';
 import { 
   Vote, 
   AlertTriangle, 
@@ -47,7 +45,7 @@ export const VotingFormSchema = z.object({
 interface VotingFormProps {
   election: Election;
   candidates: Candidate[];
-  initiatives: any[];
+  initiatives: Initiative[];
   positionOrder: Array<{
     position: string;
     description?: string | null;
@@ -68,7 +66,6 @@ export default function VotingForm({
   isSubmitting
 }: VotingFormProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const [showSummary, setShowSummary] = useState(false);
 
   const form = useForm<z.infer<typeof VotingFormSchema>>({
@@ -117,14 +114,14 @@ export default function VotingForm({
   const getVoteSummary = () => {
     const values = form.getValues();
     const candidateVoteSummary = Object.entries(values.candidateVotes)
-      .filter(([_, candidateId]) => candidateId)
+      .filter(([, candidateId]) => candidateId)
       .map(([position, candidateId]) => {
         const candidate = candidates.find(c => c.id === candidateId);
         return { position, candidate };
       });
 
     const initiativeVoteSummary = Object.entries(values.initiativeVotes)
-      .filter(([_, vote]) => vote)
+      .filter(([, vote]) => vote)
       .map(([initiativeId, vote]) => {
         const initiative = initiatives.find(i => i.id === initiativeId);
         return { initiative, vote };
@@ -444,8 +441,8 @@ export default function VotingForm({
                           <h4 className="font-semibold text-badge-orange-text mb-2">Initiative Votes:</h4>
                           <div className="space-y-2">
                             {initiativeVoteSummary.map(({ initiative, vote }) => (
-                              <div key={initiative.id} className="flex justify-between items-center py-2">
-                                <span className="font-medium">{initiative.title}:</span>
+                              <div key={initiative?.id} className="flex justify-between items-center py-2">
+                                <span className="font-medium">{initiative?.title}:</span>
                                 <Badge variant={vote === 'yes' ? 'default' : vote === 'no' ? 'destructive' : 'secondary'}>
                                   {vote === 'yes' ? 'Yes' : vote === 'no' ? 'No' : 'Abstain'}
                                 </Badge>

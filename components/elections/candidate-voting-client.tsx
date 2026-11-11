@@ -24,8 +24,7 @@ export default function CandidateVotingClient({
   election,
   candidates,
   positionOrder,
-  hasVoted,
-  userId
+  hasVoted
 }: CandidateVotingClientProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,7 +35,7 @@ export default function CandidateVotingClient({
     try {
       // Transform form values to API format
       const candidateVotes = Object.entries(values.candidateVotes)
-        .filter(([_, candidateId]) => candidateId) // Only include selected candidates
+        .filter(([, candidateId]) => candidateId) // Only include selected candidates
         .map(([position, candidateId]) => {
           const candidate = candidates.find(c => c.id === candidateId);
           return {
