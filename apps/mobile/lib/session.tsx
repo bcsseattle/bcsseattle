@@ -3,9 +3,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { App } from '@capacitor/app';
+import { SplashScreen } from '@capacitor/splash-screen';
 import type { Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
-import { supabase } from '~/lib/supabase';
+import { signOut, supabase } from '~/lib/supabase';
 import { parseAppLink } from '~/lib/app-links';
 import { listenForPush, startPush } from '~/lib/push';
 
@@ -59,6 +60,23 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       listeners.forEach((listener) => listener.then((l) => l.remove()));
     };
   }, [router]);
+
+  // The launch screen hides once the session is known; the timer is a backstop so it can't stay up.
+  useEffect(() => {
+    const backstop = setTimeout(() => SplashScreen.hide(), 4000);
+    if (state.ready) SplashScreen.hide();
+    return () => clearTimeout(backstop);
+  }, [state.ready]);
+
+  // A stored session can outlive its account (deleted on another device, or by an admin): Supabase
+  // keeps accepting the token until it expires, and every read comes back empty. Check once per
+  // sign-in and sign out locally if the account is gone. Being offline never signs anyone out.
+  useEffect(() => {
+    if (!state.session) return;
+    supabase.auth.getUser().then(({ error }) => {
+      if (error?.code === 'user_not_found') signOut().catch(() => undefined);
+    });
+  }, [state.session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Signed in: register this device for notifications if the member already allowed them (never asks here).
   const userId = state.session?.user.id;
