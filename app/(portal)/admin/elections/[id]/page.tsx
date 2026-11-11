@@ -169,7 +169,7 @@ export default async function AdminElectionPage(props: {
           <div className="flex flex-col gap-4 p-4">
             <div className="flex flex-wrap gap-3">
               <Link href={`/admin/elections/${id}/edit?step=basics`} className={buttonVariants({ variant: 'outline' })}>
-                {election.status === 'draft' ? 'Edit the draft' : 'Edit title and description'}
+                {election.status === 'draft' ? 'Edit the draft' : 'Edit the election'}
               </Link>
             </div>
             <div className="flex flex-col gap-2 border-t pt-4">
@@ -231,7 +231,7 @@ function Overview({ data }: { data: AdminElection }) {
       )}
       {ctx.adminIsStanding && (
         <Banner tone="info" title="You’re standing in this election">
-          Another admin has to review, lock, extend, cancel, certify and publish it.
+          You can review its nominations, your own included; each decision is logged with your name. Another admin has to lock, extend, cancel, certify and publish it.
         </Banner>
       )}
 
@@ -247,7 +247,17 @@ function Overview({ data }: { data: AdminElection }) {
         </Panel>
       )}
 
-      <Panel title="Key dates" subtitle="Pacific time. Each window includes its start and end.">
+      <Panel
+        title="Key dates"
+        subtitle="Pacific time. Each window includes its start and end."
+        actions={
+          ['draft', 'scheduled', 'ballot_locked'].includes(election.status) && (
+            <Link href={`/admin/elections/${election.id}/edit?step=timeline`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+              Edit dates
+            </Link>
+          )
+        }
+      >
         <dl className="m-0 divide-y">
           {positions.length > 0 && !election.runoff_of && row('Nominations', `${date(election.nomination_start)} to ${date(election.nomination_end)}`)}
           {row(separate ? 'Initiative voting' : 'Voting', `${date(election.start_date)} to ${date(election.end_date)}`)}
@@ -335,7 +345,7 @@ async function Nominations({ data }: { data: AdminElection }) {
       )}
       {ctx.adminIsStanding && (
         <Banner tone="info" title="You’re standing in this election">
-          Another admin has to review its nominations.
+          You can still approve or reject its nominations, your own included. Each decision is recorded with your name in the activity log.
         </Banner>
       )}
       {positions.map((p) => {
@@ -378,7 +388,7 @@ async function Nominations({ data }: { data: AdminElection }) {
                     {n.bio && <p className="mt-0 text-sm">{n.bio}</p>}
                     {n.manifesto && <p className="mt-0 text-sm text-muted-foreground">Platform: {n.manifesto}</p>}
                     {n.status === 'rejected' && n.rejection_reason && <p className="mt-0 text-sm">Reason: {n.rejection_reason}</p>}
-                    {reviewing && !ctx.adminIsStanding && ['awaiting_acceptance', 'submitted'].includes(n.status) && (
+                    {reviewing && ['awaiting_acceptance', 'submitted'].includes(n.status) && (
                       <ReviewButtons
                         approve={approveNomination.bind(null, election.id, n.id)}
                         reject={rejectNomination.bind(null, election.id, n.id)}

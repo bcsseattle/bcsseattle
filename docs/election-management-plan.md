@@ -135,6 +135,7 @@ The bylaws say nothing on any of these. **Decided:** B4 (plurality), B5 (run-off
 | Voting open | Voter roll | ✓ | ✓ (exists) | Daily cron |
 | Last day to vote | Roll members who haven't voted | | ✓ (exists) | Daily cron |
 | Voting extended / election cancelled | Eligible members | ✓ | ✓ | Admin action |
+| A published election's dates edited (added 12 Nov 2026) | Eligible members | ✓ | | Edit (timeline step) |
 | Results published | Eligible members | ✓ | ✓ | Publish action |
 
 - Email goes to people who may not have the app, and it carries detail such as a rejection reason. Push is for reminders.
@@ -146,6 +147,7 @@ The bylaws say nothing on any of these. **Decided:** B4 (plurality), B5 (run-off
 **Recommendation:** any admin (`users.is_admin`), with one rule. **An admin who is a nominee or candidate in an election can't review, lock, certify, publish, resolve ties, cancel or extend that election.** They can still see it.
 
 - The rule is checked on the server and inside the database functions.
+- **Changed 12 Nov 2026:** an admin who is standing may review the election's nominations, their own included. Each decision is logged with who made it. The other actions still need an admin who isn't standing.
 - If every admin is a candidate, the board needs to make someone else an admin (B10).
 - A separate election-officer role isn't worth building until the board asks for one. It would be a new flag on `users`, plus the same checks.
 
@@ -324,6 +326,16 @@ Admins enter local Seattle times, and the server converts them with `dayjs.tz('A
 ---
 
 ## 5. Pages and actions
+
+**Changed 12 Nov 2026: editing after publishing.**
+
+| Status | What admins can still change |
+|---|---|
+| Published, before the lock | Everything: basics, positions and initiatives, the nominations window, the voting dates and times, and the settings. A position that already has nominations or candidates can be renamed but not removed. Renaming a position renames it on its candidates and nominations too. |
+| After the lock | The title, the description, and the voting dates and times, either way. |
+| Once voting is over, or cancelled | The title and description. |
+
+Every change is recorded with its before and after values. Extend (with a reason) still exists.
 
 All of this is behind the `enableElectionManagement` flag (§7). The admin layout already turns away non-admins. Every action also calls `isCurrentUserAdmin()` and then the database function, which checks again.
 
@@ -532,7 +544,7 @@ Each phase is one PR into `develop`, branched from the previous phase. Following
 | D2 | Status | **Dates plus admin gates.** One shared phase rule, no scheduled job |
 | D3 | Positions | **Per election,** with seats. `position_enum` is dropped |
 | D6 | Notifications | **Email and push, chosen per event** (§2 D6). Sends need separate approval |
-| D7 | Who runs elections | **Any admin,** except in an election where they're a candidate |
+| D7 | Who runs elections | **Any admin,** except in an election where they're a candidate. **Changed 12 Nov:** a standing admin may still review nominations, their own included (logged) |
 | D8 | Undoing certification | **Allowed until results are published** |
 
 ### Operational

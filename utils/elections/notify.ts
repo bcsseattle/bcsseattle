@@ -3,6 +3,8 @@ import nodemailer from 'nodemailer';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { sendPush, type PushMessage } from '@/utils/push';
 import { formatDeadline } from '@/utils/format';
+import { createHash } from 'node:crypto';
+import type { dateChanges } from '@/utils/elections/rules';
 
 /**
  * Election notifications (docs/election-management-plan.md D6): email for
@@ -27,11 +29,19 @@ export type NoticeKind =
   | 'voting_open'
   | 'voting_extended'
   | 'cancelled'
+  | 'dates_changed'
   | 'results_published';
+
+/**
+ * What a notice is recorded under. A notice that can happen more than once in
+ * an election (a second extension, another date change) carries what changed
+ * after a colon, so each change is told once and a repeat isn't.
+ */
+type NoticeKey = NoticeKind | `${NoticeKind}:${string}`;
 
 type Notice = {
   electionId: string;
-  kind: NoticeKind;
+  kind: NoticeKey;
   /** Who gets it; omit for every approved, active member. */
   to?: string[];
   email?: { subject: string; text: string };
@@ -53,7 +63,7 @@ async function activeMembers() {
 }
 
 /** Claims the send: true the first time for this election, kind and person (null: a broadcast). */
-async function claim(electionId: string, kind: NoticeKind, userId: string | null) {
+async function claim(electionId: string, kind: NoticeKey, userId: string | null) {
   const { error } = await supabaseAdmin.from('election_notifications').insert({ election_id: electionId, kind, user_id: userId });
   if (error && error.code !== '23505') console.error('election notification log:', error);
   return !error;
@@ -135,7 +145,8 @@ export async function notifyExtended(id: string, field: 'nomination_end' | 'end_
   const until = e[field] as string;
   return notify({
     electionId: id,
-    kind: nominations ? 'nominations_extended' : 'voting_extended',
+    // Keyed by the new deadline: a second extension is told too.
+    kind: `${nominations ? 'nominations_extended' : 'voting_extended'}:${until}`,
     email: {
       subject: `${nominations ? 'Nominations' : 'Voting'} extended: ${e.title}`,
       text: `${nominations ? 'Nominations' : 'Voting'} for ${e.title} now ${nominations ? 'close' : 'closes'} ${formatDeadline(until)}.\n\n${link(id)}`
@@ -190,5 +201,34 @@ export async function notifyDecided(nominationId: string) {
     push: approved
       ? { title: `On the ballot: ${n.position}`, body: e.title, url: appUrl(e.id) }
       : { title: `Nomination not approved: ${n.position}`, body: n.rejection_reason ?? e.title, url: appUrl(e.id) }
+  });
+}
+
+/**
+ * An admin changed a published election's dates (editing after publishing):
+ * every member is told what moved. Keyed by the new dates, so the same change
+ * is told once and a later one is told again.
+ */
+export async function notifyDatesChanged(id: string, changes: ReturnType<typeof dateChanges>) {
+  if (!changes.length) return 0;
+  const e = await election(id);
+  const when = (iso: string | null) => (iso ? formatDeadline(iso) : 'not set');
+  const key = createHash('sha1')
+    .update(changes.map((c) => `${c.field}=${c.to}`).join('|'))
+    .digest('hex')
+    .slice(0, 12);
+  return notify({
+    electionId: id,
+    kind: `dates_changed:${key}`,
+    email: {
+      subject: `Dates changed: ${e.title}`,
+      text: [
+        `The dates of ${e.title} have changed:`,
+        '',
+        ...changes.map((c) => `${c.label}: ${when(c.to)} (was ${when(c.from)})`),
+        '',
+        link(id)
+      ].join('\n')
+    }
   });
 }

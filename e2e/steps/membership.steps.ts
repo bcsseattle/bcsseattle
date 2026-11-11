@@ -1,6 +1,6 @@
 import { Given, Then, When } from '@cucumber/cucumber';
 import type { Page } from '@playwright/test';
-import { findAuthUserId, getMember } from '../support/db';
+import { admin, findAuthUserId, getMember } from '../support/db';
 import { expect } from '../support/expect';
 import { giveSubscription, postWebhook, stripe } from '../support/stripe';
 import type { E2EWorld } from '../support/world';
@@ -103,6 +103,20 @@ When(/^Stripe reports my (contribution plan|recurring donation) as (cancelled|ac
     data: { object: { id, object: 'subscription', customer: this.data.stripeCustomer } },
   });
   expect(res.status, res.body).toBe(200);
+});
+
+// BUG-082: members activated by hand, or before the webhook kept members.subscription_id, have no plan link.
+Given("my member row doesn't point at my plan", async function (this: E2EWorld) {
+  await expect.poll(async () => (await getMember(this.me!.id))?.subscription_id, { message: 'webhook linked the plan' }).toBeTruthy();
+  const { error } = await admin.from('members').update({ subscription_id: null }).eq('user_id', this.me!.id);
+  expect(error).toBeNull();
+});
+
+Then('the member directory should show my contribution plan as {string}', async function (this: E2EWorld, plan: string) {
+  const member = await getMember(this.me!.id);
+  const row = this.page.getByRole('row').filter({ has: this.page.getByRole('link', { name: member!.fullName!, exact: true }) });
+  await expect(row).toContainText(plan.replace('USD ', 'USD\u00a0'));
+  await expect(row).not.toContainText('Yet to choose contribution plan');
 });
 
 Then(/^my membership should be (active|inactive)$/, async function (this: E2EWorld, status: string) {

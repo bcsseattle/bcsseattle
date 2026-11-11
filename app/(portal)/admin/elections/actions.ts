@@ -7,11 +7,12 @@ import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
 import { createClient } from '@/utils/supabase/server';
 import { checkFeatureFlag } from '@/utils/server-feature-flags';
 import { getStatusRedirect } from '@/utils/helpers';
-import { defaultTimeline, fromLocalInput, validateTimeline } from '@/utils/elections/rules';
+import { dateChanges, defaultTimeline, fromLocalInput, validateTimeline } from '@/utils/elections/rules';
 import type { ElectionType } from '@/types';
 import { dbMessage, photoFrom, uploadCandidatePhoto } from '@/utils/elections/photos';
 import {
   notifyCancelled,
+  notifyDatesChanged,
   notifyDecided,
   notifyExtended,
   notifyPublished,
@@ -155,6 +156,24 @@ export async function saveBallot(id: string, _: FormState, formData: FormData): 
   const keptPositions = new Set(positions.map((p) => p.id).filter(isUuid));
   const keptInitiatives = new Set(initiatives.map((i) => i.id).filter(isUuid));
 
+  // A published election may already have candidates or nominations for a
+  // position; removing it would delete them with it, so that's refused.
+  const removed = (oldPositions ?? []).filter((p) => !keptPositions.has(p.id));
+  if (removed.length) {
+    const ids = removed.map((p) => p.id);
+    const [{ data: c }, { data: n }] = await Promise.all([
+      supabase.from('candidates').select('ballot_position_id').in('ballot_position_id', ids),
+      supabase.from('nominations').select('ballot_position_id').in('ballot_position_id', ids)
+    ]);
+    const busy = removed.filter((p) => [...(c ?? []), ...(n ?? [])].some((r) => r.ballot_position_id === p.id));
+    if (busy.length) {
+      return {
+        error: `${busy.map((p) => p.title).join(', ')} already ${busy.length === 1 ? 'has' : 'have'} nominations or candidates, so ${busy.length === 1 ? 'it' : 'they'} can’t be removed. Rename it, or reject or withdraw them first.`,
+        values: { ballot: raw }
+      };
+    }
+  }
+
   const steps = [
     ...(oldPositions ?? []).filter((p) => !keptPositions.has(p.id)).map((p) => () => supabase.from('ballot_positions').delete().eq('id', p.id)),
     ...(oldInitiatives ?? []).filter((i) => !keptInitiatives.has(i.id)).map((i) => () => supabase.from('initiatives').delete().eq('id', i.id)),
@@ -227,10 +246,17 @@ export async function saveTimeline(id: string, _: FormState, formData: FormData)
   const separate = values.enable_separate_voting_periods === 'on';
   if (Object.keys(errors).length) return { fieldErrors: errors, values };
 
-  const { data: election } = await supabase.from('elections').select('type').eq('id', id).single();
+  const { data: election } = await supabase
+    .from('elections')
+    .select('type, status, nomination_start, nomination_end, start_date, end_date, candidate_voting_start, candidate_voting_end, results_date')
+    .eq('id', id)
+    .single();
+  // Once the ballot is locked nominations are over: the form doesn't show
+  // them, and they keep their values (the database refuses a change).
+  const locked = election?.status === 'ballot_locked';
   const row = {
-    nomination_start: parsed.nomination_start,
-    nomination_end: parsed.nomination_end,
+    nomination_start: locked ? election.nomination_start : parsed.nomination_start,
+    nomination_end: locked ? election.nomination_end : parsed.nomination_end,
     results_date: parsed.results_date,
     start_date: parsed.start_date!,
     end_date: parsed.end_date!,
@@ -246,6 +272,10 @@ export async function saveTimeline(id: string, _: FormState, formData: FormData)
 
   const { error } = await supabase.from('elections').update(row).eq('id', id);
   if (error) return { error: dbMessage(error), values };
+  // Members are told when a published election's dates move (drafts are private).
+  if (election && (election.status === 'scheduled' || election.status === 'ballot_locked')) {
+    await notifyDatesChanged(id, dateChanges(election, row));
+  }
   revalidatePath(`/admin/elections/${id}`);
   redirect(formData.get('then') === 'overview' ? `/admin/elections/${id}` : editPath(id, 'settings'));
 }

@@ -1,4 +1,3 @@
-import { formatMoney } from '@/utils/format';
 import {
   Table,
   TableBody,
@@ -17,17 +16,16 @@ import {
 } from '@/components/ui/card';
 import { MemberStatusBadge } from '@/components/portal/member-row';
 
-import { Member, Price, Subscription } from '@/types';
+import { Member } from '@/types';
+import { currentPlan, priceLabel, type PlanSubscription } from '@/utils/membership/plan';
 import Link from 'next/link';
 
 export default function MemberList({
   members,
-  subscriptions,
-  prices
+  subscriptions
 }: {
   members: Member[];
-  subscriptions: Subscription[];
-  prices: Price[];
+  subscriptions: PlanSubscription[];
 }) {
   return (
     <Card>
@@ -53,17 +51,7 @@ export default function MemberList({
           </TableHeader>
           <TableBody>
             {members.map((member, index) => {
-              const subscription = subscriptions?.find(
-                (sub) => sub.id === member.subscription_id
-              );
-
-              const price = prices?.find(
-                (price) => price.id === subscription?.price_id
-              );
-
-              const priceString = formatMoney(
-                (price?.unit_amount || 0) * (member.totalMembersInFamily ?? 0) || 0
-              );
+              const plan = currentPlan(member.user_id, subscriptions);
 
               return (
                 <TableRow key={member.id}>
@@ -83,8 +71,8 @@ export default function MemberList({
                   <TableCell>{member.membershipType}</TableCell>
                   <TableCell>{member.totalMembersInFamily}</TableCell>
                   <TableCell colSpan={3} className="text-right">
-                    {subscription?.status === 'active' ? (
-                      `${priceString} / ${price?.interval}`
+                    {plan ? (
+                      priceLabel(plan.price, plan.quantity)
                     ) : (
                       <span className="text-badge-red-text">
                         Yet to choose contribution plan

@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/portal/page-header';
 import { StatTile } from '@/components/ui/stat-tile';
 import { Member } from '@/types';
 import { createClient } from '@/utils/supabase/server';
+import { PLAN_SUBSCRIPTION_SELECT } from '@/utils/membership/plan';
 import { redirect } from 'next/navigation';
 
 export default async function Members() {
@@ -27,11 +28,8 @@ export default async function Members() {
     .eq('user_id', user?.id)
     .maybeSingle();
 
-  const { data: subscriptions } = await supabase
-    .from('subscriptions')
-    .select('*');
-
-  const { data: prices } = await supabase.from('prices').select('*');
+  // Each member's plan comes from their own subscriptions (utils/membership/plan.ts).
+  const { data: subscriptions } = await supabase.from('subscriptions').select(PLAN_SUBSCRIPTION_SELECT);
 
   // Signed in but never registered: there's no member to show a status for (BUG-056).
   if (!member) {
@@ -73,7 +71,6 @@ export default async function Members() {
       <MemberList
         members={members || []}
         subscriptions={subscriptions || []}
-        prices={prices || []}
       />
     </div>
   );

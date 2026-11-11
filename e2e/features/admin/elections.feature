@@ -91,3 +91,39 @@ Feature: Admins run elections from Admin › Elections
     And the election is still a draft
     And I am signed in as an admin
     Then each of the election's admin pages should have no serious accessibility problems and fit the screen
+
+  @P0 @critical
+  Scenario: An admin changes a published election's nominations and voting times
+    Given there is a nominations election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an admin
+    When I edit the election so nominations close in 2 hours and voting opens in 30 hours
+    Then the election should have the new times
+    And the election's activity should show "Edited the election"
+
+  @P0 @critical
+  Scenario: An admin moves the end of voting while voting is open
+    Given there is an open election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an admin
+    When I edit the election so voting closes in 3 hours
+    Then the election should have the new times
+
+  @P1
+  Scenario: Renaming a position after publishing renames it for its candidates
+    Given there is a nominations election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an admin
+    When I rename the position "President" to "Chair"
+    Then the candidates should stand for "Chair"
+
+  @P1
+  Scenario: A position that already has candidates can't be removed
+    Given there is a nominations election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an admin
+    When I remove the position "President"
+    Then I should see "President already has nominations or candidates, so it can’t be removed."
+
+  @P1
+  Scenario: Once voting is over, only the title and description can change
+    Given there is a closed election with candidates "Hani" and "Nazir" for "President"
+    And I am signed in as an admin
+    When I try to edit the election's dates
+    Then I should be on the election's admin page
