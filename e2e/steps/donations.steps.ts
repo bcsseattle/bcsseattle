@@ -122,7 +122,7 @@ Then('my donation should be marked as completed', async function (this: E2EWorld
   expect(data?.stripe_payment_id).toMatch(/^pi_/);
 });
 
-Given(/^a (completed|pending) \$(\d+) donation by a guest donor$/, async function (this: E2EWorld, status: 'completed' | 'pending', dollars: string) {
+Given(/^a (completed|pending|refunded) \$(\d+) donation by a guest donor$/, async function (this: E2EWorld, status: 'completed' | 'pending' | 'refunded', dollars: string) {
   this.donation = await createDonation(this.cleanup, { amountCents: Number(dollars) * 100, status });
 });
 

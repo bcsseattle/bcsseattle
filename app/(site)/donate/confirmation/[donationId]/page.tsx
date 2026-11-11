@@ -56,6 +56,15 @@ export default async function DonationConfirmation(props: {
   // A receipt is only issued for money received (BUG-042). Donors land here
   // straight from Stripe, often a moment before the webhook confirms payment.
   if (donation.donation_status !== 'completed') {
+    // Refunded: settled, not pending, so no refreshing "confirming" page (W20).
+    if (donation.donation_status === 'refunded') {
+      return (
+        <div className="mx-auto max-w-xl py-16 text-center space-y-4">
+          <h1 className="text-2xl font-bold">This gift was refunded</h1>
+          <p className="text-muted-foreground">The money went back to you, so no receipt is issued.</p>
+        </div>
+      );
+    }
     const failed = donation.donation_status === 'failed';
     if (failed) {
       return (

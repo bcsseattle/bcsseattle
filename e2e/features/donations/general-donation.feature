@@ -96,6 +96,14 @@ Feature: General donations
     When I open the receipt for that donation
     Then I should see "Your gift of USD 50.00"
 
+  @P1 @W20
+  Scenario: A refunded donation says so, instead of confirming for ever
+    Given a refunded $50 donation by a guest donor
+    And I am signed in as an approved member
+    When I open the receipt for that donation
+    Then I should see "This gift was refunded"
+    And I should not see "confirming your payment"
+
   @P1 @BUG-042
   Scenario: No receipt is issued for a donation that was never paid
     Given a pending $50 donation by a guest donor
