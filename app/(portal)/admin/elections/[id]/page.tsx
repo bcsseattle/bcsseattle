@@ -231,7 +231,7 @@ function Overview({ data }: { data: AdminElection }) {
       )}
       {ctx.adminIsStanding && (
         <Banner tone="info" title="You’re standing in this election">
-          Another admin has to review, lock, extend, cancel, certify and publish it.
+          You can review its nominations, your own included; each decision is logged with your name. Another admin has to lock, extend, cancel, certify and publish it.
         </Banner>
       )}
 
@@ -335,7 +335,7 @@ async function Nominations({ data }: { data: AdminElection }) {
       )}
       {ctx.adminIsStanding && (
         <Banner tone="info" title="You’re standing in this election">
-          Another admin has to review its nominations.
+          You can still approve or reject its nominations, your own included. Each decision is recorded with your name in the activity log.
         </Banner>
       )}
       {positions.map((p) => {
@@ -378,7 +378,7 @@ async function Nominations({ data }: { data: AdminElection }) {
                     {n.bio && <p className="mt-0 text-sm">{n.bio}</p>}
                     {n.manifesto && <p className="mt-0 text-sm text-muted-foreground">Platform: {n.manifesto}</p>}
                     {n.status === 'rejected' && n.rejection_reason && <p className="mt-0 text-sm">Reason: {n.rejection_reason}</p>}
-                    {reviewing && !ctx.adminIsStanding && ['awaiting_acceptance', 'submitted'].includes(n.status) && (
+                    {reviewing && ['awaiting_acceptance', 'submitted'].includes(n.status) && (
                       <ReviewButtons
                         approve={approveNomination.bind(null, election.id, n.id)}
                         reject={rejectNomination.bind(null, election.id, n.id)}
