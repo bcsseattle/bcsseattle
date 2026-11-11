@@ -207,13 +207,6 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         back={{ href: '/elections', label: 'Elections' }}
         title={election.title}
         description={election.description}
-        actions={
-          isVotingOpen ? (
-            <Link href={`/elections/${election.id}/results`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-              View live results
-            </Link>
-          ) : undefined
-        }
       />
 
       <PhaseTimeline
@@ -355,7 +348,14 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         </div>
       )}
 
-      {isClosed && (
+      {isClosed && ['ballot_locked', 'certified'].includes(election.status) && (
+        <Banner tone="info" title="Voting has closed">
+          {election.results_date
+            ? `Results are expected ${formatDeadline(election.results_date)}, once the votes are certified.`
+            : 'Results are published once the votes are certified.'}
+        </Banner>
+      )}
+      {isClosed && ['completed', 'archived'].includes(election.status) && (
         <Banner
           tone="info"
           title="This election is complete"

@@ -3,6 +3,9 @@ import { supabaseAdmin } from '@/utils/supabase/admin';
 import { electionPhase } from '@/utils/elections/rules';
 import { formatDeadline } from '@/utils/format';
 import { sendPush, type PushMessage } from '@/utils/push';
+import { notify } from '@/utils/elections/notify';
+
+const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.bcsseattle.org';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -13,6 +16,10 @@ const DAY = 24 * 60 * 60 * 1000;
  * Each moment falls in exactly one daily window, so nothing is sent twice.
  * Draft and cancelled elections never send. Voting reminders need a locked
  * ballot, and nomination reminders a published (scheduled) election.
+ *
+ * The election management notices (emails when nominations and voting open,
+ * a push the day before nominations close) go through notify(), which sends
+ * nothing until ELECTION_NOTIFICATIONS=send.
  */
 export async function GET(request: Request) {
   if (!isInternalRequest(request)) return new Response('Unauthorized', { status: 401 });
@@ -52,6 +59,11 @@ export async function GET(request: Request) {
         body: `Cast your ballot by ${formatDeadline(closesAt)}.`,
         url
       });
+      await notify({
+        electionId: e.id,
+        kind: 'voting_open',
+        email: { subject: `Voting is open: ${e.title}`, text: `Cast your ballot by ${formatDeadline(closesAt)}.\n\n${site}/elections/${e.id}` }
+      });
     }
     if (w.votingOpen && (within(w.candidateWindow.end, now, now + DAY) || within(e.end_date, now, now + DAY))) {
       // ponytail: "voted" means any completed session; a member who cast only one part of a two-part ballot isn't reminded.
@@ -72,6 +84,21 @@ export async function GET(request: Request) {
         title: `Nominations are open: ${e.title}`,
         body: e.nomination_end ? `Nominate by ${formatDeadline(e.nomination_end)}.` : 'Nominate a candidate in the app.',
         url
+      });
+      await notify({
+        electionId: e.id,
+        kind: 'nominations_open',
+        email: {
+          subject: `Nominations are open: ${e.title}`,
+          text: `Nominate yourself or another member${e.nomination_end ? ` by ${formatDeadline(e.nomination_end)}` : ''}.\n\n${site}/elections/${e.id}/nominate`
+        }
+      });
+    }
+    if (e.status === 'scheduled' && within(e.nomination_end, now, now + DAY)) {
+      await notify({
+        electionId: e.id,
+        kind: 'nominations_closing',
+        push: { title: `Nominations close soon: ${e.title}`, body: `Nominate by ${formatDeadline(e.nomination_end!)}.`, url }
       });
     }
   }

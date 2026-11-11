@@ -10,6 +10,13 @@ import { getStatusRedirect } from '@/utils/helpers';
 import { defaultTimeline, fromLocalInput, validateTimeline } from '@/utils/elections/rules';
 import type { ElectionType } from '@/types';
 import { dbMessage, photoFrom, uploadCandidatePhoto } from '@/utils/elections/photos';
+import {
+  notifyCancelled,
+  notifyDecided,
+  notifyExtended,
+  notifyPublished,
+  notifyResultsPublished
+} from '@/utils/elections/notify';
 
 /**
  * Admin › Elections actions. Each checks the caller on the server, then writes
@@ -272,6 +279,7 @@ export async function publishElection(id: string): Promise<FormState> {
   const { supabase } = await guard();
   const { error } = await supabase.rpc('election_publish', { p_election: id });
   if (error) return { error: dbMessage(error) };
+  await notifyPublished(id);
   revalidatePath('/admin/elections');
   redirect(getStatusRedirect(`/admin/elections/${id}`, 'Election published.', 'Members can see it now.'));
 }
@@ -290,6 +298,7 @@ export async function cancelElection(id: string, reason: string): Promise<FormSt
   const { supabase } = await guard();
   const { error } = await supabase.rpc('election_cancel', { p_election: id, p_reason: reason });
   if (error) return { error: dbMessage(error) };
+  await notifyCancelled(id);
   revalidatePath('/admin/elections');
   redirect(getStatusRedirect(`/admin/elections/${id}`, 'Election cancelled.', 'Members see it as cancelled, with your reason.'));
 }
@@ -302,6 +311,7 @@ export async function approveNomination(id: string, nominationId: string): Promi
   const { supabase } = await guard();
   const { error } = await supabase.rpc('nomination_decide', { p_nomination: nominationId, p_approve: true });
   if (error) return { error: dbMessage(error) };
+  await notifyDecided(nominationId);
   revalidatePath(`/admin/elections/${id}`);
   redirect(getStatusRedirect(nominationsTab(id), 'Nomination approved.', 'The candidate is on the ballot.'));
 }
@@ -310,6 +320,7 @@ export async function rejectNomination(id: string, nominationId: string, reason:
   const { supabase } = await guard();
   const { error } = await supabase.rpc('nomination_decide', { p_nomination: nominationId, p_approve: false, p_reason: reason });
   if (error) return { error: dbMessage(error) };
+  await notifyDecided(nominationId);
   revalidatePath(`/admin/elections/${id}`);
   redirect(getStatusRedirect(nominationsTab(id), 'Nomination not approved.', 'The nominee sees your reason.'));
 }
@@ -413,6 +424,7 @@ export async function extendDeadline(
     p_reason: values.reason ?? ''
   });
   if (error) return { error: dbMessage(error), values };
+  await notifyExtended(id, field);
   revalidatePath(`/admin/elections/${id}`);
   redirect(
     getStatusRedirect(
@@ -438,4 +450,52 @@ export async function withdrawCandidate(id: string, candidateId: string, reason:
   if (error) return { error: dbMessage(error) };
   revalidatePath(`/admin/elections/${id}`);
   redirect(getStatusRedirect(tab(id, 'ballot'), 'Candidate marked withdrawn.', 'Members can’t choose them any more.'));
+}
+
+// ---------------------------------------------------------------- results
+
+const resultsTab = (id: string) => `/admin/elections/${id}?tab=results`;
+
+/** Freezes the count (election_certify). Refused while a tie has no certified run-off. */
+export async function certifyElection(id: string): Promise<FormState> {
+  const { supabase } = await guard();
+  const { error } = await supabase.rpc('election_certify', { p_election: id });
+  if (error) return { error: dbMessage(error) };
+  revalidatePath('/admin/elections');
+  redirect(getStatusRedirect(resultsTab(id), 'Results certified.', 'Members see them once you publish them.'));
+}
+
+/** Until results are published (D8), with a reason. */
+export async function reopenCertification(id: string, reason: string): Promise<FormState> {
+  const { supabase } = await guard();
+  const { error } = await supabase.rpc('election_reopen_certification', { p_election: id, p_reason: reason });
+  if (error) return { error: dbMessage(error) };
+  revalidatePath('/admin/elections');
+  redirect(getStatusRedirect(resultsTab(id), 'Certification reopened.', ''));
+}
+
+export async function publishResults(id: string): Promise<FormState> {
+  const { supabase } = await guard();
+  const { error } = await supabase.rpc('election_publish_results', { p_election: id });
+  if (error) return { error: dbMessage(error) };
+  await notifyResultsPublished(id);
+  revalidatePath('/admin/elections');
+  redirect(getStatusRedirect(resultsTab(id), 'Results published.', 'Members can see them now.'));
+}
+
+export async function archiveElection(id: string): Promise<FormState> {
+  const { supabase } = await guard();
+  const { error } = await supabase.rpc('election_archive', { p_election: id });
+  if (error) return { error: dbMessage(error) };
+  revalidatePath('/admin/elections');
+  redirect(getStatusRedirect(`/admin/elections/${id}`, 'Election archived.', ''));
+}
+
+/** A run-off for a tied position: a linked draft to set dates for and publish. */
+export async function startRunoff(id: string, positionId: string): Promise<FormState> {
+  const { supabase } = await guard();
+  const { data: runoff, error } = await supabase.rpc('election_start_runoff', { p_election: id, p_position: positionId });
+  if (error || !runoff) return { error: error ? dbMessage(error) : 'The run-off wasn’t created.' };
+  revalidatePath('/admin/elections');
+  redirect(getStatusRedirect(editPath(runoff, 'timeline'), 'Run-off created.', 'Set its voting dates, then publish it.'));
 }

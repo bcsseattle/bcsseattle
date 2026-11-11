@@ -2,6 +2,8 @@ import {
   ADMIN_TAB,
   adminActions,
   ballotQuestions,
+  candidateResultWord,
+  initiativeResultWord,
   electedUnopposed,
   positionOnBallot,
   defaultTimeline,
@@ -374,5 +376,34 @@ describe('the ballot after the lock', () => {
     // Without decisions (elections locked before this), the old all-or-nothing rule applies.
     expect(electedUnopposed(e, two, false, [pos('President'), pos('Treasurer')])).toBe(true);
     expect(electedUnopposed(e, two, true, [pos('President'), pos('Treasurer')])).toBe(false);
+  });
+});
+
+describe('result words (W17)', () => {
+  it('uses the certified outcome for candidates', () => {
+    expect(candidateResultWord({ outcome: 'elected', isTop: false, votes: 3, votingOpen: false })).toBe('Elected');
+    expect(candidateResultWord({ outcome: 'elected_unopposed', isTop: true, votes: 0, votingOpen: false })).toBe('Elected unopposed');
+    expect(candidateResultWord({ outcome: 'not_elected', isTop: true, votes: 9, votingOpen: false })).toBeNull();
+  });
+
+  it('says Elected, not Leading, once voting has closed', () => {
+    expect(candidateResultWord({ isTop: true, votes: 3, votingOpen: true })).toBe('Leading');
+    expect(candidateResultWord({ isTop: true, votes: 3, votingOpen: false })).toBe('Elected');
+    expect(candidateResultWord({ isTop: true, votes: 0, votingOpen: false })).toBeNull();
+  });
+
+  it('words initiatives by their outcome and threshold', () => {
+    expect(initiativeResultWord({ outcome: 'passed', yes: 6, no: 3, votingOpen: false }).word).toBe('Passed');
+    expect(initiativeResultWord({ outcome: 'not_passed', note: 'Tied', yes: 4, no: 4, votingOpen: false }).word).toBe('Tied');
+    expect(initiativeResultWord({ outcome: 'not_passed', note: 'No Yes or No votes', yes: 0, no: 0, votingOpen: false }).word).toBe('No votes');
+    // Two-thirds needed: more Yes than No still doesn't pass.
+    expect(initiativeResultWord({ outcome: 'not_passed', note: 'Two-thirds of Yes and No needed', yes: 5, no: 4, votingOpen: false }).word).toBe('Not passed');
+  });
+
+  it('says Supported or Opposed once closed, and No votes for none (W17)', () => {
+    expect(initiativeResultWord({ yes: 0, no: 0, votingOpen: false }).word).toBe('No votes');
+    expect(initiativeResultWord({ yes: 3, no: 1, votingOpen: false }).word).toBe('Supported');
+    expect(initiativeResultWord({ yes: 1, no: 3, votingOpen: false }).word).toBe('Opposed');
+    expect(initiativeResultWord({ yes: 3, no: 1, votingOpen: true }).word).toBe('Currently supported');
   });
 });

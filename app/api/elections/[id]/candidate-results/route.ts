@@ -32,9 +32,17 @@ export async function GET(
     }
     // Certified results wait for an admin to publish them; cancelled ones are never counted.
     const { data: election } = await supabase.from('elections').select('status').eq('id', id).maybeSingle();
-    if (!election || ['certified', 'cancelled'].includes(election.status)) {
+    // A locked ballot is counted for members only once the results are certified and published.
+    if (!election || ['certified', 'cancelled', 'ballot_locked', 'scheduled', 'draft'].includes(election.status)) {
       return NextResponse.json({ error: 'Results aren’t published yet' }, { status: 403 });
     }
+
+    // Certified results decide who won (ties settled by run-off, seats, withdrawals).
+    const { data: certified } = await supabaseAdmin
+      .from('election_results')
+      .select('candidate_id, outcome')
+      .eq('election_id', id)
+      .not('candidate_id', 'is', null);
 
     // Get all candidates for this election
     const { data: candidates, error: candidatesError } = await supabase
@@ -121,8 +129,10 @@ export async function GET(
             totalVotes > 0
               ? Math.round((candidate.vote_count / totalVotes) * 100)
               : 0;
-          const isWinner =
-            candidate.vote_count > 0 && candidate.vote_count === maxVotes;
+          const won = certified?.find((r) => r.candidate_id === candidate.id);
+          const isWinner = certified?.length
+            ? !!won && ['elected', 'elected_unopposed'].includes(won.outcome)
+            : candidate.vote_count > 0 && candidate.vote_count === maxVotes;
           const ranking = index + 1;
 
           results.push({

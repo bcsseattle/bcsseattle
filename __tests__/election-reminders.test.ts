@@ -24,6 +24,8 @@ const data = {
 };
 const sendPush = jest.fn(async () => ({ devices: 0, removed: 0 }));
 jest.mock('@/utils/push', () => ({ sendPush: (...args: unknown[]) => sendPush(...(args as [])) }));
+const notify = jest.fn(async () => 0);
+jest.mock('@/utils/elections/notify', () => ({ notify: (...args: unknown[]) => notify(...(args as [])) }));
 jest.mock('@/utils/supabase/admin', () => ({
   supabaseAdmin: {
     from: (table: string) => {
@@ -111,4 +113,15 @@ it('says nothing about voting while the ballot is unlocked, or about nominations
   ];
   await cron();
   expect(sendPush).not.toHaveBeenCalled();
+});
+
+it('hands the new notices to notify(), which sends nothing until it is turned on', async () => {
+  notify.mockClear();
+  data.elections = [
+    election('noms', { status: 'scheduled', start_date: hours(200), end_date: hours(300), nomination_start: hours(-1), nomination_end: hours(72) }),
+    election('closing', { status: 'scheduled', start_date: hours(200), end_date: hours(300), nomination_start: hours(-100), nomination_end: hours(10) })
+  ];
+  await cron();
+  expect(notify).toHaveBeenCalledWith(expect.objectContaining({ electionId: 'noms', kind: 'nominations_open' }));
+  expect(notify).toHaveBeenCalledWith(expect.objectContaining({ electionId: 'closing', kind: 'nominations_closing' }));
 });

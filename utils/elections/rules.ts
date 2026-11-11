@@ -312,6 +312,8 @@ export type AdminContext = {
   positionCount: number;
   /** Ties without a certified run-off (Phase 5). */
   unresolvedTies?: number;
+  /** A run-off: it has positions but no nominations window. */
+  isRunoff?: boolean;
 };
 
 /**
@@ -323,7 +325,7 @@ export function adminActions(e: PhaseInput, ctx: AdminContext, now = Date.now())
   const standing = ctx.adminIsStanding ? 'You’re standing in this election, so another admin has to do this.' : null;
   const guard = (ok: boolean, reason: string): true | string => (standing ?? (ok ? true : reason)) as true | string;
   const scheduledOrLocked = e.status === 'scheduled' || e.status === 'ballot_locked';
-  const timeline = validateTimeline(e, { hasPositions: ctx.positionCount > 0, now });
+  const timeline = validateTimeline(e, { hasPositions: ctx.positionCount > 0 && !ctx.isRunoff, now });
   const firstError = Object.values(timeline.errors)[0];
 
   return {
@@ -536,7 +538,7 @@ export type NextAction =
 /** The one primary action an election's phase calls for (plan §5), or null when there's nothing left to do. */
 export function nextAction(
   phase: ElectionPhase,
-  { canPublish, nominationsToReview }: { canPublish: boolean; nominationsToReview: number }
+  { canPublish, nominationsToReview, ties = 0 }: { canPublish: boolean; nominationsToReview: number; ties?: number }
 ): { action: NextAction; label: string } | null {
   const review = { action: 'review_nominations' as const, label: `Review ${nominationsToReview} nomination${nominationsToReview === 1 ? '' : 's'}` };
   switch (phase) {
@@ -553,7 +555,7 @@ export function nextAction(
     case 'voting_open':
       return { action: 'turnout', label: 'View turnout' };
     case 'voting_closed':
-      return { action: 'certify', label: 'Certify results' };
+      return ties > 0 ? { action: 'certify', label: 'Settle the tie' } : { action: 'certify', label: 'Certify results' };
     case 'certified':
       return { action: 'publish_results', label: 'Publish results' };
     case 'results_published':
@@ -632,3 +634,63 @@ export const NOMINATION_LABEL: Record<NominationStatus, { label: string; tone: T
   declined: { label: 'Declined', tone: 'neutral' },
   withdrawn: { label: 'Withdrawn', tone: 'neutral' }
 };
+
+// ---------------------------------------------------------------------------
+// Result words (W17): final once voting is over, from the certified outcome
+// when there is one.
+// ---------------------------------------------------------------------------
+
+const CANDIDATE_OUTCOME_WORD: Record<string, string | null> = {
+  elected: 'Elected',
+  elected_unopposed: 'Elected unopposed',
+  withdrawn: 'Withdrawn',
+  runoff: 'Tied: run-off',
+  not_elected: null
+};
+
+/**
+ * The badge for a candidate: the certified outcome; otherwise (elections
+ * certified before this) the top candidate, "Leading" while voting is open
+ * and "Elected" once it's closed.
+ */
+export function candidateResultWord({
+  outcome,
+  isTop,
+  votes,
+  votingOpen
+}: {
+  outcome?: string | null;
+  isTop: boolean;
+  votes: number;
+  votingOpen: boolean;
+}): string | null {
+  if (outcome) return CANDIDATE_OUTCOME_WORD[outcome] ?? null;
+  if (!isTop || votes === 0) return null;
+  return votingOpen ? 'Leading' : 'Elected';
+}
+
+/** The badge for an initiative, with its tone. */
+export function initiativeResultWord({
+  outcome,
+  note,
+  yes,
+  no,
+  votingOpen
+}: {
+  outcome?: string | null;
+  note?: string | null;
+  yes: number;
+  no: number;
+  votingOpen: boolean;
+}): { word: string; tone: Tone } {
+  if (outcome) {
+    if (outcome === 'passed') return { word: 'Passed', tone: 'green' };
+    if (note === 'Tied') return { word: 'Tied', tone: 'neutral' };
+    if (note === 'No Yes or No votes') return { word: 'No votes', tone: 'neutral' };
+    return { word: 'Not passed', tone: 'red' };
+  }
+  if (yes + no === 0) return { word: 'No votes', tone: 'neutral' };
+  if (yes === no) return { word: 'Tied', tone: 'neutral' };
+  if (votingOpen) return yes > no ? { word: 'Currently supported', tone: 'green' } : { word: 'Currently opposed', tone: 'red' };
+  return yes > no ? { word: 'Supported', tone: 'green' } : { word: 'Opposed', tone: 'red' };
+}

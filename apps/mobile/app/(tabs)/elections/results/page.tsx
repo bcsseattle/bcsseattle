@@ -14,6 +14,7 @@ import { formatDeadline } from '@/utils/format';
 import { Loaded, Screen, Section } from '~/components/screen';
 import { INITIATIVE_WORD } from '~/components/elections/election';
 import { api } from '~/lib/api';
+import { initiativeResultWord } from '@/utils/elections/rules';
 import { useData } from '~/lib/use-data';
 
 type Ranked = { id: string; is_winner: boolean; ranking: number };
@@ -163,14 +164,14 @@ function Results({
 
         <TabsContent value="initiatives" className="mt-4 flex flex-col gap-4">
           {r.initiativeResults.map((i) => {
-            const outcome =
-              i.totalVotes === 0
-                ? 'No votes yet'
-                : i.votes.yes > i.votes.no
-                  ? 'Supported'
-                  : i.votes.no > i.votes.yes
-                    ? 'Opposed'
-                    : 'Tied';
+            // The shared words (W17): the certified outcome when there is one.
+            const { word: outcome, tone } = initiativeResultWord({
+              outcome: i.outcome,
+              note: i.note,
+              yes: i.votes.yes,
+              no: i.votes.no,
+              votingOpen: live
+            });
             return (
               <div
                 key={i.id}
@@ -178,16 +179,8 @@ function Results({
               >
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="text-item text-foreground">{i.title}</h3>
-                  <Badge
-                    tone={
-                      outcome === 'Supported'
-                        ? 'green'
-                        : outcome === 'Opposed'
-                          ? 'red'
-                          : 'neutral'
-                    }
-                  >
-                    {live && i.totalVotes > 0 ? `${outcome} so far` : outcome}
+                  <Badge tone={tone}>
+                    {outcome}
                   </Badge>
                 </div>
                 <p className="text-caption text-muted-foreground">

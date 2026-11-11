@@ -12,7 +12,11 @@ import { createClient } from '@/utils/supabase/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { formatDeadline } from '@/utils/format';
 import {
+  candidateResultWord,
+  initiativeResultWord,
   NOMINATION_LABEL,
+  PHASE_LABEL,
+  electionPhase,
   positionOnBallot,
   separatePeriods,
   toLocalInput,
@@ -24,14 +28,19 @@ import { cn } from '@/utils/cn';
 import {
   addCandidate,
   approveNomination,
+  archiveElection,
   cancelElection,
+  certifyElection,
   decidePosition,
   deleteDraft,
   editCandidate,
   extendDeadline,
   lockBallot,
   publishElection,
+  publishResults,
   rejectNomination,
+  reopenCertification,
+  startRunoff,
   withdrawCandidate
 } from '../actions';
 import {
@@ -41,17 +50,25 @@ import {
   WithdrawCandidateButton
 } from '@/components/admin/elections/ballot-controls';
 import { StatTile } from '@/components/ui/stat-tile';
+import {
+  ArchiveButton,
+  CertifyButton,
+  PrintButton,
+  PublishResultsButton,
+  ReopenCertificationButton,
+  StartRunoffButton
+} from '@/components/admin/elections/results-controls';
 import { ELECTION_TYPE_CONFIGS } from '@/utils/election-types';
 import type { ElectionType } from '@/types';
 import { AddCandidateForm, EditCandidate, ReviewButtons } from '@/components/admin/elections/nomination-review';
 import { loadAdminElection, requireElectionManagement, type AdminElection } from '../data';
 
-// Phase 5 adds Results.
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'nominations', label: 'Nominations' },
   { key: 'ballot', label: 'Ballot' },
   { key: 'voting', label: 'Voting' },
+  { key: 'results', label: 'Results' },
   { key: 'activity', label: 'Activity' },
   { key: 'settings', label: 'Settings' }
 ] as const;
@@ -84,7 +101,13 @@ export default async function AdminElectionPage(props: {
   // The next action as a button, where this phase's screen exists. Later
   // phases add review, lock, turnout, certify, publish results and archive.
   // Actions done on another tab are links to it; on that tab the tab itself is the action.
-  const actionTab = { review_nominations: 'nominations', lock_ballot: 'ballot', turnout: 'voting' }[next?.action as string];
+  const actionTab = {
+    review_nominations: 'nominations',
+    lock_ballot: 'ballot',
+    turnout: 'voting',
+    certify: 'results',
+    publish_results: 'results'
+  }[next?.action as string];
   const primary =
     actionTab && actionTab === tab ? null : next?.action === 'publish' ? (
       <PublishButton run={publishElection.bind(null, id)} summary={publishSummary} />
@@ -92,9 +115,9 @@ export default async function AdminElectionPage(props: {
       <Link href={`/admin/elections/${id}/edit?step=review`} className={buttonVariants()}>
         Finish setup
       </Link>
-    ) : next?.action === 'lock_ballot' || next?.action === 'turnout' ? (
-      <Link href={`/admin/elections/${id}?tab=${next.action === 'lock_ballot' ? 'ballot' : 'voting'}`} className={buttonVariants()}>
-        {next.label}
+    ) : actionTab ? (
+      <Link href={`/admin/elections/${id}?tab=${actionTab}`} className={buttonVariants()}>
+        {next?.label}
       </Link>
     ) : next?.action === 'review_nominations' ? (
       <Link href={`/admin/elections/${id}?tab=nominations`} className={buttonVariants()}>
@@ -116,10 +139,11 @@ export default async function AdminElectionPage(props: {
         description={election.description}
         actions={primary}
       />
-      <nav aria-label="Election sections" className="flex max-w-full items-end gap-5 overflow-x-auto border-b border-border">
+      <nav aria-label="Election sections" className="flex max-w-full items-end gap-5 overflow-x-auto border-b border-border print:hidden">
         {TABS.filter(
           (t) =>
-            (t.key !== 'nominations' || positions.length > 0) && (t.key !== 'voting' || election.status !== 'draft')
+            (t.key !== 'nominations' || (positions.length > 0 && !election.runoff_of)) &&
+            ((t.key !== 'voting' && t.key !== 'results') || election.status !== 'draft')
         ).map((t) => (
           <Link
             key={t.key}
@@ -138,6 +162,7 @@ export default async function AdminElectionPage(props: {
       {tab === 'nominations' && <Nominations data={data} />}
       {tab === 'ballot' && <BallotTab data={data} />}
       {tab === 'voting' && <VotingTab data={data} />}
+      {tab === 'results' && <ResultsTab data={data} />}
       {tab === 'activity' && <Activity electionId={id} />}
       {tab === 'settings' && (
         <Panel title="Settings" subtitle="Changes here are recorded in the activity log.">
@@ -224,7 +249,7 @@ function Overview({ data }: { data: AdminElection }) {
 
       <Panel title="Key dates" subtitle="Pacific time. Each window includes its start and end.">
         <dl className="m-0 divide-y">
-          {positions.length > 0 && row('Nominations', `${date(election.nomination_start)} to ${date(election.nomination_end)}`)}
+          {positions.length > 0 && !election.runoff_of && row('Nominations', `${date(election.nomination_start)} to ${date(election.nomination_end)}`)}
           {row(separate ? 'Initiative voting' : 'Voting', `${date(election.start_date)} to ${date(election.end_date)}`)}
           {separate &&
             row(
@@ -602,6 +627,158 @@ async function VotingTab({ data }: { data: AdminElection }) {
           </div>
         </Panel>
       )}
+    </div>
+  );
+}
+
+/**
+ * Results (plan §5): the count once voting has closed (admins only, counts
+ * never who voted for whom), ties and their run-offs, certify, publish,
+ * reopen and archive, and export as CSV or print.
+ */
+async function ResultsTab({ data }: { data: AdminElection }) {
+  const { election, positions, initiatives, candidates, outcomes, actions, phase, ctx } = data;
+  const id = election.id;
+  if (election.status === 'cancelled') {
+    return <Banner tone="info" title="Cancelled">Nothing from a cancelled election is counted.</Banner>;
+  }
+  if (election.status === 'scheduled' || (election.status === 'ballot_locked' && !phase.votingOver)) {
+    return (
+      <Banner tone="info" title="Votes are counted once voting closes">
+        Nobody, admins included, sees a count while voting is open. Turnout is on the Voting tab.
+      </Banner>
+    );
+  }
+
+  const supabase = await createClient();
+  const certified = election.status !== 'ballot_locked';
+  const [{ data: frozen }, { data: runoffs }] = await Promise.all([
+    certified
+      ? supabase.from('election_results').select('*').eq('election_id', id)
+      : Promise.resolve({ data: null }),
+    supabase.from('elections').select('*, ballot_positions(title)').eq('runoff_of', id).order('created_at')
+  ]);
+  const rows = certified ? (frozen ?? []) : outcomes;
+  const name = (candidateId: string | null) => candidates.find((c) => c.id === candidateId)?.full_name ?? '';
+  const elected = rows
+    .filter((r) => r.outcome === 'elected' || r.outcome === 'elected_unopposed')
+    .map((r) => `${name(r.candidate_id)} (${positions.find((p) => p.id === r.ballot_position_id)?.title})`);
+  const passed = rows.filter((r) => r.outcome === 'passed').map((r) => initiatives.find((t) => t.id === r.initiative_id)?.title);
+  const summary = [
+    elected.length ? `Elected: ${elected.join(', ')}.` : 'Nobody is elected.',
+    initiatives.length ? (passed.length ? `Passed: ${passed.join(', ')}.` : 'No initiative passed.') : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    <div className="flex flex-col gap-6">
+      {!certified && (
+        <Banner tone="info" title="Not certified yet">
+          This is the count as it stands. Members see results only once you certify and publish them.
+        </Banner>
+      )}
+      {election.runoff_of && (
+        <Banner
+          tone="info"
+          title="This is a run-off"
+          action={
+            <Link href={`/admin/elections/${election.runoff_of}?tab=results`} className={buttonVariants({ size: 'sm', variant: 'outline' })}>
+              Open the original
+            </Link>
+          }
+        >
+          Once it’s certified, the original election’s tie is settled by it.
+        </Banner>
+      )}
+
+      {positions.map((p) => {
+        const here = rows.filter((r) => r.ballot_position_id === p.id);
+        const tied = here.filter((r) => r.outcome === 'runoff');
+        const runoff = (runoffs ?? []).find((r) => r.status !== 'cancelled' && r.ballot_positions.some((b) => b.title === p.title));
+        return (
+          <Panel key={p.id} title={p.title} subtitle={`${p.seats} seat${p.seats === 1 ? '' : 's'}`}>
+            <ul className="divide-y">
+              {here.map((r, i) => {
+                const word = r.outcome === 'vacant' ? 'Vacant' : candidateResultWord({ outcome: r.outcome, isTop: false, votes: r.votes ?? 0, votingOpen: false });
+                return (
+                  <li key={i} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
+                    <span className="flex flex-col">
+                      <span className="font-medium">{r.candidate_id ? name(r.candidate_id) : r.note}</span>
+                      {r.candidate_id && r.note && <span className="text-caption text-muted-foreground">{r.note}</span>}
+                    </span>
+                    <span className="flex items-center gap-3">
+                      {r.votes !== null && <span className="tabular-nums">{r.votes} vote{r.votes === 1 ? '' : 's'}</span>}
+                      {word && <Badge tone={r.outcome === 'runoff' ? 'orange' : r.outcome === 'vacant' || r.outcome === 'withdrawn' ? 'neutral' : 'green'}>{word}</Badge>}
+                    </span>
+                  </li>
+                );
+              })}
+              {here.length === 0 && <li className="px-4 py-3 text-sm text-muted-foreground">Not counted.</li>}
+            </ul>
+            {tied.length > 0 && (
+              <div className="flex flex-wrap items-center gap-3 border-t px-4 py-3 text-sm print:hidden">
+                {runoff ? (
+                  <>
+                    <span>
+                      Run-off: <Badge tone={PHASE_LABEL[electionPhase(runoff).phase].tone}>{PHASE_LABEL[electionPhase(runoff).phase].admin}</Badge>
+                    </span>
+                    <Link href={`/admin/elections/${runoff.id}`} className="underline underline-offset-2">
+                      Open the run-off
+                    </Link>
+                  </>
+                ) : (
+                  !ctx.adminIsStanding && (
+                    <StartRunoffButton run={startRunoff.bind(null, id, p.id)} position={p.title} names={tied.map((r) => name(r.candidate_id))} />
+                  )
+                )}
+              </div>
+            )}
+          </Panel>
+        );
+      })}
+
+      {initiatives.length > 0 && (
+        <Panel title="Initiatives" subtitle="Abstentions never count toward passing.">
+          <ul className="divide-y">
+            {initiatives.map((t) => {
+              const r = rows.find((x) => x.initiative_id === t.id);
+              const { word, tone } = initiativeResultWord({ outcome: r?.outcome, note: r?.note, yes: r?.yes ?? 0, no: r?.no ?? 0, votingOpen: false });
+              return (
+                <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
+                  <span className="font-medium">{t.title}</span>
+                  <span className="flex items-center gap-3 tabular-nums">
+                    Yes {r?.yes ?? 0} · No {r?.no ?? 0} · Abstain {r?.abstain ?? 0}
+                    <Badge tone={tone}>{word}</Badge>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </Panel>
+      )}
+
+      <div className="flex flex-wrap gap-3 print:hidden">
+        {election.status === 'ballot_locked' && actions.certify === true && (
+          <CertifyButton run={certifyElection.bind(null, id)} summary={summary} />
+        )}
+        {election.status === 'ballot_locked' && actions.certify !== true && (
+          <p className="mt-0 text-sm text-muted-foreground">{actions.certify}</p>
+        )}
+        {election.status === 'certified' && actions.publish_results === true && <PublishResultsButton run={publishResults.bind(null, id)} />}
+        {election.status === 'certified' && actions.reopen_certification === true && (
+          <ReopenCertificationButton run={reopenCertification.bind(null, id)} />
+        )}
+        {election.status === 'completed' && actions.archive === true && <ArchiveButton run={archiveElection.bind(null, id)} />}
+        {certified && (
+          <>
+            <a href={`/admin/elections/${id}/results.csv`} className={buttonVariants({ variant: 'outline' })} download>
+              Download CSV
+            </a>
+            <PrintButton />
+          </>
+        )}
+      </div>
     </div>
   );
 }

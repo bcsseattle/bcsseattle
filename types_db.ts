@@ -1698,6 +1698,10 @@ export type Database = {
         Args: { p_election: string; p_reason: string }
         Returns: undefined
       }
+      election_certify: {
+        Args: { p_election: string }
+        Returns: undefined
+      }
       election_extend: {
         Args: {
           p_election: string
@@ -1754,6 +1758,21 @@ export type Database = {
           full_name: string
         }[]
       }
+      election_outcomes: {
+        Args: { p_election: string }
+        Returns: {
+          ballot_position_id: string
+          candidate_id: string
+          initiative_id: string
+          votes: number
+          yes: number
+          no: number
+          abstain: number
+          rank: number
+          outcome: string
+          note: string
+        }[]
+      }
       election_publish: {
         Args: { p_election: string }
         Returns: undefined
@@ -1773,6 +1792,10 @@ export type Database = {
       election_snapshot_voters: {
         Args: { p_election: string }
         Returns: undefined
+      }
+      election_start_runoff: {
+        Args: { p_election: string; p_position: string }
+        Returns: string
       }
       election_turnout: {
         Args: { p_election: string }

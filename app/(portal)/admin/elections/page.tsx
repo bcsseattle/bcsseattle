@@ -39,7 +39,8 @@ async function ManageElections() {
 
   const rows: ElectionListRow[] = (elections ?? []).map((e) => {
     const p = electionPhase(e);
-    const hasPositions = count(positions, e.id) > 0;
+    // A run-off has positions but no nominations window.
+    const hasPositions = count(positions, e.id) > 0 && !e.runoff_of;
     // The list only needs to know whether a draft could be published; the
     // overview checks the rest (adminActions).
     const canPublish = (hasPositions || count(initiatives, e.id) > 0) && validateTimeline(e, { hasPositions }).valid;

@@ -4,6 +4,7 @@ import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { isCandidateVotingOpen, shouldShowUnopposedStatus } from '@/utils/election-config';
 import dayjs from '@/libs/dayjs';
+import { electionPhase } from '@/utils/elections/rules';
 
 interface CandidateResult {
   id: string;
@@ -13,6 +14,9 @@ interface CandidateResult {
   percentage: number;
   photoUrl?: string;
   bio?: string;
+  /** From the certified results (election_results), once there are any. */
+  outcome?: string;
+  note?: string | null;
 }
 
 interface InitiativeResult {
@@ -30,6 +34,8 @@ interface InitiativeResult {
     no: number;
     abstain: number;
   };
+  outcome?: string;
+  note?: string | null;
 }
 
 interface ElectionResults {
@@ -61,6 +67,8 @@ interface ElectionResults {
   candidateResults: CandidateResult[];
   initiativeResults: InitiativeResult[];
   positions: string[];
+  /** True when the outcomes come from certified results. */
+  certified: boolean;
 }
 
 export async function GET(
@@ -105,6 +113,27 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    // A locked ballot (the election management flow): nobody sees counts while
+    // voting is open, and members only once the results are certified and
+    // published (completed); admins see the count once voting has closed.
+    if (election.status === 'ballot_locked') {
+      const phase = electionPhase(election);
+      if (!phase.votingOver || !(await isCurrentUserAdmin())) {
+        return NextResponse.json(
+          { error: 'Results are published after the votes are certified.', pending: true },
+          { status: 403 }
+        );
+      }
+    }
+    const { data: certified } = await supabase
+      .from('election_results')
+      .select('candidate_id, initiative_id, outcome, note')
+      .eq('election_id', id);
+    const outcomeOf = (key: 'candidate_id' | 'initiative_id', rowId: string) => {
+      const row = certified?.find((r) => r[key] === rowId);
+      return row ? { outcome: row.outcome, note: row.note } : {};
+    };
 
     // Calculate voting status for separate candidate/initiative periods
     const nowUtc = dayjs.utc();
@@ -214,7 +243,8 @@ export async function GET(
           ? Math.round((voteCount / votesByPosition.get(candidate.position)!) * 100 * 100) / 100
           : 0,
         photoUrl: candidate.photo_url,
-        bio: candidate.bio
+        bio: candidate.bio,
+        ...outcomeOf('candidate_id', candidate.id)
       });
       
       positionsSet.add(candidate.position);
@@ -295,7 +325,8 @@ export async function GET(
           yes: totalVotes > 0 ? Math.round((votes.yes / totalVotes) * 100 * 100) / 100 : 0,
           no: totalVotes > 0 ? Math.round((votes.no / totalVotes) * 100 * 100) / 100 : 0,
           abstain: totalVotes > 0 ? Math.round((votes.abstain / totalVotes) * 100 * 100) / 100 : 0
-        }
+        },
+        ...outcomeOf('initiative_id', initiative.id)
       });
     });
 
@@ -332,7 +363,8 @@ export async function GET(
       },
       candidateResults,
       initiativeResults,
-      positions: Array.from(positionsSet).sort()
+      positions: Array.from(positionsSet).sort(),
+      certified: (certified?.length ?? 0) > 0
     };
 
     return NextResponse.json(results);
