@@ -58,7 +58,7 @@ export async function loadElection(id: string, userId: string) {
     supabase.from('elections').select('*').eq('id', id).maybeSingle()
   );
   if (!election) throw new Error('This election was not found.');
-  const [candidates, initiatives, dbPositions, sessions, confirmations, votes, nominations] =
+  const [candidates, initiatives, dbPositions, sessions, confirmations, votes, nominations, roll] =
     await Promise.all([
       rows(
         supabase
@@ -77,7 +77,7 @@ export async function loadElection(id: string, userId: string) {
       rows(
         supabase
           .from('ballot_positions')
-          .select('position:title, description, display_order')
+          .select('position:title, description, display_order, seats, vacant, unopposed_decision')
           .eq('election_id', id)
           .order('display_order')
       ),
@@ -111,6 +111,14 @@ export async function loadElection(id: string, userId: string) {
           .select('id, position, status, rejection_reason')
           .eq('election_id', id)
           .eq('nominee_user_id', userId)
+      ),
+      // On the voter roll taken at lock (B11)? RLS shows members their own row.
+      rows(
+        supabase
+          .from('election_voters')
+          .select('user_id')
+          .eq('election_id', id)
+          .eq('user_id', userId)
       )
     ]);
   const positions = positionOrder(
@@ -128,11 +136,13 @@ export async function loadElection(id: string, userId: string) {
   const votedInitiatives =
     !!session('initiatives') || votes.some((v) => v.initiative_id);
 
-  // Elected only once candidate voting has closed. The website's rule also
-  // says so before voting opens (during nominations); the app doesn't.
+  // Decided at lock, position by position (then it holds during voting too);
+  // otherwise only once candidate voting has closed. The website's old rule
+  // also said so before voting opened (during nominations); the app doesn't.
+  const decided = positions.some((x) => x.unopposed_decision || x.vacant);
   const electedUnopposed =
-    unopposed(election, candidates, p.candidateVotingOpen) &&
-    p.now > Date.parse(p.candidateWindow.end);
+    unopposed(election, candidates, p.candidateVotingOpen, positions) &&
+    (decided || p.now > Date.parse(p.candidateWindow.end));
   const { offerCandidates, offerInitiatives } = ballotOffer({
     windows: p,
     votedCandidates,
@@ -161,6 +171,7 @@ export async function loadElection(id: string, userId: string) {
     offerInitiatives,
     myCandidacy: candidates.find((c) => c.user_id === userId) ?? null,
     myNominations: nominations,
+    onRoll: roll.length > 0,
     /** A nomination the member has accepted (waiting for review, or approved). */
     myAcceptedNomination:
       nominations.find((n) => n.status === 'submitted' || n.status === 'approved') ?? null

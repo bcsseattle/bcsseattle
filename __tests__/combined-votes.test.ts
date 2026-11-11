@@ -131,6 +131,40 @@ describe('submitCombinedVotes', () => {
     expect(result.error).toMatch(/multiple candidates in the same position/);
   });
 
+  describe('seats and the locked ballot', () => {
+    const directors = [
+      { id: 'c1', position: 'Director', withdrawn_at: null },
+      { id: 'c2', position: 'Director', withdrawn_at: null },
+      { id: 'c3', position: 'Director', withdrawn_at: null }
+    ];
+    const pick = (...ids: string[]) => vote(ids.map((candidateId) => ({ candidateId, position: 'ignored' })), []);
+
+    it('takes up to as many votes as the position has seats', async () => {
+      results.candidates = { data: directors, error: null };
+      results.ballot_positions = { data: [{ title: 'Director', seats: 2, vacant: false, unopposed_decision: null }], error: null };
+      expect((await pick('c1', 'c2')).success).toBe(true);
+      expect((await pick('c1', 'c2', 'c3')).error).toBe('Choose up to 2 candidates for Director');
+    });
+
+    it('refuses the same candidate twice', async () => {
+      results.candidates = { data: directors, error: null };
+      expect((await pick('c1', 'c1')).error).toMatch(/once/);
+    });
+
+    it('refuses a withdrawn candidate (B13)', async () => {
+      results.candidates = { data: [{ ...directors[0], withdrawn_at: '2026-12-01T00:00:00Z' }, directors[1]], error: null };
+      expect((await pick('c1')).error).toMatch(/withdrawn/);
+    });
+
+    it('refuses a position elected unopposed or vacant', async () => {
+      results.candidates = { data: [directors[0]], error: null };
+      results.ballot_positions = { data: [{ title: 'Director', seats: 1, vacant: false, unopposed_decision: 'elect' }], error: null };
+      expect((await pick('c1')).error).toBe('Director isn’t on the ballot');
+      results.ballot_positions = { data: [{ title: 'Director', seats: 1, vacant: true, unopposed_decision: null }], error: null };
+      expect((await pick('c1')).error).toBe('Director isn’t on the ballot');
+    });
+  });
+
   it('rejects a candidate from another election', async () => {
     results.candidates = { data: [], error: null };
     expect((await vote()).error).toBe('Invalid candidate IDs: c1');

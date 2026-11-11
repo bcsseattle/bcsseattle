@@ -63,8 +63,13 @@ export type VotingWindows = ReturnType<typeof votingWindows>;
 export function electedUnopposed(
   e: Pick<ElectionRow, 'type' | 'show_unopposed_status'>,
   candidates: { position: string }[],
-  candidateVotingOpen: boolean
+  candidateVotingOpen: boolean,
+  /** The election's positions. Once the ballot is locked they carry the decisions made then. */
+  positions?: Position[]
 ) {
+  // Decided at lock, position by position: nothing is left to vote for.
+  if (positions?.some((p) => p.unopposed_decision || p.vacant))
+    return candidates.length > 0 && !positions.some((p) => positionOnBallot(p, candidates));
   const show = e.show_unopposed_status ?? ELECTION_TYPE_CONFIGS[e.type as ElectionType]?.defaultShowUnopposedStatus ?? true;
   if (!show || candidates.length === 0 || candidateVotingOpen) return false;
   const counts = new Map<string, number>();
@@ -72,7 +77,27 @@ export function electedUnopposed(
   return Array.from(counts.values()).every((n) => n <= 1);
 }
 
-export type Position = { position: string; description: string | null; display_order: number };
+export type Position = {
+  position: string;
+  description: string | null;
+  display_order: number;
+  /** How many people the position elects (ballot_positions.seats). */
+  seats?: number;
+  vacant?: boolean;
+  /** Decided at lock when candidates <= seats. */
+  unopposed_decision?: string | null;
+};
+
+/**
+ * Whether members vote on a position: it has candidates, isn't vacant, and
+ * wasn't elected unopposed at lock (D5). Withdrawn candidates still count:
+ * they stay on the ballot, labelled, and can't be chosen.
+ */
+export function positionOnBallot(p: Position, candidates: { position: string }[]) {
+  const count = candidates.filter((c) => c.position === p.position).length;
+  if (p.vacant || count === 0) return false;
+  return !(p.unopposed_decision === 'elect' && count <= (p.seats ?? 1));
+}
 
 // Used when election_positions has no rows for the election's type.
 const DEFAULT_POSITIONS: Record<string, [string, string][]> = {
@@ -141,20 +166,23 @@ export function ballotQuestions({
   offerCandidates: boolean;
   offerInitiatives: boolean;
   positions: Position[];
-  candidates: Pick<Tables<'candidates'>, 'id' | 'position' | 'full_name' | 'bio'>[];
+  candidates: (Pick<Tables<'candidates'>, 'id' | 'position' | 'full_name' | 'bio'> & { withdrawn_at?: string | null })[];
   initiatives: Pick<Tables<'initiatives'>, 'id' | 'title' | 'description' | 'additional_info_url'>[];
 }) {
   return {
+    // Positions members vote on, each with its seats: vacant and
+    // elected-unopposed positions are left off (positionOnBallot).
     positions: offerCandidates
       ? positions
+          .filter((p) => positionOnBallot(p, candidates))
           .map((p) => ({
             position: p.position,
             description: p.description,
+            seats: p.seats ?? 1,
             candidates: candidates
               .filter((c) => c.position === p.position)
-              .map((c) => ({ id: c.id, name: c.full_name, detail: c.bio }))
+              .map((c) => ({ id: c.id, name: c.full_name, detail: c.bio, withdrawn: !!c.withdrawn_at }))
           }))
-          .filter((p) => p.candidates.length > 0)
       : [],
     initiatives: offerInitiatives
       ? initiatives.map((i) => ({ id: i.id, title: i.title, description: i.description, url: i.additional_info_url }))

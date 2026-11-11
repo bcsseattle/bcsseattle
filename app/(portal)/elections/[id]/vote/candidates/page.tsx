@@ -39,6 +39,15 @@ export default async function CandidateVotePage(props: Props) {
     redirect(`/elections/${id}`);
   }
 
+  // This form takes one choice per position; a position with more seats is
+  // voted on in the election page's ballot, which takes up to that many.
+  const { count: multiSeat } = await supabase
+    .from('ballot_positions')
+    .select('id', { count: 'exact', head: true })
+    .eq('election_id', id)
+    .gt('seats', 1);
+  if (multiSeat) redirect(`/elections/${id}`);
+
   // Check if user has already voted for candidates
   const { data: existingSession } = await supabase
     .from('vote_sessions')

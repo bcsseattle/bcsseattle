@@ -92,7 +92,12 @@ function Summary({ me }: { me: Me }) {
     // Each part is read on its own.
     const [positions, candidates, initiatives, sessions, votes] = ids.length
       ? await Promise.all([
-          rows(supabase.from('ballot_positions').select('election_id').in('election_id', ids)),
+          rows(
+            supabase
+              .from('ballot_positions')
+              .select('election_id, title, seats, vacant, unopposed_decision')
+              .in('election_id', ids)
+          ),
           rows(
             supabase
               .from('candidates')
@@ -139,7 +144,15 @@ function Summary({ me }: { me: Me }) {
           electedUnopposed: electedUnopposed(
             e,
             mine(candidates),
-            windows.candidateVotingOpen
+            windows.candidateVotingOpen,
+            mine(positions).map((x) => ({
+              position: x.title,
+              description: null,
+              display_order: 0,
+              seats: x.seats,
+              vacant: x.vacant,
+              unopposed_decision: x.unopposed_decision
+            }))
           ),
           candidateCount: mine(candidates).length,
           initiativeCount: mine(initiatives).length

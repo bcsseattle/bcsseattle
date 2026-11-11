@@ -369,3 +369,73 @@ export async function editCandidate(id: string, candidateId: string, _: FormStat
   revalidatePath(`/admin/elections/${id}`);
   redirect(getStatusRedirect(nominationsTab(id), 'Candidate updated.', ''));
 }
+
+// ---------------------------------------------------------------- ballot and voting
+
+const tab = (id: string, name: 'ballot' | 'voting') => `/admin/elections/${id}?tab=${name}`;
+
+/**
+ * A position's decision before the lock: vacant (no one stands), or for an
+ * uncontested one whether it's elected unopposed or kept on the ballot.
+ * The database allows this only while the ballot is open.
+ */
+export async function decidePosition(
+  id: string,
+  positionId: string,
+  decision: 'vacant' | 'not_vacant' | 'elect' | 'keep_on_ballot'
+): Promise<FormState> {
+  const { supabase } = await guard();
+  const change =
+    decision === 'vacant' || decision === 'not_vacant'
+      ? { vacant: decision === 'vacant' }
+      : { unopposed_decision: decision };
+  const { error } = await supabase.from('ballot_positions').update(change).eq('id', positionId).eq('election_id', id);
+  if (error) return { error: dbMessage(error) };
+  revalidatePath(`/admin/elections/${id}`);
+  redirect(tab(id, 'ballot'));
+}
+
+/** Moves a deadline later with a reason (election_extend): nominations, voting, or candidate voting. */
+export async function extendDeadline(
+  id: string,
+  field: 'nomination_end' | 'end_date' | 'candidate_voting_end',
+  _: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const { supabase } = await guard();
+  const values = valuesOf(formData);
+  const until = fromLocalInput(values.until ?? '');
+  if ('error' in until) return { fieldErrors: { until: until.error }, values };
+  const { error } = await supabase.rpc('election_extend', {
+    p_election: id,
+    p_field: field,
+    p_until: until.iso,
+    p_reason: values.reason ?? ''
+  });
+  if (error) return { error: dbMessage(error), values };
+  revalidatePath(`/admin/elections/${id}`);
+  redirect(
+    getStatusRedirect(
+      tab(id, field === 'nomination_end' ? 'ballot' : 'voting'),
+      field === 'nomination_end' ? 'Nominations extended.' : 'Voting extended.',
+      'Recorded in the activity log.'
+    )
+  );
+}
+
+export async function lockBallot(id: string): Promise<FormState> {
+  const { supabase } = await guard();
+  const { error } = await supabase.rpc('election_lock_ballot', { p_election: id });
+  if (error) return { error: dbMessage(error) };
+  revalidatePath('/admin/elections');
+  redirect(getStatusRedirect(tab(id, 'ballot'), 'Ballot locked.', 'Voting opens at the time set. The voter roll is taken.'));
+}
+
+/** After the lock (B13): the candidate stays on the ballot, labelled, and can't be chosen or win. */
+export async function withdrawCandidate(id: string, candidateId: string, reason: string): Promise<FormState> {
+  const { supabase } = await guard();
+  const { error } = await supabase.rpc('election_withdraw_candidate', { p_candidate: candidateId, p_reason: reason });
+  if (error) return { error: dbMessage(error) };
+  revalidatePath(`/admin/elections/${id}`);
+  redirect(getStatusRedirect(tab(id, 'ballot'), 'Candidate marked withdrawn.', 'Members can’t choose them any more.'));
+}

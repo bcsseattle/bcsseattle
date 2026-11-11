@@ -29,14 +29,14 @@ Given('I have already voted for {string}', async function (this: E2EWorld, name:
 });
 
 /** The election page's ballot: Review votes, Submit ballot, then confirm in the dialog. */
-async function submitBallot(page: E2EWorld['page']) {
+export async function submitBallot(page: E2EWorld['page']) {
   await page.getByRole('button', { name: 'Review votes' }).click();
   await page.getByRole('button', { name: 'Submit ballot' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Submit ballot' }).click();
   await expect(page.getByRole('heading', { name: 'Your ballot is in' })).toBeVisible();
 }
 
-function candidate(world: E2EWorld, name: string) {
+export function candidate(world: E2EWorld, name: string) {
   const c = world.election!.candidates.find((x) => x.full_name === name);
   if (!c) throw new Error(`No candidate "${name}" in this scenario's election`);
   return c;
