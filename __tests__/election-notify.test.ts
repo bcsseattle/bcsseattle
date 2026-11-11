@@ -18,6 +18,12 @@ jest.mock('@/utils/supabase/admin', () => ({
           }
         };
       }
+      if (table === 'elections') {
+        const e: Record<string, unknown> = {};
+        for (const m of ['select', 'eq']) e[m] = () => e;
+        e.single = async () => ({ data: election, error: null });
+        return e;
+      }
       // members: approved, active
       const q: Record<string, unknown> = {};
       for (const m of ['select', 'eq', 'not']) q[m] = () => q;
@@ -34,7 +40,10 @@ jest.mock('@/utils/supabase/admin', () => ({
   }
 }));
 
-import { notify } from '@/utils/elections/notify';
+import { notify, notifyDatesChanged, notifyExtended } from '@/utils/elections/notify';
+import { dateChanges } from '@/utils/elections/rules';
+
+const election: Record<string, string | null> = { id: 'e1', title: 'Board 2027', end_date: '2026-12-20T04:00:00.000Z' };
 
 const notice = { electionId: 'e1', kind: 'results_published' as const, email: { subject: 'Results', text: 'Out now' }, push: { title: 'Results', body: 'Out now' } };
 
@@ -70,4 +79,32 @@ it('sends a personal notice once per person', async () => {
   expect(sendMail.mock.calls.map(([m]: any) => m.to)).toEqual(['three@example.com']);
   expect(await notify(personal)).toBe(0);
   expect(await notify({ ...personal, to: ['u1', 'u3'] })).toBe(1);
+});
+
+describe('date changes and extensions', () => {
+  beforeEach(() => {
+    process.env.ELECTION_NOTIFICATIONS = 'send';
+  });
+
+  it('tells members what moved, once per change', async () => {
+    const before = { start_date: '2026-12-10T17:00:00Z', end_date: '2026-12-20T04:00:00Z' };
+    const moved = dateChanges(before, { start_date: '2026-12-11T17:00:00Z', end_date: before.end_date });
+    expect(await notifyDatesChanged('e1', moved)).toBe(2);
+    const [mail] = sendMail.mock.calls[0] as any;
+    expect(mail.subject).toBe('Dates changed: Board 2027');
+    expect(mail.text).toContain('Voting opens: 11 Dec 2026, 09:00 PST (was 10 Dec 2026, 09:00 PST)');
+    expect(mail.text).not.toContain('Voting closes');
+
+    expect(await notifyDatesChanged('e1', moved)).toBe(0); // the same change again
+    const again = dateChanges(before, { start_date: '2026-12-12T17:00:00Z' });
+    expect(await notifyDatesChanged('e1', again)).toBe(2); // a new change
+    expect(await notifyDatesChanged('e1', [])).toBe(0);
+  });
+
+  it('tells members about a second extension too', async () => {
+    expect(await notifyExtended('e1', 'end_date')).toBe(2);
+    expect(await notifyExtended('e1', 'end_date')).toBe(0);
+    election.end_date = '2026-12-22T04:00:00.000Z';
+    expect(await notifyExtended('e1', 'end_date')).toBe(2);
+  });
 });
