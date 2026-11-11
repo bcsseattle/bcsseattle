@@ -183,6 +183,9 @@ describe('adminActions', () => {
       expect(adminActions(base, { ...ready, undecidedNominations: 2 }, afterNominations).lock_ballot).toBe(
         'Some nominations haven’t been decided yet.'
       );
+      expect(adminActions(base, { ...ready, undecidedProposals: 1 }, afterNominations).lock_ballot).toBe(
+        'Some initiative proposals haven’t been decided yet.'
+      );
     });
     it('needs every position filled or vacant, and something on the ballot', () => {
       expect(adminActions(base, { ...ready, emptyPositions: ['Treasurer'] }, afterNominations).lock_ballot).toMatch(/Treasurer/);
@@ -303,6 +306,8 @@ describe('admin list and overview', () => {
     expect(nextAction('draft', { ...none, canPublish: false })?.action).toBe('finish_setup');
     expect(nextAction('review', { ...none, nominationsToReview: 6 })?.label).toBe('Review 6 nominations');
     expect(nextAction('review', { ...none, nominationsToReview: 1 })?.label).toBe('Review 1 nomination');
+    expect(nextAction('review', { ...none, nominationsToReview: 2, proposalsToReview: 1 })?.label).toBe('Review 2 nominations and 1 proposal');
+    expect(nextAction('nominations_open', { ...none, proposalsToReview: 3 })?.label).toBe('Review 3 proposals');
     expect(nextAction('review', none)?.label).toBe('Lock ballot');
     expect(nextAction('voting_closed', none)?.label).toBe('Certify results');
     expect(nextAction('certified', none)?.label).toBe('Publish results');

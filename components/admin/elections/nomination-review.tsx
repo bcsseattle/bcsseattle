@@ -52,6 +52,41 @@ export function ReviewButtons({
   );
 }
 
+/** Approve an initiative proposal (it joins the ballot) or reject it with a reason the member sees. */
+export function ProposalReviewButtons({
+  approve,
+  reject,
+  title
+}: {
+  approve: () => Promise<FormState | void>;
+  reject: (reason: string) => Promise<FormState | void>;
+  title: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <ConfirmAction
+        trigger="Approve"
+        size="sm"
+        title="Put this question on the ballot?"
+        description={`“${title}” goes on the ballot, passing with more Yes than No. You can change its wording, or make it need two-thirds (for a bylaw change), under Ballot until the lock.`}
+        confirmLabel="Approve initiative"
+        run={() => approve()}
+      />
+      <ConfirmAction
+        trigger="Reject"
+        size="sm"
+        variant="outline"
+        tone="destructive"
+        title="Don’t put this question on the ballot?"
+        description={`“${title}” won’t be on the ballot. The member sees your reason.`}
+        confirmLabel="Reject initiative"
+        run={reject}
+        reason={{ label: 'Reason', helper: 'The member sees this. It’s also in the activity log.' }}
+      />
+    </div>
+  );
+}
+
 /** Fix a candidate's name, statement or photo (logged; allowed after the lock too). */
 export function EditCandidate({
   action,

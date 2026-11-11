@@ -166,6 +166,14 @@ The bylaws say nothing on any of these. **Decided:** B4 (plurality), B5 (run-off
 
 ---
 
+### Initiative proposals (B17-B20, added 13 Nov)
+
+- Table `initiative_proposals` (migration `20261113090000`): title, description, link, `submitted → approved | rejected`, or `withdrawn`. Readable by the proposer and admins; written only through `initiative_propose`, `initiative_proposal_update`, `initiative_proposal_withdraw` and `initiative_proposal_decide`. Every change is in the activity log.
+- Approving creates the `initiatives` row and links it. Withdrawing an approved one deletes it; if an admin removes that initiative from the ballot, the proposal shows as not approved ("Taken off the ballot by an admin").
+- The ballot can't be locked while a proposal waits for review (trigger on `elections`), and the admin's next action counts proposals with nominations.
+- Member pages: **Propose an initiative** (`/elections/[id]/propose`, with four sample questions to start from) and the proposal's own page (`/elections/[id]/proposals/[proposalId]`) to edit or withdraw. Admins review under the Nominations tab. The proposer gets an email on the decision (when notifications are on).
+- **Not in the app yet:** members propose on the website only (app gap A10).
+
 ## 3. Schema changes
 
 Migrations are listed in order. All of them are additive or backfilled, and none touches `votes`.
@@ -540,6 +548,10 @@ Each phase is one PR into `develop`, branched from the previous phase. Following
 | B14 | Fixes after lock | **Name, statement and photo can be fixed,** and each change is logged |
 | B15 | Two-person certification | **No.** One admin certifies |
 | B16 | Admin tally before certifying | **Yes,** once every voting window has ended |
+| B17 | Members propose initiatives (13 Nov) | **Yes, admins approve.** A proposal waits for review; approving puts it on the ballot (majority; admins can change the wording or make it ⅔ until the lock), rejecting needs a reason the member sees |
+| B18 | When proposals are open | **The nominations window.** An election without positions can now have one (optional in Timeline) just for proposals; without it, members can't propose |
+| B19 | Support needed | **None.** Any approved, active member can propose; review is the filter |
+| B20 | Limit | **Up to 3** active proposals per member per election |
 | D2 | Status | **Dates plus admin gates.** One shared phase rule, no scheduled job |
 | D3 | Positions | **Per election,** with seats. `position_enum` is dropped |
 | D6 | Notifications | **Email and push, chosen per event** (§2 D6). Sends need separate approval |
