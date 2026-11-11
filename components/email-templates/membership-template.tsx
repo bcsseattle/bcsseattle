@@ -34,11 +34,11 @@ export const WelcomeEmailTemplate = () => (
             have you become a member of our community.
           </Text>
           <Text style={paragraph}>
-            If you have any questions or need help, please don't hesitate to
+            If you have any questions or need help, please don&apos;t hesitate to
             reach out to us.
           </Text>
           <Text style={paragraph}>
-            Please select a membership plan if you haven't already.
+            Please select a membership plan if you haven&apos;t already.
           </Text>
           <Button style={button} href={`${baseUrl}/contribute`}>
             Select Contribution Plan

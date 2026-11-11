@@ -35,11 +35,11 @@ This application uses a comprehensive feature flag system that follows industry 
 ### Server Components (Next.js)
 
 ```typescript
-import { useServerFeatureFlags } from '@/utils/server-feature-flags';
+import { getServerFeatureFlags } from '@/utils/server-feature-flags';
 
 export default async function MyPage({ searchParams }: { searchParams: { configoverride?: string } }) {
   // Get feature flags
-  const features = await useServerFeatureFlags(searchParams.configoverride);
+  const features = await getServerFeatureFlags(searchParams.configoverride);
   
   // Use feature flags
   if (!features.skipMembershipCheck) {
@@ -156,7 +156,7 @@ const config = parseConfigOverride(searchParams.configoverride);
 if (config.skipMembershipCheck) { ... }
 
 // New way
-const features = await useServerFeatureFlags(searchParams.configoverride);
+const features = await getServerFeatureFlags(searchParams.configoverride);
 if (features.skipMembershipCheck) { ... }
 ```
 

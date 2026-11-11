@@ -1,5 +1,5 @@
-import { currentUserIsActiveMember } from '@/utils/election-config';
 import { createClient } from '@/utils/supabase/server';
+import { ballotRefusal } from '@/utils/elections/access';
 import { notFound, redirect } from 'next/navigation';
 import CandidateVotingClient from '@/components/elections/candidate-voting-client';
 
@@ -33,25 +33,9 @@ export default async function CandidateVotePage(props: Props) {
     notFound();
   }
 
-  // Check if candidate voting is open
-  const now = new Date();
-  const start = new Date(election.start_date);
-  const end = new Date(election.end_date);
-  
-  // Check candidate-specific voting period if separate periods are enabled
-  let isCandidateVotingOpen = now >= start && now <= end;
-  
-  if (election.enable_separate_voting_periods && election.candidate_voting_end) {
-    const candidateEnd = new Date(election.candidate_voting_end);
-    isCandidateVotingOpen = now >= start && now <= candidateEnd;
-  }
-
-  if (!isCandidateVotingOpen) {
-    redirect(`/elections/${id}`);
-  }
-
-  // Only approved, active members get a ballot (BUG-007).
-  if (!(await currentUserIsActiveMember())) {
+  // Locked ballot, window open, approved active member on the roll: the same
+  // check the vote handlers make (BUG-007, BUG-060).
+  if (await ballotRefusal(supabase, id, user.id, 'candidates')) {
     redirect(`/elections/${id}`);
   }
 

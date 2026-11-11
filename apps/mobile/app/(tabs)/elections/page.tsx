@@ -31,7 +31,9 @@ export default function ElectionsTab() {
     );
     const ids = elections.map((e) => e.id);
     const [positions, initiatives] = await Promise.all([
-      rows(supabase.from('election_positions').select('election_type')),
+      ids.length
+        ? rows(supabase.from('ballot_positions').select('election_id').in('election_id', ids))
+        : [],
       ids.length
         ? rows(
             supabase
@@ -41,7 +43,7 @@ export default function ElectionsTab() {
           )
         : []
     ]);
-    // Type tags as on the website: positions are defined per election type (BUG-059).
+    // Type tags as on the website.
     const list: Row[] = elections.map((e) => ({
       ...e,
       types: typeTags(e, positions, initiatives)

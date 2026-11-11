@@ -1,5 +1,5 @@
 import { Given, Then, When } from '@cucumber/cucumber';
-import { admin, anonClient, castCandidateVotes, clientAs, createDonation, getMember } from '../support/db';
+import { admin, anonClient, castCandidateVotes, clientAs, createDonation, getMember, whileBallotOpen } from '../support/db';
 import { env } from '../support/env';
 import { expect } from '../support/expect';
 import { givePaidContribution } from '../support/stripe';
@@ -171,7 +171,9 @@ Then('I should get the voting security report', async function (this: E2EWorld) 
 const candidateNamed = (world: E2EWorld, name: string) => world.election!.candidates.find((c) => c.full_name === name)!;
 
 Given('{string} is standing as {string}', async function (this: E2EWorld, user: string, candidate: string) {
-  const { error } = await admin.from('candidates').update({ user_id: this.user(user).id }).eq('id', candidateNamed(this, candidate).id);
+  const { error } = await whileBallotOpen(this.election!.id, () =>
+    admin.from('candidates').update({ user_id: this.user(user).id }).eq('id', candidateNamed(this, candidate).id)
+  );
   expect(error).toBeNull();
 });
 

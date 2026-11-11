@@ -30,9 +30,6 @@ export default async function AdminElectionsPage() {
           <Button asChild variant="outline" size="sm">
             <Link href="/admin/voting-config">Voting configuration</Link>
           </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/election-types">Election types</Link>
-          </Button>
         </div>
       </CardHeader>
       <CardContent>

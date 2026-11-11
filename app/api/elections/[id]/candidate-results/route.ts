@@ -30,6 +30,11 @@ export async function GET(
     if (await isCandidateVotingOpen(id)) {
       return NextResponse.json({ error: 'Results are available once voting closes' }, { status: 403 });
     }
+    // Certified results wait for an admin to publish them; cancelled ones are never counted.
+    const { data: election } = await supabase.from('elections').select('status').eq('id', id).maybeSingle();
+    if (!election || ['certified', 'cancelled'].includes(election.status)) {
+      return NextResponse.json({ error: 'Results aren’t published yet' }, { status: 403 });
+    }
 
     // Get all candidates for this election
     const { data: candidates, error: candidatesError } = await supabase

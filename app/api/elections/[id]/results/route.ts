@@ -92,8 +92,13 @@ export async function GET(
       .single();
 
     // Draft, cancelled or inactive elections aren't published; admins can still preview them (BUG-037).
+    // Certified results wait for an admin to publish them.
     const unpublished =
-      !election || !election.is_active || election.status === 'draft' || election.status === 'cancelled';
+      !election ||
+      !election.is_active ||
+      election.status === 'draft' ||
+      election.status === 'cancelled' ||
+      election.status === 'certified';
     if (electionError || !election || (unpublished && !(await isCurrentUserAdmin()))) {
       return NextResponse.json(
         { error: 'Election not found' },

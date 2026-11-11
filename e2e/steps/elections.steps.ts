@@ -1,5 +1,5 @@
 import { Given, Then, When } from '@cucumber/cucumber';
-import { admin, castCandidateVotes, createElection, createUser, type ElectionWindow } from '../support/db';
+import { admin, castCandidateVotes, createElection, createUser, whileBallotOpen, type ElectionWindow } from '../support/db';
 import { expect } from '../support/expect';
 import type { E2EWorld } from '../support/world';
 
@@ -230,11 +230,13 @@ Given(/^"([^"]+)" received (\d+) votes? and "([^"]+)" received (\d+) votes?$/, a
 });
 
 Given(/^"([^"]+)" is the only candidate for "([^"]+)" and received (\d+) votes$/, async function (this: E2EWorld, name: string, position: string, n: string) {
-  const { data, error } = await admin
-    .from('candidates')
-    .insert({ election_id: this.election!.id, full_name: name, position })
-    .select('id, full_name, position')
-    .single();
+  const { data, error } = await whileBallotOpen(this.election!.id, () =>
+    admin
+      .from('candidates')
+      .insert({ election_id: this.election!.id, full_name: name, position })
+      .select('id, full_name, position')
+      .single()
+  );
   if (error) throw new Error(error.message);
   this.election!.candidates.push(data);
   await giveVotes(this, data.id, Number(n));

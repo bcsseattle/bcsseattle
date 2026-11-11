@@ -1,16 +1,23 @@
 /**
- * Election rules shared by the website's election page (rows loaded on the
- * server) and the app (rows loaded on the device). Pure and client-safe: no
- * queries here. The vote and nomination handlers check all of this again.
+ * Election rules shared by the website (rows loaded on the server), the app
+ * (rows loaded on the device) and the admin screens. Pure and client-safe: no
+ * queries here. The handlers and the database (supabase/migrations/
+ * 20261110120100_election_lifecycle.sql) check all of this again.
  *
- * Nomination windows and phase words are not here: the website and the app
- * still disagree on those (docs/mobile-app-gaps.md W15), so each keeps its own.
+ * Where an election stands comes from two things (docs/election-management-plan.md
+ * D2): elections.status, which holds only what an admin decided, and the dates,
+ * which decide when nominations and voting are open. electionPhase combines them.
  */
 import type { Tables } from '@/types_db';
 import type { ElectionType } from '@/types';
 import { ELECTION_TYPE_CONFIGS } from '@/utils/election-types';
 
 type ElectionRow = Tables<'elections'>;
+
+/** Separate candidate and initiative periods: the election's setting, else its type's default (BUG-060). */
+export function separatePeriods(e: Pick<ElectionRow, 'type' | 'enable_separate_voting_periods'>) {
+  return e.enable_separate_voting_periods ?? ELECTION_TYPE_CONFIGS[e.type as ElectionType]?.defaultSeparateVotingPeriods ?? false;
+}
 
 /**
  * Where voting stands. Candidate voting follows candidate_voting_start/end
@@ -25,8 +32,7 @@ export function votingWindows(
   >,
   now = Date.now()
 ) {
-  const separate =
-    e.enable_separate_voting_periods ?? ELECTION_TYPE_CONFIGS[e.type as ElectionType]?.defaultSeparateVotingPeriods ?? false;
+  const separate = separatePeriods(e);
   const candidateWindow = {
     start: (separate && e.candidate_voting_start) || e.start_date,
     end: (separate && e.candidate_voting_end) || e.end_date
@@ -154,4 +160,315 @@ export function ballotQuestions({
       ? initiatives.map((i) => ({ id: i.id, title: i.title, description: i.description, url: i.additional_info_url }))
       : []
   };
+}
+
+// ---------------------------------------------------------------------------
+// Phase and state machine
+// ---------------------------------------------------------------------------
+
+export type ElectionPhase =
+  | 'draft'
+  | 'upcoming'
+  | 'nominations_open'
+  | 'review'
+  | 'ballot_ready'
+  | 'voting_open'
+  | 'voting_closed'
+  | 'certified'
+  | 'results_published'
+  | 'archived'
+  | 'cancelled';
+
+type Tone = 'green' | 'blue' | 'orange' | 'red' | 'neutral';
+
+/** Status in words, never colour alone. Members see a certified election as closed until results are published. */
+export const PHASE_LABEL: Record<ElectionPhase, { member: string; admin: string; tone: Tone }> = {
+  draft: { member: 'Draft', admin: 'Draft', tone: 'neutral' },
+  upcoming: { member: 'Upcoming', admin: 'Upcoming', tone: 'neutral' },
+  nominations_open: { member: 'Nominations open', admin: 'Nominations open', tone: 'blue' },
+  review: { member: 'Nominations closed', admin: 'Nominations review', tone: 'orange' },
+  ballot_ready: { member: 'Upcoming', admin: 'Ballot locked', tone: 'neutral' },
+  voting_open: { member: 'Voting open', admin: 'Voting open', tone: 'green' },
+  voting_closed: { member: 'Voting closed', admin: 'Voting closed', tone: 'orange' },
+  certified: { member: 'Voting closed', admin: 'Certified', tone: 'orange' },
+  results_published: { member: 'Completed', admin: 'Results published', tone: 'neutral' },
+  archived: { member: 'Archived', admin: 'Archived', tone: 'neutral' },
+  cancelled: { member: 'Cancelled', admin: 'Cancelled', tone: 'red' }
+};
+
+type PhaseInput = Pick<
+  ElectionRow,
+  | 'status'
+  | 'type'
+  | 'nomination_start'
+  | 'nomination_end'
+  | 'start_date'
+  | 'end_date'
+  | 'enable_separate_voting_periods'
+  | 'candidate_voting_start'
+  | 'candidate_voting_end'
+>;
+
+const within = (now: number, start: string | null, end: string | null) =>
+  !!start && !!end && now >= Date.parse(start) && now <= Date.parse(end);
+
+/**
+ * Where an election stands. Voting is open only once the ballot is locked and
+ * inside its window; the flags returned here are gated on that, so pass this
+ * (not votingWindows) to ballotOffer. Windows include their edges.
+ * Mirrors public.election_voting_open in the database.
+ */
+export function electionPhase(e: PhaseInput, now = Date.now()) {
+  const w = votingWindows(e, now);
+  const locked = e.status === 'ballot_locked';
+  const nominationsOpen = e.status === 'scheduled' && within(now, e.nomination_start, e.nomination_end);
+  const candidateVotingOpen = locked && w.candidateVotingOpen;
+  const initiativeVotingOpen = locked && w.initiativeVotingOpen;
+  const votingStart = Math.min(Date.parse(w.candidateWindow.start), Date.parse(e.start_date));
+  const votingEnd = Math.max(Date.parse(w.candidateWindow.end), Date.parse(e.end_date));
+
+  const phase: ElectionPhase = (() => {
+    switch (e.status) {
+      case 'draft':
+      case 'certified':
+      case 'archived':
+      case 'cancelled':
+        return e.status;
+      case 'completed':
+        return 'results_published';
+      case 'scheduled':
+        if (e.nomination_start && now < Date.parse(e.nomination_start)) return 'upcoming';
+        return nominationsOpen ? 'nominations_open' : 'review';
+      default: // ballot_locked
+        if (now < votingStart) return 'ballot_ready';
+        return now <= votingEnd ? 'voting_open' : 'voting_closed';
+    }
+  })();
+
+  return {
+    ...w,
+    phase,
+    label: PHASE_LABEL[phase],
+    nominationsOpen,
+    candidateVotingOpen,
+    initiativeVotingOpen,
+    votingOpen: candidateVotingOpen || initiativeVotingOpen,
+    /** Every voting window has ended (whatever the status). */
+    votingOver: now > votingEnd,
+    /** Voting should have started but the ballot was never locked. */
+    lockOverdue: e.status === 'scheduled' && now >= votingStart
+  };
+}
+
+export type AdminAction =
+  | 'publish'
+  | 'delete_draft'
+  | 'extend_nominations'
+  | 'lock_ballot'
+  | 'extend_voting'
+  | 'cancel'
+  | 'certify'
+  | 'reopen_certification'
+  | 'publish_results'
+  | 'archive';
+
+export type AdminContext = {
+  /** The admin is a nominee or candidate in this election (D7). */
+  adminIsStanding: boolean;
+  /** Nominations still awaiting acceptance or review. */
+  undecidedNominations: number;
+  /** Positions with no candidate that aren't marked vacant. */
+  emptyPositions: string[];
+  candidateCount: number;
+  initiativeCount: number;
+  positionCount: number;
+  /** Ties without a certified run-off (Phase 5). */
+  unresolvedTies?: number;
+};
+
+/**
+ * What an admin may do now: true, or the reason it's blocked, in the words the
+ * database uses when it refuses (election_* functions).
+ */
+export function adminActions(e: PhaseInput, ctx: AdminContext, now = Date.now()): Record<AdminAction, true | string> {
+  const p = electionPhase(e, now);
+  const standing = ctx.adminIsStanding ? 'You’re standing in this election, so another admin has to do this.' : null;
+  const guard = (ok: boolean, reason: string): true | string => (standing ?? (ok ? true : reason)) as true | string;
+  const scheduledOrLocked = e.status === 'scheduled' || e.status === 'ballot_locked';
+  const timeline = validateTimeline(e, { hasPositions: ctx.positionCount > 0, now });
+  const firstError = Object.values(timeline.errors)[0];
+
+  return {
+    publish: guard(
+      e.status === 'draft' && ctx.positionCount + ctx.initiativeCount > 0 && !firstError,
+      e.status !== 'draft'
+        ? 'Only a draft can be published.'
+        : ctx.positionCount + ctx.initiativeCount === 0
+          ? 'Add at least one position or initiative.'
+          : (firstError ?? '')
+    ),
+    delete_draft: e.status === 'draft' ? true : 'Only a draft can be deleted. Cancel a published election instead.',
+    extend_nominations: guard(
+      e.status === 'scheduled' && !!e.nomination_end,
+      'Nominations can be extended only before the ballot is locked.'
+    ),
+    lock_ballot: guard(
+      e.status === 'scheduled' &&
+        !p.nominationsOpen &&
+        p.phase !== 'upcoming' &&
+        ctx.undecidedNominations === 0 &&
+        ctx.emptyPositions.length === 0 &&
+        ctx.candidateCount + ctx.initiativeCount > 0,
+      e.status !== 'scheduled'
+        ? 'Only a scheduled election’s ballot can be locked.'
+        : p.nominationsOpen || p.phase === 'upcoming'
+          ? 'Nominations are still open.'
+          : ctx.undecidedNominations > 0
+            ? 'Some nominations haven’t been decided yet.'
+            : ctx.emptyPositions.length > 0
+              ? `No candidates for: ${ctx.emptyPositions.join(', ')}. Mark them vacant or extend nominations.`
+              : 'The ballot is empty.'
+    ),
+    extend_voting: guard(
+      scheduledOrLocked && !p.votingOver,
+      scheduledOrLocked ? 'Voting has already closed, so it can’t be extended.' : 'Voting can be extended only before results are certified.'
+    ),
+    cancel: guard(
+      scheduledOrLocked,
+      e.status === 'draft' ? 'Delete a draft instead.' : 'Only a published election that isn’t certified can be cancelled.'
+    ),
+    certify: guard(
+      e.status === 'ballot_locked' && p.votingOver && !ctx.unresolvedTies,
+      e.status !== 'ballot_locked'
+        ? 'Only a locked ballot can be certified.'
+        : !p.votingOver
+          ? 'Voting hasn’t closed yet.'
+          : 'Settle the ties with a run-off first.'
+    ),
+    reopen_certification: guard(e.status === 'certified', 'Only certified results that aren’t published can be reopened.'),
+    publish_results: guard(e.status === 'certified', 'Certify the results before publishing them.'),
+    archive: guard(e.status === 'completed', 'Only an election with published results can be archived.')
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Timeline
+// ---------------------------------------------------------------------------
+
+type TimelineInput = Pick<
+  ElectionRow,
+  | 'type'
+  | 'nomination_start'
+  | 'nomination_end'
+  | 'start_date'
+  | 'end_date'
+  | 'enable_separate_voting_periods'
+  | 'candidate_voting_start'
+  | 'candidate_voting_end'
+> & { results_date?: string | null };
+
+type TimelineField =
+  | 'nomination_start'
+  | 'nomination_end'
+  | 'start_date'
+  | 'end_date'
+  | 'candidate_voting_start'
+  | 'candidate_voting_end'
+  | 'results_date';
+
+const NOTICE_DAYS = 30;
+
+/**
+ * The timeline's order: nominations, then voting, then results. Errors block
+ * publishing; the warning (Art. IV §1's 30 days' notice, B9) doesn't.
+ * The database refuses the same orders (election_publish, elections_timeline_order).
+ */
+export function validateTimeline(
+  e: TimelineInput,
+  { hasPositions, now = Date.now() }: { hasPositions: boolean; now?: number }
+) {
+  const errors: Partial<Record<TimelineField, string>> = {};
+  const t = (v: string | null | undefined) => (v ? Date.parse(v) : NaN);
+  const set = (f: TimelineField, msg: string) => (errors[f] ??= msg);
+
+  const ns = t(e.nomination_start);
+  const ne = t(e.nomination_end);
+  const vs = t(e.start_date);
+  const ve = t(e.end_date);
+  const separate = separatePeriods(e);
+  const cs = separate ? t(e.candidate_voting_start) : NaN;
+  const ce = separate ? t(e.candidate_voting_end) : NaN;
+  const rd = t(e.results_date);
+
+  if (hasPositions) {
+    if (isNaN(ns)) set('nomination_start', 'Set when nominations open.');
+    if (isNaN(ne)) set('nomination_end', 'Set when nominations close.');
+  }
+  if (!isNaN(ns) && !isNaN(ne) && ne <= ns) set('nomination_end', 'Nominations must close after they open.');
+  if (isNaN(vs)) set('start_date', 'Set when voting opens.');
+  else if (vs <= now) set('start_date', 'Voting must start in the future.');
+  if (isNaN(ve)) set('end_date', 'Set when voting closes.');
+  else if (!isNaN(vs) && ve <= vs) set('end_date', 'Voting must close after it opens.');
+  if (!isNaN(ne) && !isNaN(vs) && ne > vs) set('nomination_end', 'Nominations must close before voting opens.');
+
+  if (!isNaN(cs) || !isNaN(ce)) {
+    if (!isNaN(cs) && !isNaN(ne) && cs < ne) set('candidate_voting_start', 'Candidate voting must open after nominations close.');
+    if (!isNaN(cs) && !isNaN(ce) && ce <= cs) set('candidate_voting_end', 'Candidate voting must close after it opens.');
+  }
+  if (!isNaN(rd)) {
+    const lastClose = Math.max(isNaN(ve) ? -Infinity : ve, isNaN(ce) ? -Infinity : ce);
+    if (rd < lastClose) set('results_date', 'Results come after voting closes.');
+  }
+
+  const firstOpen = Math.min(isNaN(vs) ? Infinity : vs, isNaN(cs) ? Infinity : cs);
+  const warning =
+    isFinite(firstOpen) && firstOpen - now < NOTICE_DAYS * 24 * 60 * 60 * 1000
+      ? `Voting opens less than ${NOTICE_DAYS} days from now. The bylaws ask for 30 days’ notice of the annual meeting (Art. IV §1).`
+      : null;
+
+  return { errors, warning, valid: Object.keys(errors).length === 0 };
+}
+
+// ---------------------------------------------------------------------------
+// Seattle time in forms
+// ---------------------------------------------------------------------------
+
+export const TIME_ZONE = 'America/Los_Angeles';
+
+const localParts = (instant: number) => {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: TIME_ZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    })
+      .formatToParts(instant)
+      .map((p) => [p.type, p.value])
+  );
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+};
+
+/** An instant as the value of a datetime-local field, in Seattle time. */
+export function toLocalInput(iso: string | null | undefined): string {
+  return iso ? localParts(Date.parse(iso)) : '';
+}
+
+/**
+ * A datetime-local value ("2026-12-01T23:59"), read as Seattle time, as a UTC
+ * ISO string. A time skipped when clocks go forward is refused; a time that
+ * happens twice when they go back is the first one (PDT).
+ */
+export function fromLocalInput(value: string): { iso: string } | { error: string } {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+  if (!m) return { error: 'Enter a date and time.' };
+  const [, y, mo, d, h, mi] = m.map(Number);
+  const wall = Date.UTC(y, mo - 1, d, h, mi);
+  // Seattle is UTC-7 (PDT) or UTC-8 (PST); keep the offsets that read back as the same wall time.
+  const matches = [7, 8].map((hours) => wall + hours * 3600_000).filter((instant) => localParts(instant) === value);
+  if (matches.length === 0) return { error: 'That time doesn’t exist in Seattle: clocks skip it when daylight saving starts.' };
+  return { iso: new Date(Math.min(...matches)).toISOString() };
 }

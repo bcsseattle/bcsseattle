@@ -1,6 +1,6 @@
 import { defineParameterType, Given, Then, When } from '@cucumber/cucumber';
 import { signInViaUi, toast } from '../support/auth';
-import { createMember, createUser, type MemberState, type TestUser } from '../support/db';
+import { addToVoterRoll, createMember, createUser, type MemberState, type TestUser } from '../support/db';
 import { env } from '../support/env';
 import { expect } from '../support/expect';
 import type { E2EWorld } from '../support/world';
@@ -30,6 +30,9 @@ export async function arrange(world: E2EWorld, role: Role, name: string): Promis
   const fullName = `${name} ${Math.random().toString(36).slice(2, 6)}`;
   const user = await createUser(world.cleanup, { fullName, isAdmin: role === 'admin' });
   if (role !== 'none') await createMember(user, role === 'admin' ? 'approved' : (role as MemberState));
+  // The scenario's election was locked before this member existed; an approved
+  // member counts as eligible at lock, as real members would have been.
+  if (world.election && (role === 'approved' || role === 'admin')) await addToVoterRoll(user.id, world.election.id);
   world.users[name] = user;
   return user;
 }
