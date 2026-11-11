@@ -7,11 +7,12 @@ import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
 import { createClient } from '@/utils/supabase/server';
 import { checkFeatureFlag } from '@/utils/server-feature-flags';
 import { getStatusRedirect } from '@/utils/helpers';
-import { defaultTimeline, fromLocalInput, validateTimeline } from '@/utils/elections/rules';
+import { dateChanges, defaultTimeline, fromLocalInput, validateTimeline } from '@/utils/elections/rules';
 import type { ElectionType } from '@/types';
 import { dbMessage, photoFrom, uploadCandidatePhoto } from '@/utils/elections/photos';
 import {
   notifyCancelled,
+  notifyDatesChanged,
   notifyDecided,
   notifyExtended,
   notifyPublished,
@@ -247,7 +248,7 @@ export async function saveTimeline(id: string, _: FormState, formData: FormData)
 
   const { data: election } = await supabase
     .from('elections')
-    .select('type, status, nomination_start, nomination_end')
+    .select('type, status, nomination_start, nomination_end, start_date, end_date, candidate_voting_start, candidate_voting_end, results_date')
     .eq('id', id)
     .single();
   // Once the ballot is locked nominations are over: the form doesn't show
@@ -271,6 +272,10 @@ export async function saveTimeline(id: string, _: FormState, formData: FormData)
 
   const { error } = await supabase.from('elections').update(row).eq('id', id);
   if (error) return { error: dbMessage(error), values };
+  // Members are told when a published election's dates move (drafts are private).
+  if (election && (election.status === 'scheduled' || election.status === 'ballot_locked')) {
+    await notifyDatesChanged(id, dateChanges(election, row));
+  }
   revalidatePath(`/admin/elections/${id}`);
   redirect(formData.get('then') === 'overview' ? `/admin/elections/${id}` : editPath(id, 'settings'));
 }

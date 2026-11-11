@@ -3,6 +3,7 @@ import {
   adminActions,
   ballotQuestions,
   candidateResultWord,
+  dateChanges,
   initiativeResultWord,
   electedUnopposed,
   positionOnBallot,
@@ -405,5 +406,21 @@ describe('result words (W17)', () => {
     expect(initiativeResultWord({ yes: 3, no: 1, votingOpen: false }).word).toBe('Supported');
     expect(initiativeResultWord({ yes: 1, no: 3, votingOpen: false }).word).toBe('Opposed');
     expect(initiativeResultWord({ yes: 3, no: 1, votingOpen: true }).word).toBe('Currently supported');
+  });
+});
+
+describe('dateChanges', () => {
+  it('lists only the dates that moved, in timeline order', () => {
+    const before = { nomination_end: '2026-12-08T08:00:00+00:00', start_date: '2026-12-10T08:00:00+00:00', end_date: '2026-12-20T08:00:00+00:00' };
+    const after = { nomination_end: '2026-12-08T08:00:00.000Z', start_date: '2026-12-11T08:00:00.000Z', end_date: '2026-12-20T08:00:00.000Z' };
+    expect(dateChanges(before, after)).toEqual([
+      { field: 'start_date', label: 'Voting opens', from: before.start_date, to: after.start_date }
+    ]);
+  });
+
+  it('counts a date set or cleared as a change, and ignores fields not given', () => {
+    expect(dateChanges({ results_date: null }, { results_date: '2026-12-21T20:00:00Z' }).map((c) => c.label)).toEqual(['Results expected']);
+    expect(dateChanges({ candidate_voting_end: '2026-12-12T08:00:00Z' }, { candidate_voting_end: null })[0].to).toBeNull();
+    expect(dateChanges({ end_date: '2026-12-20T08:00:00Z' }, {})).toEqual([]);
   });
 });

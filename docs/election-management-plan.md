@@ -135,6 +135,7 @@ The bylaws say nothing on any of these. **Decided:** B4 (plurality), B5 (run-off
 | Voting open | Voter roll | ✓ | ✓ (exists) | Daily cron |
 | Last day to vote | Roll members who haven't voted | | ✓ (exists) | Daily cron |
 | Voting extended / election cancelled | Eligible members | ✓ | ✓ | Admin action |
+| A published election's dates edited (added 12 Nov 2026) | Eligible members | ✓ | | Edit (timeline step) |
 | Results published | Eligible members | ✓ | ✓ | Publish action |
 
 - Email goes to people who may not have the app, and it carries detail such as a rejection reason. Push is for reminders.

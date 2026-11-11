@@ -694,3 +694,36 @@ export function initiativeResultWord({
   if (votingOpen) return yes > no ? { word: 'Currently supported', tone: 'green' } : { word: 'Currently opposed', tone: 'red' };
   return yes > no ? { word: 'Supported', tone: 'green' } : { word: 'Opposed', tone: 'red' };
 }
+
+// ---------------------------------------------------------------------------
+// Date changes, for telling members
+// ---------------------------------------------------------------------------
+
+const DATE_FIELDS = [
+  ['nomination_start', 'Nominations open'],
+  ['nomination_end', 'Nominations close'],
+  ['start_date', 'Voting opens'],
+  ['end_date', 'Voting closes'],
+  ['candidate_voting_start', 'Candidate voting opens'],
+  ['candidate_voting_end', 'Candidate voting closes'],
+  ['results_date', 'Results expected']
+] as const;
+export type DateField = (typeof DATE_FIELDS)[number][0];
+
+/**
+ * The dates that changed, in timeline order, with their words. Instants are
+ * compared, not strings: the database and the form spell the same moment
+ * differently.
+ */
+export function dateChanges(
+  before: Partial<Record<DateField, string | null>>,
+  after: Partial<Record<DateField, string | null>>
+): { field: DateField; label: string; from: string | null; to: string | null }[] {
+  const instant = (v: string | null | undefined) => (v ? Date.parse(v) : null);
+  return DATE_FIELDS.filter(([field]) => field in after && instant(before[field]) !== instant(after[field])).map(([field, label]) => ({
+    field,
+    label,
+    from: before[field] ?? null,
+    to: after[field] ?? null
+  }));
+}
