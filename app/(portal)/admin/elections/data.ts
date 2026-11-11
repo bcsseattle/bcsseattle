@@ -13,7 +13,6 @@ export async function requireElectionManagement() {
   if (!(await electionManagementEnabled())) notFound();
 }
 
-const STANDING = ['awaiting_acceptance', 'submitted', 'approved'];
 const UNDECIDED = ['awaiting_acceptance', 'submitted'];
 
 /**
@@ -37,9 +36,6 @@ export async function loadAdminElection(id: string) {
   ]);
 
   const ctx: AdminContext = {
-    adminIsStanding:
-      (candidates ?? []).some((c) => c.user_id === user.id) ||
-      (nominations ?? []).some((n) => n.nominee_user_id === user.id && STANDING.includes(n.status)),
     undecidedNominations: (nominations ?? []).filter((n) => UNDECIDED.includes(n.status)).length,
     emptyPositions: (positions ?? [])
       .filter((p) => !p.vacant && !(candidates ?? []).some((c) => c.ballot_position_id === p.id))

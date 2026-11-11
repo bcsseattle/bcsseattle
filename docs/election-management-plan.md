@@ -147,8 +147,7 @@ The bylaws say nothing on any of these. **Decided:** B4 (plurality), B5 (run-off
 **Recommendation:** any admin (`users.is_admin`), with one rule. **An admin who is a nominee or candidate in an election can't review, lock, certify, publish, resolve ties, cancel or extend that election.** They can still see it.
 
 - The rule is checked on the server and inside the database functions.
-- **Changed 12 Nov 2026:** an admin who is standing may review the election's nominations, their own included. Each decision is logged with who made it. The other actions still need an admin who isn't standing.
-- If every admin is a candidate, the board needs to make someone else an admin (B10).
+- **Changed 12 Nov 2026:** the rule is dropped. Any admin runs any election, including one they are standing in: reviewing nominations (their own included), locking, extending, cancelling, certifying, publishing and run-offs. Every action is logged with who did it. (Migrations `20261112090000`, `20261112110000`.)
 - A separate election-officer role isn't worth building until the board asks for one. It would be a new flag on `users`, plus the same checks.
 
 ### D8. Certification
@@ -156,7 +155,7 @@ The bylaws say nothing on any of these. **Decided:** B4 (plurality), B5 (run-off
 **Recommendation:**
 
 - **Closing and certifying are separate steps.** Voting closes at its end time, and admins can extend it before then.
-- **Certify** is open to any admin who isn't a candidate in the election. It needs every voting window closed and every tie resolved.
+- **Certify** is open to any admin (D7). It needs every voting window closed and every tie resolved.
   - It freezes the tally into `election_results`, which holds aggregates only.
   - From then on, members and exports read that table, never `votes`.
 - **Undo** ("Reopen certification", with a required reason) works until results are published. It deletes the frozen rows and puts the status back to `ballot_locked`.
@@ -285,10 +284,10 @@ Migrations are listed in order. All of them are additive or backfilled, and none
 | `draft` | *(deleted)* | Admin "Delete draft" | Never published. Logged |
 | `draft` | `scheduled` | Admin **Publish** | Title set. At least 1 position with ≥1 seat, or at least 1 initiative. Timeline valid (below). Voting start in the future |
 | `scheduled` | `scheduled` | Admin **Extend nominations** | Before lock. New end is after the old end and before voting start (otherwise the voting dates move too). Reason required |
-| `scheduled` | `ballot_locked` | Admin **Lock ballot** | Nominations window over (or none). No nominations left in `awaiting_acceptance` or `submitted`. Each position has candidates ≥ 1, is marked vacant, or has an unopposed decision. The admin isn't a candidate. The voter roll is snapshotted |
+| `scheduled` | `ballot_locked` | Admin **Lock ballot** | Nominations window over (or none). No nominations left in `awaiting_acceptance` or `submitted`. Each position has candidates ≥ 1, is marked vacant, or has an unopposed decision. The voter roll is snapshotted |
 | `ballot_locked` | `ballot_locked` | Admin **Extend voting** | A voting window hasn't ended yet. New end > old end. Reason required |
 | `ballot_locked` | `ballot_locked` | Admin **Start run-off** | Every voting window has ended. A tie exists on a position. Creates a linked draft run-off election |
-| `ballot_locked` | `certified` | Admin **Certify** | Every voting window has ended. Every tie has a certified run-off. The admin isn't a candidate |
+| `ballot_locked` | `certified` | Admin **Certify** | Every voting window has ended. Every tie has a certified run-off. |
 | `certified` | `ballot_locked` | Admin **Reopen certification** | Results not published. Reason required. Frozen results deleted |
 | `certified` | `completed` | Admin **Publish results** | — |
 | `completed` | `archived` | Admin **Archive** | — |
@@ -544,7 +543,7 @@ Each phase is one PR into `develop`, branched from the previous phase. Following
 | D2 | Status | **Dates plus admin gates.** One shared phase rule, no scheduled job |
 | D3 | Positions | **Per election,** with seats. `position_enum` is dropped |
 | D6 | Notifications | **Email and push, chosen per event** (§2 D6). Sends need separate approval |
-| D7 | Who runs elections | **Any admin,** except in an election where they're a candidate. **Changed 12 Nov:** a standing admin may still review nominations, their own included (logged) |
+| D7 | Who runs elections | **Any admin. Changed 12 Nov:** including an admin who is standing in the election (every action logged) |
 | D8 | Undoing certification | **Allowed until results are published** |
 
 ### Operational

@@ -10,6 +10,7 @@ import {
   defaultTimeline,
   electionPhase,
   fromLocalInput,
+  isPastElection,
   keyDate,
   nextAction,
   toLocalInput,
@@ -148,7 +149,6 @@ describe('electionPhase', () => {
 
 describe('adminActions', () => {
   const ready: AdminContext = {
-    adminIsStanding: false,
     undecidedNominations: 0,
     emptyPositions: [],
     candidateCount: 3,
@@ -213,13 +213,6 @@ describe('adminActions', () => {
     expect(adminActions({ ...base, status: 'completed' }, ready, now).reopen_certification).toMatch(/aren’t published/);
   });
 
-  it('blocks an admin who is standing in the election (D7)', () => {
-    const standing = { ...ready, adminIsStanding: true };
-    const actions = adminActions(locked, standing, at(base.end_date) + ms);
-    expect(actions.certify).toMatch(/standing in this election/);
-    expect(actions.cancel).toMatch(/standing in this election/);
-    expect(adminActions(base, standing, at(base.nomination_end!) + ms).lock_ballot).toMatch(/standing/);
-  });
 });
 
 describe('validateTimeline', () => {
@@ -422,5 +415,12 @@ describe('dateChanges', () => {
     expect(dateChanges({ results_date: null }, { results_date: '2026-12-21T20:00:00Z' }).map((c) => c.label)).toEqual(['Results expected']);
     expect(dateChanges({ candidate_voting_end: '2026-12-12T08:00:00Z' }, { candidate_voting_end: null })[0].to).toBeNull();
     expect(dateChanges({ end_date: '2026-12-20T08:00:00Z' }, {})).toEqual([]);
+  });
+});
+
+describe('isPastElection', () => {
+  it('keeps an election current until its results are out or it is cancelled', () => {
+    for (const status of ['draft', 'scheduled', 'ballot_locked', 'certified'] as const) expect(isPastElection({ status })).toBe(false);
+    for (const status of ['completed', 'archived', 'cancelled'] as const) expect(isPastElection({ status })).toBe(true);
   });
 });

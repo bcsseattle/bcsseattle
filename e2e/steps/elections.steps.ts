@@ -304,3 +304,13 @@ Then(/^"([^"]+)" should have (\d+) votes$/, async function (this: E2EWorld, name
   const r = resultFor(this.response!.body, name);
   expect(r?.vote_count ?? r?.voteCount, JSON.stringify(r)).toBe(Number(n));
 });
+
+When("I follow the election's {string} link", async function (this: E2EWorld, label: string) {
+  // The card's link names the election for screen readers: "Results: <title>".
+  await this.page.getByRole('link', { name: new RegExp(`^${label}\\W+${this.election!.title}$`) }).click();
+});
+
+Then('I should be on the election results', async function (this: E2EWorld) {
+  await expect(this.page).toHaveURL(new RegExp(`/elections/${this.election!.id}/results`));
+  await expect(this.page.getByRole('heading', { name: 'Election Results' })).toBeVisible();
+});
