@@ -167,3 +167,82 @@ Given(
     }
   }
 );
+
+/** An instant as a datetime-local value in Seattle time, as the admin forms take it. */
+function seattleLocal(at: number) {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    })
+      .formatToParts(at)
+      .map((x) => [x.type, x.value])
+  );
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}
+
+const FIELD_ID: Record<string, string> = {
+  'nominations close': 'nomination_end',
+  'voting opens': 'start_date',
+  'voting closes': 'end_date'
+};
+
+When(
+  /^I edit the election so (nominations close|voting opens|voting closes) in (\d+) hours?(?: and (nominations close|voting opens|voting closes) in (\d+) hours?)?$/,
+  async function (this: E2EWorld, f1: string, h1: string, f2?: string, h2?: string) {
+    await this.page.goto(`/admin/elections/${this.election!.id}/edit?step=timeline`);
+    this.data.expected = JSON.stringify({});
+    const expected: Record<string, string> = {};
+    for (const [field, hours] of [[f1, h1], [f2, h2]].filter(([f]) => f) as [string, string][]) {
+      // Whole minutes, as the form takes them.
+      const at = Math.floor((Date.now() + Number(hours) * 3600_000) / 60_000) * 60_000;
+      await this.page.locator(`#${FIELD_ID[field]}`).fill(seattleLocal(at));
+      expected[FIELD_ID[field]] = new Date(at).toISOString();
+    }
+    this.data.expected = JSON.stringify(expected);
+    await this.page.getByRole('button', { name: 'Save and continue' }).click();
+    await expect(this.page).not.toHaveURL(/step=timeline/);
+  }
+);
+
+Then('the election should have the new times', async function (this: E2EWorld) {
+  const expected = JSON.parse(this.data.expected) as Record<string, string>;
+  const { data } = await admin.from('elections').select(Object.keys(expected).join(', ')).eq('id', this.election!.id).single();
+  for (const [field, iso] of Object.entries(expected)) {
+    expect(Date.parse((data as unknown as Record<string, string>)[field]), field).toBe(Date.parse(iso));
+  }
+});
+
+When('I rename the position {string} to {string}', async function (this: E2EWorld, from: string, to: string) {
+  await this.page.goto(`/admin/elections/${this.election!.id}/edit?step=ballot`);
+  const inputs = this.page.locator('input[id^="position-"][id$="-title"]');
+  const titles = await inputs.evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
+  await inputs.nth(titles.indexOf(from)).fill(to);
+  await this.page.getByRole('button', { name: 'Save and continue' }).click();
+  await expect(this.page).toHaveURL(/step=timeline/);
+});
+
+When('I remove the position {string}', async function (this: E2EWorld, title: string) {
+  await this.page.goto(`/admin/elections/${this.election!.id}/edit?step=ballot`);
+  const titles = await this.page.locator('input[id^="position-"][id$="-title"]').evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
+  await this.page.getByRole('button', { name: `Remove position ${titles.indexOf(title) + 1}` }).click();
+  await this.page.getByRole('button', { name: 'Save and continue' }).click();
+});
+
+Then('the candidates should stand for {string}', async function (this: E2EWorld, position: string) {
+  const { data } = await admin.from('candidates').select('position').eq('election_id', this.election!.id);
+  expect(new Set((data ?? []).map((c) => c.position))).toEqual(new Set([position]));
+});
+
+When("I try to edit the election's dates", async function (this: E2EWorld) {
+  await this.page.goto(`/admin/elections/${this.election!.id}/edit?step=timeline`);
+});
+
+Then("I should be on the election's admin page", async function (this: E2EWorld) {
+  await expect(this.page).toHaveURL(new RegExp(`/admin/elections/${this.election!.id}$`));
+});

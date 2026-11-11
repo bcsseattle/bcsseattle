@@ -326,6 +326,16 @@ Admins enter local Seattle times, and the server converts them with `dayjs.tz('A
 
 ## 5. Pages and actions
 
+**Changed 12 Nov 2026: editing after publishing.**
+
+| Status | What admins can still change |
+|---|---|
+| Published, before the lock | Everything: basics, positions and initiatives, the nominations window, the voting dates and times, and the settings. A position that already has nominations or candidates can be renamed but not removed. Renaming a position renames it on its candidates and nominations too. |
+| After the lock | The title, the description, and the voting dates and times, either way. |
+| Once voting is over, or cancelled | The title and description. |
+
+Every change is recorded with its before and after values. Extend (with a reason) still exists.
+
 All of this is behind the `enableElectionManagement` flag (§7). The admin layout already turns away non-admins. Every action also calls `isCurrentUserAdmin()` and then the database function, which checks again.
 
 ### Admin

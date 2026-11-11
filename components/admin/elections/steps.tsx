@@ -16,12 +16,22 @@ import { STEPS, type StepKey } from './step-list';
  * are done, and every step of a saved draft is a link (the draft is saved as
  * you go, so moving between steps loses nothing that was saved).
  */
-export function StepNav({ current, electionId }: { current: StepKey; electionId?: string }) {
-  const at = STEPS.findIndex((s) => s.key === current);
+export function StepNav({
+  current,
+  electionId,
+  keys = STEPS.map((s) => s.key)
+}: {
+  current: StepKey;
+  electionId?: string;
+  /** The steps on offer (editableSteps); all of them for a draft. */
+  keys?: StepKey[];
+}) {
+  const steps = STEPS.filter((s) => keys.includes(s.key));
+  const at = steps.findIndex((s) => s.key === current);
   return (
     <nav aria-label="Election setup steps">
       <TransactionSteps>
-        {STEPS.map((s, i) => {
+        {steps.map((s, i) => {
           const state = i < at ? 'done' : i === at ? 'current' : 'upcoming';
           const label =
             electionId && i !== at ? (
@@ -31,7 +41,7 @@ export function StepNav({ current, electionId }: { current: StepKey; electionId?
             ) : (
               <span aria-current={i === at ? 'step' : undefined}>{s.label}</span>
             );
-          return <TransactionStep key={s.key} state={state} label={label} detail={`Step ${i + 1} of ${STEPS.length}`} />;
+          return <TransactionStep key={s.key} state={state} label={label} detail={`Step ${i + 1} of ${steps.length}`} />;
         })}
       </TransactionSteps>
     </nav>
