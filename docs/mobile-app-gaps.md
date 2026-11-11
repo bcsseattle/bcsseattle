@@ -50,7 +50,6 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 | A2 | Home can't say whether this month's contribution was paid. That's only known in Stripe. | It shows the plan and its renewal date instead. |
 | A3 | The app's unit tests (`node --test`) can't import `@/` paths, so the elections phase logic is covered by Playwright runs, not unit tests. | Add a small test setup that resolves `@/` if this grows. |
 | A4 | Taps in the iOS Simulator can't be automated from a Claude session: macOS blocks synthetic clicks without an Accessibility grant. iOS form flows are checked on Android and in the browser, and tapped by hand. | Not a product gap; affects how each phase is verified. |
-| A5 | **Browser testing needs a workaround for CORS.** The website sends CORS headers only to the app's native origins (`capacitor://localhost`, `https://localhost`), so testing the app in a desktop browser needs `--disable-web-security` or a relay. | Add a dev-only origin (for example `http://localhost:3200`) to `APP_ORIGINS` when `NODE_ENV !== 'production'`. Website change. |
 | A6 | **Local Checkout can't complete.** The e2e stack's active prices have fake Stripe IDs (`price_e2e_*`). | Seed real Stripe test-mode price IDs into the e2e stack. |
 | A9 | **Not yet checked live:** the contribution receipt PDF itself (no local member has Stripe payments), the portal return URL in Stripe, and the native share sheet. | The share code is the same path the donation receipt used successfully. Check on device in the manual checklist. |
 
@@ -58,6 +57,7 @@ The plan these phases follow is [mobile-app-plan.md](mobile-app-plan.md).
 
 | # | Gap | Fixed in |
 |---|---|---|
+| A5 | Testing the app in a desktop browser needed CORS off; the app's dev origin (localhost:3200) is now allowed outside production | branch `gaps/website-fixes` |
 | W4 | /members/[id] returned a 500 to a signed-in non-member; it now says the page is for members | branch `gaps/website-fixes` |
 | W5 | The app linked to placeholder pages; it no longer does until they have content (writing it is P11) | branch `gaps/website-fixes` |
 | W7 | members.stripe_customer_id looked like the Stripe id; it now carries a column comment (a rename would break older app builds) | branch `gaps/website-fixes` |
