@@ -1,5 +1,4 @@
 import type { Tables } from '@/types_db';
-import { formatMoney } from '@/utils/format';
 
 export type Membership = 'none' | 'pending' | 'rejected' | 'inactive' | 'active';
 
@@ -27,19 +26,5 @@ export const MEMBERSHIP = {
 
 export const memberState = (member: Parameters<typeof membershipOf>[0]) => MEMBERSHIP[membershipOf(member)];
 
-/** Checkout's quantity for a family plan: the family size, 1 to 5 (utils/stripe/server.ts). */
-export const familyQuantity = (size?: number | null) => Math.min(Math.max(Math.floor(Number(size)) || 1, 1), 5);
-
-/**
- * "USD 15.00 / month", "USD 30.00 / 6 months", "USD 20.00" (one-time): the
- * price times the subscription's quantity, which is what the member pays.
- */
-export function priceLabel(
-  price: Pick<Tables<'prices'>, 'unit_amount' | 'interval' | 'interval_count'> | null | undefined,
-  quantity?: number | null
-) {
-  const amount = formatMoney((price?.unit_amount ?? 0) * (quantity ?? 1));
-  if (!price?.interval) return amount;
-  const count = price.interval_count ?? 1;
-  return `${amount} / ${count === 1 ? price.interval : `${count} ${price.interval}s`}`;
-}
+// The plan amount label lives with the website's (utils/membership/plan.ts), so both say the same.
+export { priceLabel } from '@/utils/membership/plan';
