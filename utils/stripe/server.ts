@@ -25,6 +25,7 @@ import {
 import { Donation, Donor, Price } from '@/types';
 import { FundraiserDonation } from '@/types/fundraisers';
 import { sendSMS } from '../membership/handlers';
+import { isMonthlyContribution, monthlyBillingAnchor } from '@/utils/membership/billing';
 
 type CheckoutResponse = {
   errorRedirect?: string;
@@ -107,17 +108,21 @@ export async function checkoutWithStripe(
       success_url: getURL(redirectPath)
     };
 
-    console.log(
-      'Trial end:',
-      calculateTrialEndUnixTimestamp(price.trial_period_days)
-    );
     if (price.type === 'recurring') {
       params = {
         ...params,
         mode: 'subscription',
-        subscription_data: {
-          trial_end: calculateTrialEndUnixTimestamp(price.trial_period_days)
-        }
+        // The stored price determines billing, shared by web and mobile.
+        // Monthly contributions charge the partial period now, rather than
+        // giving a free trial until the first full invoice on the 18th.
+        subscription_data: isMonthlyContribution(price)
+          ? {
+              billing_cycle_anchor: monthlyBillingAnchor(),
+              proration_behavior: 'create_prorations'
+            }
+          : {
+              trial_end: calculateTrialEndUnixTimestamp(price.trial_period_days)
+            }
       };
     } else if (price.type === 'one_time') {
       params = {
