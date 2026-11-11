@@ -5,7 +5,7 @@ import {
   Text,
   View,
   StyleSheet,
-  Image
+  Image as PdfImage
 } from '@react-pdf/renderer';
 import { formatDate, formatMoney } from '@/utils/format';
 
@@ -127,7 +127,7 @@ export default function InvoicePDF({
               </View>
             </View>
             <View>
-              <Image
+              <PdfImage
                 src="https://www.bcsseattle.org/bcss-logo.png"
                 style={styles.image}
               />

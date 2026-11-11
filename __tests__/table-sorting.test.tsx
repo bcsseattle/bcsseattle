@@ -22,7 +22,15 @@ test('expense amounts sort numerically in both directions, then restore the orig
     { id: '1', payee: 'Middle', amount: 900, date: '2026-02-01' },
     { id: '2', payee: 'Largest', amount: 100000, date: '2025-12-01' },
     { id: '3', payee: 'Smallest', amount: 50, date: '2026-01-01' }
-  ];
+  ].map((expense) => ({
+    category: 'General',
+    created_at: null,
+    currency: 'usd',
+    description: null,
+    is_private: false,
+    payment_method: null,
+    ...expense
+  }));
   render(<Expenses expenses={expenses} />);
   await user.click(screen.getByRole('button', { name: /^Amount/ }));
   expect(names(2)).toEqual(['Smallest', 'Middle', 'Largest']);

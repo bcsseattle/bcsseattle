@@ -7,8 +7,6 @@ import {
   getBankBalance,
   getDonations,
   getStripeAvailableBalance,
-  // getStripeCustomers,
-  getStripePayments,
   getStripeRecentTransactions
 } from '@/utils/supabase/admin';
 import { createClient } from '@/utils/supabase/server';
@@ -83,16 +81,16 @@ export default async function CommunityFunds(props: {
   const donationsOutsideStripe = donations?.filter(
     (donation) =>
       donation.donation_status === 'completed' &&
-      !['card', 'us_bank_account'].includes(donation.payment_method)
+      !['card', 'us_bank_account'].includes(donation.payment_method ?? '')
   );
 
   const totalDonations = donationsOutsideStripe?.reduce(
-    (acc: number, donation: any) => acc + Number(donation.donation_amount), // the column is donation_amount, in cents
+    (acc: number, donation) => acc + Number(donation.donation_amount), // the column is donation_amount, in cents
     0
   );
 
   const fundsInBank = funds?.reduce(
-    (acc: number, fund: any) => acc + fund.amount,
+    (acc: number, fund) => acc + fund.amount,
     0
   );
 
@@ -105,12 +103,12 @@ export default async function CommunityFunds(props: {
   const stripeAmount =
     (available?.[0]?.amount ?? 0) + (pending?.[0]?.amount ?? 0);
   const totalExpenses =
-    expenses?.reduce((acc: number, expense: any) => acc + expense.amount, 0) ??
+    expenses?.reduce((acc: number, expense) => acc + expense.amount, 0) ??
     0;
 
   const totalStripeFees =
     transactions?.reduce(
-      (acc: number, transaction: any) => acc + transaction.fee,
+      (acc: number, transaction) => acc + transaction.fee,
       0
     ) ?? 0;
 
@@ -141,7 +139,7 @@ export default async function CommunityFunds(props: {
       <Panel title="Recent contributions" subtitle="Member contributions">
         <div className="px-4 pb-2">
           <Suspense fallback={<Loading><SkeletonRows className="px-0" /></Loading>}>
-            <RecentFunds members={members as any} columns={columns} month={month} year={year} showTitle={false} />
+            <RecentFunds members={members ?? []} columns={columns} month={month} year={year} showTitle={false} />
           </Suspense>
         </div>
       </Panel>

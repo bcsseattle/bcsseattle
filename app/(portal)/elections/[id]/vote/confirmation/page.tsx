@@ -11,7 +11,7 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Vote, Download } from 'lucide-react';
+import { CheckCircle, Vote } from 'lucide-react';
 import { formatDeadline } from '@/utils/format';
 import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 

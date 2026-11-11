@@ -10,8 +10,7 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
-  FormMessage,
+  FormMessage
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,7 +24,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Separator } from '@/components/ui/separator';
 import { Candidate, Election } from '@/types';
 import { 
   Vote, 
@@ -109,7 +107,7 @@ export default function CandidateVotingForm({
   const getVoteSummary = () => {
     const values = form.getValues();
     const candidateVoteSummary = Object.entries(values.candidateVotes)
-      .filter(([_, candidateId]) => candidateId)
+      .filter(([, candidateId]) => candidateId)
       .map(([position, candidateId]) => {
         const candidate = candidates.find(c => c.id === candidateId);
         return { position, candidate };

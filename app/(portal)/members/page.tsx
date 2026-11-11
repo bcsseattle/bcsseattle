@@ -45,7 +45,7 @@ export default async function Members() {
   }
 
   const activeMembers = members?.filter(
-    (member: any) => member.status === 'active'
+    (member) => member.status === 'active'
   );
 
   const totalFamilyMembers = activeMembers?.reduce(

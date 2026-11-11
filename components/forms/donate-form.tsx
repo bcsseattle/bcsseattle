@@ -62,7 +62,7 @@ import Image from 'next/image';
 
 interface DonateFormProps {
   user: User | null | undefined;
-  product: ProductWithPrices;
+  product: ProductWithPrices | null;
   donor?: Donor | null;
   programs?: Program[];
   defaultPurpose?: DonationPurpose;
@@ -217,9 +217,9 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
   const viaStripe = paysViaStripe(values.paymentMethod);
   const goBack = () => setWizardStep(wizardStep - 1);
 
-  const setFrequency = (frequency: string) => {
-    form.setValue('frequency', frequency as any);
-    form.setValue('isRecurring' as any, frequency !== 'one_time');
+  const setFrequency = (frequency: z.infer<typeof DonationFormSchema>['frequency']) => {
+    form.setValue('frequency', frequency);
+    form.setValue('isRecurring', frequency !== 'one_time');
   };
 
   const giftSummaryRow = (
@@ -341,7 +341,7 @@ export default function DonateForm({ user, product, donor, programs, defaultPurp
     </div>
   );
 
-  const textField = (name: any, label: string, placeholder: string, autoComplete?: string) => (
+  const textField = (name: 'donorName' | 'email' | 'phone' | 'organizationName' | 'address' | 'city' | 'zip', label: string, placeholder: string, autoComplete?: string) => (
     <FormField
       control={form.control}
       name={name}

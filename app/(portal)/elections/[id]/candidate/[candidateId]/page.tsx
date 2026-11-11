@@ -1,11 +1,11 @@
 import { createClient } from '@/utils/supabase/server';
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, Mail, User, Vote, ArrowLeft, Award } from 'lucide-react';
+import { CalendarDays, User, Vote, ArrowLeft, Award } from 'lucide-react';
 import Link from 'next/link';
 import { BackLink } from '@/components/ui/breadcrumb';
 import { getServerFeatureFlag } from '@/utils/server-feature-flags';
@@ -76,7 +76,7 @@ export default async function CandidatePage2(props: Props) {
   }
 
   // Fetch election details separately
-  const { data: election, error: electionError } = await supabase
+  const { data: election } = await supabase
     .from('elections')
     .select('title, description, start_date, end_date, status, type, nomination_start, nomination_end, enable_separate_voting_periods, candidate_voting_start, candidate_voting_end')
     .eq('id', candidate.election_id!)

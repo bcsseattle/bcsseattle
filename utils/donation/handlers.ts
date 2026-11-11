@@ -56,7 +56,7 @@ export async function submitDonation(
       purpose: values.purpose,
       goods_services_estimate: null,
       donation_status: 'pending',
-      donation_interval: values.frequency === 'one_time' ? null : (values.frequency as any),
+      donation_interval: values.frequency === 'one_time' ? null : values.frequency,
       donation_type: values.isRecurring ? 'recurring' : 'one_time',
       donation_description: 'Donation',
       is_private: false

@@ -1,3 +1,4 @@
+import type { Database } from '@/types_db';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { isCurrentUserAdmin } from '@/utils/auth-helpers/server';
@@ -12,8 +13,8 @@ interface CandidateResult {
   position: string;
   voteCount: number;
   percentage: number;
-  photoUrl?: string;
-  bio?: string;
+  photoUrl?: string | null;
+  bio?: string | null;
   /** From the certified results (election_results), once there are any. */
   outcome?: string;
   note?: string | null;
@@ -22,7 +23,7 @@ interface CandidateResult {
 interface InitiativeResult {
   id: string;
   title: string;
-  description?: string;
+  description?: string | null;
   votes: {
     yes: number;
     no: number;
@@ -42,15 +43,15 @@ interface ElectionResults {
   election: {
     id: string;
     title: string;
-    description?: string;
+    description?: string | null;
     status: string;
     startDate: string;
     endDate: string;
-    type: string;
+    type: string | null;
     candidateVotingStart?: string | null;
     candidateVotingEnd?: string | null;
-    enableSeparateVotingPeriods?: boolean;
-    showUnopposedStatus?: boolean;
+    enableSeparateVotingPeriods?: boolean | null;
+    showUnopposedStatus?: boolean | null;
   };
   votingStatus: {
     candidateVotingOpen: boolean;
@@ -87,7 +88,7 @@ export async function GET(
     }
 
     // Use service client to bypass RLS for public election results
-    const supabase = createServiceClient(
+    const supabase = createServiceClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
@@ -204,9 +205,9 @@ export async function GET(
     console.log('Sample candidate votes:', candidateVotes?.slice(0, 3));
 
     // Process candidate results
-    const candidateVoteMap = new Map<string, any>();
+    const candidateVoteMap = new Map<string, NonNullable<typeof candidateVotes>[number]['candidates'] & { voteCount: number }>();
     candidateVotes?.forEach((vote) => {
-      const candidate = vote.candidates as any;
+      const candidate = vote.candidates;
       if (candidate && candidate.id) {
         const key = candidate.id;
         if (!candidateVoteMap.has(key)) {
@@ -215,7 +216,7 @@ export async function GET(
             voteCount: 0
           });
         }
-        candidateVoteMap.get(key).voteCount++;
+        candidateVoteMap.get(key)!.voteCount++;
       }
     });
 
@@ -291,9 +292,9 @@ export async function GET(
     }
 
     // Process initiative results
-    const initiativeVoteMap = new Map<string, any>();
+    const initiativeVoteMap = new Map<string, NonNullable<typeof initiativeVotes>[number]['initiatives'] & { votes: { yes: number; no: number; abstain: number } }>();
     initiativeVotes?.forEach((vote) => {
-      const initiative = vote.initiatives as any;
+      const initiative = vote.initiatives;
       if (initiative && initiative.id) {
         const key = initiative.id;
         if (!initiativeVoteMap.has(key)) {
@@ -305,7 +306,7 @@ export async function GET(
         
         const voteValue = vote.vote_value;
         if (voteValue === 'yes' || voteValue === 'no' || voteValue === 'abstain') {
-          initiativeVoteMap.get(key).votes[voteValue]++;
+          initiativeVoteMap.get(key)!.votes[voteValue]++;
         }
       }
     });

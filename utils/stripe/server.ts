@@ -4,11 +4,9 @@ import Stripe from 'stripe';
 import { stripe } from '@/utils/stripe/config';
 import { createClient } from '@/utils/supabase/server';
 import {
-  createCustomerInStripe,
   createOrRetrieveCustomer,
   getOrCreateUser,
   retrieveMember,
-  updateDonation,
   updateMember,
   updateDonor,
   retrieveSmsNotification,
@@ -77,7 +75,7 @@ export async function checkoutWithStripe(
       throw new Error('Unable to access customer record.');
     }
 
-    let member: any;
+    let member: Awaited<ReturnType<typeof retrieveMember>>;
     try {
       member = await retrieveMember({
         user_id: user.id || ''
@@ -210,8 +208,12 @@ export async function checkoutWithStripeForDonation(
     donation = saved as Donation;
     price = { ...(storedPrice as Price), unit_amount: saved.donation_amount };
 
+    if (!donor?.email) throw new Error('Missing donor email');
+    if (price.type === 'recurring' && !donation.donation_interval) {
+      throw new Error('Missing donation interval');
+    }
     const { data: user, error: userError } = await getOrCreateUser({
-      email: donor?.email!
+      email: donor.email
     });
 
     if (!user || userError) {
@@ -241,14 +243,14 @@ export async function checkoutWithStripeForDonation(
       customer_update: {
         address: 'auto'
       },
-      payment_method_types: [(donation?.payment_method as any) || 'card'],
+      payment_method_types: [(donation.payment_method as Stripe.Checkout.SessionCreateParams.PaymentMethodType | null) || 'card'],
       line_items: [
         {
           price_data: {
             currency: 'usd',
             unit_amount: Number(price.unit_amount),
             product: price.product_id as string,
-            recurring: { interval: donation?.donation_interval as any }
+            recurring: donation.donation_interval ? { interval: donation.donation_interval } : undefined
           },
           quantity: 1
         }
@@ -257,7 +259,7 @@ export async function checkoutWithStripeForDonation(
       success_url: getURL(redirectPath),
       metadata: {
         type: 'donation',
-        donation_id: donation?.id!
+        donation_id: donation.id
       }
     };
 
@@ -551,11 +553,11 @@ export async function handleUpcomingInvoice(
     });
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to handle upcoming invoice:', error);
     return {
       success: false,
-      error: error?.message
+      error: error instanceof Error ? error.message : 'Unable to process upcoming invoice'
     };
   }
 }

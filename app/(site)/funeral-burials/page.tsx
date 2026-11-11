@@ -1,20 +1,8 @@
 import BurialFundSignUp from '@/components/burial-fund-signup';
 import { columns } from '@/components/funeral-burial/columns';
 import { DataTable } from '@/components/payments/data-table';
-import { fetchPageBlocks, fetchPageBySlug, notion } from '@/utils/notion';
-import bookmarkPlugin from '@notion-render/bookmark-plugin';
-import { NotionRenderer } from '@notion-render/client';
-import hljsPlugin from '@notion-render/hljs-plugin';
-import { notFound } from 'next/navigation';
 
-import {
-  getStripeAvailableBalance,
-  // getStripeCustomers,
-  getStripePayments,
-  getStripeRecentTransactions
-} from '@/utils/supabase/admin';
 import { createClient } from '@/utils/supabase/server';
-import { redirect } from 'next/navigation';
 
 export const revalidate = 0;
 
@@ -39,7 +27,7 @@ export default async function Page() {
   const installPaymentPerHead = halfOfTotalAmountPerHead / 3;
   const totalPaymentPerHead = totalAmountPerHead;
 
-  const tableData = data?.map((d: any) => {
+  const tableData = data?.map((d) => {
     return {
       ...d,
       initial_payment: intialPaymentPerHead,

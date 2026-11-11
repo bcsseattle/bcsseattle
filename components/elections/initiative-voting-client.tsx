@@ -18,8 +18,7 @@ interface InitiativeVotingClientProps {
 export default function InitiativeVotingClient({
   election,
   initiatives,
-  hasVoted,
-  userId
+  hasVoted
 }: InitiativeVotingClientProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,7 +31,7 @@ export default function InitiativeVotingClient({
     try {
       // Transform form values to API format
       const initiativeVotes = Object.entries(values.initiativeVotes)
-        .filter(([_, vote]) => vote) // Only include votes that are not empty
+        .filter(([, vote]) => vote) // Only include votes that are not empty
         .map(([initiativeId, vote]) => ({
           initiativeId,
           vote: vote as 'yes' | 'no' | 'abstain'

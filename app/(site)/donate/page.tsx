@@ -43,7 +43,7 @@ export default async function Page(props: { searchParams: SearchParams }) {
   return (
     <DonateForm
       user={user}
-      product={product as any}
+      product={product}
       donor={donor}
       programs={programs ?? []}
       defaultPurpose={purpose as DonationPurpose}

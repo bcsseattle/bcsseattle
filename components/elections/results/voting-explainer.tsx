@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Info, Clock, Trophy, Users, Vote } from 'lucide-react';
+import { Info, Clock, Trophy, Users, Vote } from 'lucide-react';
 import { ElectionResults } from '@/hooks/useElectionResults';
 import { getElectionTypeDescription, supportsUnopposedCandidates } from '@/utils/election-types';
 import { ElectionType } from '@/types';
