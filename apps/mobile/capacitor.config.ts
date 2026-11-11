@@ -11,6 +11,8 @@ const config: CapacitorConfig = {
   plugins: {
     // Dark status-bar text and icons: every screen has a light background.
     SystemBars: { style: 'LIGHT' },
+    // The launch screen stays until the session is restored (lib/session.tsx hides it), so no blank frame shows.
+    SplashScreen: { launchAutoHide: false, backgroundColor: '#F5F6F7', showSpinner: false },
     // Show a notification that arrives while the app is open, as when it's closed.
     PushNotifications: { presentationOptions: ['badge', 'sound', 'alert'] }
   }

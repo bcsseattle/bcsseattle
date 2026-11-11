@@ -49,3 +49,33 @@ To open a link in the app from the command line:
   ```json
   {"aps":{"alert":{"title":"Voting is open","body":"Cast your ballot."}},"url":"/elections/"}
   ```
+
+## Release builds (TestFlight and Play internal testing)
+
+These need the BCS Seattle organization developer accounts (`docs/mobile-app-gaps.md`, P7). Everything below runs on your machine; no signing key ever goes in the repo.
+
+1. **Production values.** Create `apps/mobile/.env.production.local` (git-ignored) with the production `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `NEXT_PUBLIC_SITE_URL=https://www.bcsseattle.org`. Add `NEXT_PUBLIC_ANDROID_PUSH=1` once `android/app/google-services.json` is in place. The build refuses secret keys.
+2. **Version.** Run `scripts/set-version.sh 1.0.0 <build>`. Raise the build number for every upload.
+3. **Build the web bundle into both apps.** Run `pnpm sync` *without* `MOBILE_ENV=local`, so production stays https-only.
+
+**iOS (TestFlight)**
+1. `pnpm exec cap open ios`. In Xcode, go to App target › Signing & Capabilities, pick the BCS Seattle team and keep *Automatically manage signing*. Push Notifications and Associated Domains are already in `App.entitlements`.
+2. Product › Archive, then Distribute App › App Store Connect › Upload.
+3. In App Store Connect, add the build to TestFlight. `ITSAppUsesNonExemptEncryption` is already `NO` (HTTPS only), so there's no export-compliance question.
+
+**Android (Play internal testing)**
+1. **Make the upload key once, and keep it safe.** Play App Signing holds the real signing key; this upload key only proves uploads come from you.
+   ```sh
+   keytool -genkeypair -keystore ~/bcs-upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000
+   ```
+2. **Write `android/keystore.properties`** (git-ignored):
+   ```properties
+   storeFile=/Users/<you>/bcs-upload.jks
+   storePassword=…
+   keyAlias=upload
+   keyPassword=…
+   ```
+3. **Build the bundle.** In `android/`, run `JAVA_HOME=<JDK 21> ./gradlew bundleRelease`. Upload `app/build/outputs/bundle/release/app-release.aab` to Play Console › Testing › Internal testing.
+4. **App Links.** From Play Console › App integrity, copy the **App signing** SHA-256 into Vercel as `ANDROID_CERT_SHA256`.
+
+**Icons and launch screens.** `scripts/make-app-assets.sh [master.png]` regenerates every size from one square image (needs ImageMagick). The current set is a draft made from the website's seal.
