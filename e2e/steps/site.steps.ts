@@ -59,12 +59,6 @@ Then('every link on the page should open a page that exists', async function (th
   expect(dead, `dead links on ${new URL(this.page.url()).pathname}`).toEqual([]);
 });
 
-Then('I should see the election in the list as {string}', async function (this: E2EWorld, status: string) {
-  const row = this.page.getByRole('row').filter({ hasText: this.election!.title });
-  await expect(row).toContainText(status);
-  await expect(row.getByRole('link', { name: 'Results' })).toHaveAttribute('href', `/elections/${this.election!.id}/results`);
-});
-
 // ---------------------------------------------------------------- account
 
 When('I change my name to {string}', async function (this: E2EWorld, name: string) {

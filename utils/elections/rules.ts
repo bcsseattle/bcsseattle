@@ -472,3 +472,119 @@ export function fromLocalInput(value: string): { iso: string } | { error: string
   if (matches.length === 0) return { error: 'That time doesn’t exist in Seattle: clocks skip it when daylight saving starts.' };
   return { iso: new Date(Math.min(...matches)).toISOString() };
 }
+
+// ---------------------------------------------------------------------------
+// Admin list and overview
+// ---------------------------------------------------------------------------
+
+export type AdminTab = 'drafts' | 'upcoming' | 'nominations' | 'voting' | 'closed' | 'archived';
+
+/** Which tab of Admin › Elections an election is listed under. */
+export const ADMIN_TAB: Record<ElectionPhase, AdminTab> = {
+  draft: 'drafts',
+  upcoming: 'upcoming',
+  ballot_ready: 'upcoming',
+  nominations_open: 'nominations',
+  review: 'nominations',
+  voting_open: 'voting',
+  voting_closed: 'closed',
+  certified: 'closed',
+  results_published: 'closed',
+  archived: 'archived',
+  cancelled: 'archived'
+};
+
+export type NextAction =
+  | 'publish'
+  | 'finish_setup'
+  | 'preview'
+  | 'review_nominations'
+  | 'lock_ballot'
+  | 'turnout'
+  | 'certify'
+  | 'publish_results'
+  | 'archive';
+
+/** The one primary action an election's phase calls for (plan §5), or null when there's nothing left to do. */
+export function nextAction(
+  phase: ElectionPhase,
+  { canPublish, nominationsToReview }: { canPublish: boolean; nominationsToReview: number }
+): { action: NextAction; label: string } | null {
+  const review = { action: 'review_nominations' as const, label: `Review ${nominationsToReview} nomination${nominationsToReview === 1 ? '' : 's'}` };
+  switch (phase) {
+    case 'draft':
+      return canPublish ? { action: 'publish', label: 'Publish' } : { action: 'finish_setup', label: 'Finish setup' };
+    case 'upcoming':
+      return { action: 'preview', label: 'Preview' };
+    case 'nominations_open':
+      return nominationsToReview > 0 ? review : { action: 'preview', label: 'Preview' };
+    case 'review':
+      return nominationsToReview > 0 ? review : { action: 'lock_ballot', label: 'Lock ballot' };
+    case 'ballot_ready':
+      return { action: 'preview', label: 'Preview ballot' };
+    case 'voting_open':
+      return { action: 'turnout', label: 'View turnout' };
+    case 'voting_closed':
+      return { action: 'certify', label: 'Certify results' };
+    case 'certified':
+      return { action: 'publish_results', label: 'Publish results' };
+    case 'results_published':
+      return { action: 'archive', label: 'Archive' };
+    default:
+      return null;
+  }
+}
+
+/** The date that matters next in this phase, with what happens then. */
+export function keyDate(
+  e: PhaseInput & { results_date?: string | null; results_published_at?: string | null },
+  phase: ElectionPhase
+): { label: string; at: string } | null {
+  const w = votingWindows(e);
+  const votingStart = Date.parse(w.candidateWindow.start) < Date.parse(e.start_date) ? w.candidateWindow.start : e.start_date;
+  const votingEnd = Date.parse(w.candidateWindow.end) > Date.parse(e.end_date) ? w.candidateWindow.end : e.end_date;
+  switch (phase) {
+    case 'draft':
+    case 'review':
+    case 'ballot_ready':
+      return { label: 'Voting opens', at: votingStart };
+    case 'upcoming':
+      return e.nomination_start ? { label: 'Nominations open', at: e.nomination_start } : { label: 'Voting opens', at: votingStart };
+    case 'nominations_open':
+      return { label: 'Nominations close', at: e.nomination_end! };
+    case 'voting_open':
+      return { label: 'Voting closes', at: votingEnd };
+    case 'voting_closed':
+    case 'certified':
+      return e.results_date ? { label: 'Results due', at: e.results_date } : { label: 'Voting closed', at: votingEnd };
+    case 'results_published':
+      return e.results_published_at ? { label: 'Results published', at: e.results_published_at } : null;
+    default:
+      return null;
+  }
+}
+
+const shiftDay = (localDate: string, days: number) => {
+  const [y, m, d] = localDate.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+};
+
+/**
+ * A starting timeline for a new draft, in Seattle time: nominations for two
+ * weeks, then voting 45 days out (past the 30 days' notice, B9) for the type's
+ * typical length, results the next day. Admins change it in the Timeline step.
+ */
+export function defaultTimeline(type: ElectionType, now = Date.now()) {
+  const today = toLocalInput(new Date(now).toISOString()).slice(0, 10);
+  const days = ELECTION_TYPE_CONFIGS[type]?.typicalDurationDays ?? 14;
+  const at = (date: string, time: string) => (fromLocalInput(`${date}T${time}`) as { iso: string }).iso;
+  const voteDay = shiftDay(today, 45);
+  const endDay = shiftDay(voteDay, days);
+  return {
+    nomination_start: at(shiftDay(voteDay, -21), '09:00'),
+    nomination_end: at(shiftDay(voteDay, -7), '23:59'),
+    start_date: at(voteDay, '09:00'),
+    end_date: at(endDay, '20:00'),
+    results_date: at(shiftDay(endDay, 1), '12:00')
+  };
+}

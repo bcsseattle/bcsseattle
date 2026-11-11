@@ -18,6 +18,9 @@ export const FEATURE_FLAGS = {
   // Future features (add as needed)
   ENABLE_NEW_UI: 'enableNewUI',
   ALLOW_ANONYMOUS_FEEDBACK: 'allowAnonymousFeedback',
+
+  // Admin › Elections lifecycle (docs/election-management-plan.md)
+  ENABLE_ELECTION_MANAGEMENT: 'enableElectionManagement',
 } as const;
 
 // Type for feature flag keys
@@ -35,6 +38,7 @@ export const FEATURE_FLAG_DEFAULTS: Record<FeatureFlagKey, boolean> = {
   [FEATURE_FLAGS.SHOW_FEATURE_FLAGS]: false,
   [FEATURE_FLAGS.ENABLE_NEW_UI]: false,
   [FEATURE_FLAGS.ALLOW_ANONYMOUS_FEEDBACK]: false,
+  [FEATURE_FLAGS.ENABLE_ELECTION_MANAGEMENT]: false,
 };
 
 // Helper type for feature flag results

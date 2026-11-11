@@ -8,11 +8,11 @@ Feature: Admin pages have no dead ends
     Given I am signed in as an admin
 
   @P1 @critical
-  Scenario: An admin sees elections in Election Management
+  Scenario: An admin sees elections in Admin › Elections
     Given there is an open election with the initiative "Build a community garden"
     When I go to "/admin/elections"
-    Then I should see the heading "Election Management"
-    And I should see the election in the list as "Open"
+    Then I should see the heading "Elections"
+    And the election should be listed under "Voting" with the action "View turnout"
 
   @P1 @BUG-047
   Scenario Outline: No link in the admin area leads to a missing page

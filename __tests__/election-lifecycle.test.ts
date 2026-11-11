@@ -1,10 +1,15 @@
 import {
+  ADMIN_TAB,
   adminActions,
+  defaultTimeline,
   electionPhase,
   fromLocalInput,
+  keyDate,
+  nextAction,
   toLocalInput,
   validateTimeline,
-  type AdminContext
+  type AdminContext,
+  type ElectionPhase
 } from '@/utils/elections/rules';
 import type { Tables } from '@/types_db';
 
@@ -280,5 +285,47 @@ describe('Seattle time in forms', () => {
     // A datetime-local field has no zone, so the PST 01:30 reads back as the PDT one.
     expect(toLocalInput('2026-11-01T09:30:00.000Z')).toBe('2026-11-01T01:30');
     expect(fromLocalInput('2026-11-01T01:30')).toEqual({ iso: '2026-11-01T08:30:00.000Z' });
+  });
+});
+
+describe('admin list and overview', () => {
+  it('files every phase under one of the six tabs', () => {
+    const phases = Object.keys(ADMIN_TAB) as ElectionPhase[];
+    expect(new Set(phases.map((p) => ADMIN_TAB[p]))).toEqual(
+      new Set(['drafts', 'upcoming', 'nominations', 'voting', 'closed', 'archived'])
+    );
+    expect(ADMIN_TAB.cancelled).toBe('archived');
+    expect(ADMIN_TAB.ballot_ready).toBe('upcoming');
+  });
+
+  it('offers the one next action the phase calls for', () => {
+    const none = { canPublish: true, nominationsToReview: 0 };
+    expect(nextAction('draft', none)).toEqual({ action: 'publish', label: 'Publish' });
+    expect(nextAction('draft', { ...none, canPublish: false })?.action).toBe('finish_setup');
+    expect(nextAction('review', { ...none, nominationsToReview: 6 })?.label).toBe('Review 6 nominations');
+    expect(nextAction('review', { ...none, nominationsToReview: 1 })?.label).toBe('Review 1 nomination');
+    expect(nextAction('review', none)?.label).toBe('Lock ballot');
+    expect(nextAction('voting_closed', none)?.label).toBe('Certify results');
+    expect(nextAction('certified', none)?.label).toBe('Publish results');
+    expect(nextAction('cancelled', none)).toBeNull();
+  });
+
+  it('names the date that matters next', () => {
+    expect(keyDate(base, 'upcoming')).toEqual({ label: 'Nominations open', at: base.nomination_start });
+    expect(keyDate(base, 'nominations_open')).toEqual({ label: 'Nominations close', at: base.nomination_end });
+    const separate = { ...locked, enable_separate_voting_periods: true, candidate_voting_end: '2026-12-25T08:00:00.000Z' };
+    expect(keyDate(separate, 'voting_open')).toEqual({ label: 'Voting closes', at: '2026-12-25T08:00:00.000Z' });
+    expect(keyDate({ ...base, results_date: '2026-12-21T20:00:00.000Z' }, 'certified')?.label).toBe('Results due');
+    expect(keyDate(base, 'archived')).toBeNull();
+  });
+
+  it('starts a draft with a valid timeline and 30 days’ notice', () => {
+    const now = at('2026-11-10T18:00:00Z');
+    const t = defaultTimeline('leadership', now);
+    const r = validateTimeline({ ...base, ...t, enable_separate_voting_periods: null }, { hasPositions: true, now });
+    expect(r.errors).toEqual({});
+    expect(r.warning).toBeNull();
+    expect(toLocalInput(t.start_date)).toBe('2026-12-25T09:00');
+    expect(toLocalInput(t.end_date)).toBe('2027-01-08T20:00');
   });
 });
