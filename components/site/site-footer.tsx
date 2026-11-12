@@ -9,7 +9,8 @@ const COLUMNS = [
       { label: 'About us', href: '/about-us' },
       { label: 'Mission & vision', href: '/about-us/mission' },
       { label: 'Bylaws', href: '/about-us/bylaws' },
-      { label: 'Contact us', href: '/contact-us' }
+      { label: 'Contact us', href: '/contact-us' },
+      { label: 'Support', href: '/support' }
     ]
   },
   {
