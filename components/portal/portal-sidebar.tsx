@@ -12,6 +12,7 @@ import {
   CheckCircle,
   FileText,
   LogOut,
+  Mail,
   Receipt,
   SlidersHorizontal,
   Users,
@@ -100,6 +101,10 @@ export function PortalSidebar({ isMember, isAdmin, className }: { isMember: bool
       {isAdmin && <Group title="Admin" items={ADMIN} pathname={pathname} />}
       <div className="flex-1" />
       <ul className="flex flex-col gap-1">
+        <NavRow
+          item={{ label: 'Support', href: '/support', icon: Mail }}
+          current={pathname === '/support'}
+        />
         <li>
           <Link href="/" className={rowClass}>
             <ArrowLeft aria-hidden />
