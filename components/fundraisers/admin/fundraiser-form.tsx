@@ -122,12 +122,12 @@ export function FundraiserForm() {
               <FormControl>
                 <Textarea
                   placeholder="Tell people why they should donate to your cause..."
-                  className="h-32"
+                  className="min-h-48"
                   {...field}
                 />
               </FormControl>
               <FormDescription>
-                Explain your cause and how the funds will be used.
+                Explain your cause and how the funds will be used. Use blank lines for paragraphs, “-” for bullets, or “1.” for numbered steps.
               </FormDescription>
               <FormMessage />
             </FormItem>
