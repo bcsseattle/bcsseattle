@@ -33,7 +33,7 @@ export default function HomeTab() {
   return (
     <>
       <AppHeader
-        title={first ? `Salaam, ${first}` : 'Salaam'}
+        title={first ? `Welcome, ${first}` : 'Welcome'}
         subtitle="Baloch Community Services of Seattle"
       />
       <div className="flex flex-col gap-6 px-4 pb-6 pt-2">
