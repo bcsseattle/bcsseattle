@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 
-import { INITIATIVE_CHOICES, type InitiativeVote } from '@/components/elections/initiative-card';
+import { type InitiativeVote } from '@/components/elections/initiative-card';
 import { ReviewRow } from '@/components/elections/review-row';
 import { ActionBar } from '@/components/ui/action-bar';
 import { Banner } from '@/components/ui/banner';
@@ -25,6 +25,7 @@ export type BallotInitiativeData = {
   title: string;
   description?: string | null;
   url?: string | null;
+  options: { value: string; label: string; detail?: string }[];
 };
 /** Posts one part to /api/elections/{id}/vote/{part}: the website with fetch, the app with its token. */
 export type SendBallotPart = (
@@ -214,7 +215,7 @@ export function BallotReview({
                 <ReviewRow
                   key={i.id}
                   question={i.title}
-                  answer={vote ? INITIATIVE_CHOICES.find((c) => c.value === vote)?.label : null}
+                  answer={vote ? i.options.find((c) => c.value === vote)?.label ?? vote : null}
                   actionLabel={vote ? 'Change' : 'Answer'}
                   onAction={() => goTo(`q-initiative-${i.id}`)}
                 />

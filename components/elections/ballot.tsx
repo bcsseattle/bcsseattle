@@ -131,6 +131,7 @@ export function Ballot({
                   title={i.title}
                   description={i.description}
                   moreInfoUrl={i.url}
+                  options={i.options}
                   value={initiativeVotes[i.id]}
                   onValueChange={(v) => b.setInitiativeVotes((s) => ({ ...s, [i.id]: v }))}
                   // The ids the initiative ballot form already uses.

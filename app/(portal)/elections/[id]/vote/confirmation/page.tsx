@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Vote } from 'lucide-react';
 import { formatDeadline } from '@/utils/format';
 import { BreadcrumbName } from '@/components/ui/breadcrumbs';
+import { initiativeResponseLabel } from '@/utils/elections/initiative-options';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -53,9 +54,10 @@ export default async function VoteConfirmationPage(props: Props) {
       candidate_id,
       initiative_id,
       vote_value,
+      response_value,
       voted_at,
       candidates(full_name, position),
-      initiatives(title)
+      initiatives(title, response_type, response_options)
     `)
     .eq('user_id', user.id)
     .eq('election_id', id);
@@ -159,8 +161,8 @@ export default async function VoteConfirmationPage(props: Props) {
                         </span>
                       </div>
                       <div>
-                        <Badge variant={vote.vote_value === 'yes' ? 'default' : vote.vote_value === 'no' ? 'destructive' : 'secondary'}>
-                          {vote.vote_value === 'yes' ? 'Yes' : vote.vote_value === 'no' ? 'No' : 'Abstain'}
+                        <Badge variant={vote.vote_value === 'yes' ? 'default' : vote.vote_value === 'no' ? 'destructive' : vote.vote_value === 'abstain' ? 'secondary' : 'outline'}>
+                          {initiativeResponseLabel(vote.initiatives?.response_type, vote.initiatives?.response_options, vote.response_value ?? vote.vote_value)}
                         </Badge>
                       </div>
                     </div>

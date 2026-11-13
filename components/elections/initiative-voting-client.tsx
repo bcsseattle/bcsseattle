@@ -34,7 +34,7 @@ export default function InitiativeVotingClient({
         .filter(([, vote]) => vote) // Only include votes that are not empty
         .map(([initiativeId, vote]) => ({
           initiativeId,
-          vote: vote as 'yes' | 'no' | 'abstain'
+          vote: vote as string
         }));
 
       const response = await fetch(

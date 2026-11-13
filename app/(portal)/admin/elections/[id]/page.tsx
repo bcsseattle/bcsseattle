@@ -608,7 +608,9 @@ async function BallotTab({ data }: { data: AdminElection }) {
             <li key={t.id} className="flex flex-col gap-1 px-4 py-3 text-sm">
               <span className="font-medium">{t.title}</span>
               <span className="text-muted-foreground">
-                Yes / No / Abstain · {t.pass_threshold === 'two_thirds' ? 'passes with two-thirds of Yes and No' : 'passes with more Yes than No'}
+                {t.response_type === 'choice'
+                  ? (Array.isArray(t.response_options) ? t.response_options.map((option) => (option as { label?: string }).label).filter(Boolean).join(' / ') : 'Custom choices')
+                  : `Support / Oppose / Abstain · ${t.pass_threshold === 'two_thirds' ? 'passes with two-thirds of Yes and No' : 'passes with more Yes than No'}`}
               </span>
             </li>
           ))}
@@ -683,7 +685,7 @@ async function VotingTab({ data }: { data: AdminElection }) {
  * reopen and archive, and export as CSV or print.
  */
 async function ResultsTab({ data }: { data: AdminElection }) {
-  const { election, positions, initiatives, candidates, outcomes, actions, phase } = data;
+  const { election, positions, initiatives, candidates, outcomes, choiceOutcomes, actions, phase } = data;
   const id = election.id;
   if (election.status === 'cancelled') {
     return <Banner tone="info" title="Cancelled">Nothing from a cancelled election is counted.</Banner>;
@@ -787,13 +789,18 @@ async function ResultsTab({ data }: { data: AdminElection }) {
           <ul className="divide-y">
             {initiatives.map((t) => {
               const r = rows.find((x) => x.initiative_id === t.id);
+              const customCounts = (certified
+                ? r && 'option_counts' in r ? r.option_counts : null
+                : choiceOutcomes.find((x) => x.initiative_id === t.id)?.option_counts
+              ) as { value: string; label: string; count: number }[] | null | undefined;
               const { word, tone } = initiativeResultWord({ outcome: r?.outcome, note: r?.note, yes: r?.yes ?? 0, no: r?.no ?? 0, votingOpen: false });
               return (
                 <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
                   <span className="font-medium">{t.title}</span>
                   <span className="flex items-center gap-3 tabular-nums">
-                    Yes {r?.yes ?? 0} · No {r?.no ?? 0} · Abstain {r?.abstain ?? 0}
-                    <Badge tone={tone}>{word}</Badge>
+                    {t.response_type === 'choice'
+                      ? customCounts?.map((option) => `${option.label} ${option.count}`).join(' · ') || 'No responses'
+                      : <>Yes {r?.yes ?? 0} · No {r?.no ?? 0} · Abstain {r?.abstain ?? 0} <Badge tone={tone}>{word}</Badge></>}
                   </span>
                 </li>
               );
