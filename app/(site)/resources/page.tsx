@@ -2,10 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   ArrowRight,
-  BookOpen,
-  FileText,
   HandHeart,
-  HeartHandshake,
   LockKeyhole,
   Mail,
   Users,
@@ -15,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { IMMIGRATION_GUIDES as SHARED_GUIDES } from '@/utils/programs';
 
 export const metadata: Metadata = {
   title: 'Resources | BCS Seattle',
@@ -22,28 +20,13 @@ export const metadata: Metadata = {
     'Find BCS Seattle immigration guides, youth programs, funeral and burial fund information, and ways to contact the community team.'
 };
 
-const IMMIGRATION_GUIDES = [
-  {
-    title: 'Asylum resources',
-    description:
-      'Find the community’s collection of information about the asylum process.',
-    href: '/resources/immigration/asylum',
-    icon: FileText
-  },
-  {
-    title: 'Citizenship preparation',
-    description: 'Explore resources for preparing for U.S. citizenship.',
-    href: '/resources/immigration/citizenship',
-    icon: BookOpen
-  },
-  {
-    title: 'Support organizations',
-    description:
-      'Browse organizations listed in our immigration resource collection.',
-    href: '/resources/immigration/support-organizations',
-    icon: HeartHandshake
-  }
-];
+// The guides live in utils/programs.ts, shared with the app.
+const IMMIGRATION_GUIDES = SHARED_GUIDES.map((g) => ({
+  title: g.title,
+  description: g.description,
+  href: `/resources/immigration/${g.slug}`,
+  icon: g.icon
+}));
 
 const COMMUNITY_RESOURCES = [
   {

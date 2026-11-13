@@ -3,7 +3,7 @@
 import { useId, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle, ChevronRight, Mail } from 'lucide-react';
+import { CheckCircle, ChevronRight, HandHeart, Mail } from 'lucide-react';
 import { ListGroup } from '@/components/portal/list-row';
 import { Banner } from '@/components/ui/banner';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -14,8 +14,8 @@ import { RadioGroup } from '@/components/ui/radio-group';
 import { StatePanel } from '@/components/ui/state-panel';
 import { Textarea } from '@/components/ui/textarea';
 import { FuneralFundFormSchema } from '@/types';
-import { IMMIGRATION_GUIDES, IMMIGRATION_INTRO, SUPPORT_EMAIL, programByKey } from '@/utils/programs';
-import { Screen } from '~/components/screen';
+import { IMMIGRATION_GUIDES, IMMIGRATION_INTRO, YOUTH, programByKey } from '@/utils/programs';
+import { Screen, Section } from '~/components/screen';
 import { MembersOnly } from '~/components/home/membership';
 import { api } from '~/lib/api';
 import { useMember } from '~/lib/member';
@@ -35,7 +35,7 @@ export default function ProgramScreen() {
         <>
           <p className="px-1 text-body text-muted-foreground">{program.summary}</p>
           {program.key === 'funeral' && <FuneralSignUp />}
-          {program.key === 'youth' && <GetInTouch subject="Youth programs" />}
+          {program.key === 'youth' && <Youth />}
           {program.key === 'immigration' && <Guides />}
         </>
       )}
@@ -43,16 +43,47 @@ export default function ProgramScreen() {
   );
 }
 
-/** Contact BCS about a program by email (the website's support address). */
-function GetInTouch({ subject }: { subject: string }) {
+/** Youth programs, as the website's /youth-programs page (utils/programs.ts). */
+function Youth() {
   return (
-    <a
-      href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`}
-      className={buttonVariants({ variant: 'outline', size: 'lg', className: 'w-full' })}
-    >
-      <Mail aria-hidden className="size-4" />
-      Get in touch
-    </a>
+    <>
+      <div className="flex flex-col gap-2 px-1">
+        <p className="text-overline uppercase text-muted-foreground">{YOUTH.eyebrow}</p>
+        <p className="font-serif text-doc-lead text-foreground">{YOUTH.tagline}</p>
+        <p className="text-body text-muted-foreground">{YOUTH.intro}</p>
+      </div>
+      <a href={YOUTH.askEmail} className={buttonVariants({ size: 'lg', className: 'w-full' })}>
+        <Mail aria-hidden className="size-4" />
+        Ask about youth programs
+      </a>
+      <Section label={YOUTH.focusTitle}>
+        <p className="px-1 text-body text-muted-foreground">{YOUTH.focusIntro}</p>
+        <div className="flex flex-col gap-2">
+          {YOUTH.focusAreas.map(({ title, icon: Icon, description }) => (
+            <div key={title} className="flex gap-3 rounded-lg border bg-card p-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-100 text-accent">
+                <Icon aria-hidden className="size-5" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <h3 className="text-section text-foreground">{title}</h3>
+                <p className="text-caption text-muted-foreground">{description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+      <Section label={YOUTH.takePartTitle}>
+        <p className="px-1 text-body text-muted-foreground">{YOUTH.takePart}</p>
+      </Section>
+      <div className="flex flex-col items-start gap-3 rounded-lg border bg-muted p-4">
+        <HandHeart aria-hidden className="size-6 text-accent" />
+        <h2 className="text-section text-foreground">{YOUTH.volunteerTitle}</h2>
+        <p className="text-caption text-muted-foreground">{YOUTH.volunteer}</p>
+        <a href={YOUTH.volunteerEmail} className={buttonVariants({ variant: 'outline', size: 'lg', className: 'w-full' })}>
+          Ask about volunteering
+        </a>
+      </div>
+    </>
   );
 }
 
@@ -71,7 +102,10 @@ function Guides() {
                     href={`/programs/guide/?slug=${g.slug}`}
                     className="flex min-h-14 items-center justify-between gap-3 py-1.5 pl-4 pr-3 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                   >
-                    <span className="text-body text-foreground">{g.title}</span>
+                    <span className="flex min-w-0 flex-col gap-0.5 py-1">
+                      <span className="text-body text-foreground">{g.title}</span>
+                      <span className="text-caption text-muted-foreground">{g.description}</span>
+                    </span>
                     <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
                   </Link>
                 </li>

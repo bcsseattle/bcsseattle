@@ -569,7 +569,7 @@ describe('GET /api/app/resources/[slug]', () => {
     mockDb.rows.members = ACTIVE;
     mocked(renderNotionPage).mockResolvedValue('<h1 class="notion-heading_1">Asylum</h1>');
     expect(await (await guide(new Request('http://localhost/x'), slug('asylum'))).json()).toEqual({
-      title: 'Asylum Resources',
+      title: 'Asylum resources',
       html: '<h1 class="notion-heading_1">Asylum</h1>',
       membersOnly: true
     });
