@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Candidate, Election, Position } from '@/types';
 import { Users, Crown, Trophy } from 'lucide-react';
 import { getCandidateResults } from '@/utils/election-config';
+import { positionCandidateGroups } from '@/utils/elections/rules';
 
 interface Props {
   candidates: Candidate[] | null;
@@ -32,45 +33,7 @@ export default async function Candidates({
 }: Props) {
   // Get candidate results if voting is closed
   const candidateResults = !candidateVotingOpen ? await getCandidateResults(election.id) : {};
-  function groupCandidatesByPosition(candidates: Candidate[]) {
-    const groupedCandidates = candidates.reduce(
-      (acc, candidate) => {
-        const position = candidate.position;
-        if (!acc[position]) {
-          acc[position] = [];
-        }
-        acc[position].push(candidate);
-        return acc;
-      },
-      {} as Record<string, typeof candidates>
-    );
-
-    // Use dynamic position order - map position objects to position strings
-    const positionNames = positionOrder.map((p) => p.position);
-    const sortedPositions = positionNames.filter(
-      (position) => groupedCandidates[position]
-    );
-
-    // Add any positions not in the predefined order
-    const otherPositions = Object.keys(groupedCandidates).filter(
-      (position) => !positionNames.includes(position)
-    );
-
-    return [...sortedPositions, ...otherPositions].map((positionName) => {
-      // Find the position object for additional info
-      const positionObj = positionOrder.find(
-        (p) => p.position === positionName
-      );
-      const positionCandidates = groupedCandidates[positionName];
-      
-      return {
-        position: positionName,
-        positionData: positionObj,
-        candidates: positionCandidates,
-        isUnopposed: positionCandidates.length <= 1 // Individual position unopposed status
-      };
-    });
-  }
+  const groups = positionCandidateGroups(positionOrder, candidates ?? []);
 
   // Get candidate's initials for avatar fallback
   const getInitials = (name: string) => {
@@ -87,14 +50,13 @@ export default async function Candidates({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="w-5 h-5" />
-          Candidates
+          Officer roles and candidates
         </CardTitle>
         <CardDescription>
           {candidates?.length === 0
-            ? 'No candidates have been nominated yet.'
+            ? `${positionOrder.length} position${positionOrder.length === 1 ? '' : 's'} available for nomination. No candidates have been nominated yet.`
             : (() => {
-                const groups = groupCandidatesByPosition(candidates ?? []);
-                const unopposedCount = groups.filter(group => group.isUnopposed && candidatesElectedUnopposed).length;
+                const unopposedCount = groups.filter(group => group.candidates.length === 1 && candidatesElectedUnopposed).length;
                 const totalPositions = groups.length;
                 
                 // If voting is closed, show results-based description
@@ -123,7 +85,7 @@ export default async function Candidates({
       </CardHeader>
 
       <CardContent>
-        {candidates?.length === 0 ? (
+        {groups.length === 0 ? (
           <div className="text-center py-12">
             <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
@@ -137,8 +99,10 @@ export default async function Candidates({
           </div>
         ) : (
           <div className="space-y-3 sm:space-y-6">
-            {groupCandidatesByPosition(candidates ?? []).map(
-              ({ position, positionData, candidates: positionCandidates, isUnopposed }) => (
+            {groups.map(
+              ({ position, positionData, candidates: positionCandidates }) => {
+                const isUnopposed = positionCandidates.length === 1;
+                return (
                 <div key={position} className="space-y-2 sm:space-y-3">
                   {/* Mobile-Optimized Position Header */}
                   <div className="border-b border-border pb-2 sm:pb-3">
@@ -179,6 +143,11 @@ export default async function Candidates({
 
                   {/* Candidates Grid - Mobile: Single column, tighter spacing */}
                   <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
+                    {positionCandidates.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        No candidates nominated yet.{isNominationOpen && ' This position is open for nominations.'}
+                      </p>
+                    )}
                     {positionCandidates.map((candidate) => {
                       const showElected = candidatesElectedUnopposed && isUnopposed;
                       
@@ -299,7 +268,8 @@ export default async function Candidates({
                     })}
                   </div>
                 </div>
-              )
+                );
+              }
             )}
           </div>
         )}

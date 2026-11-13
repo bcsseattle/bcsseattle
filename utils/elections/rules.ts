@@ -151,6 +151,17 @@ export function positionOrder(
   }));
 }
 
+/** Every configured position, including roles that do not have a candidate yet. */
+export function positionCandidateGroups<P extends { position: string }, T extends { position: string }>(positions: P[], candidates: T[]) {
+  const names = positions.map((position) => position.position);
+  const otherNames = candidates.map((candidate) => candidate.position).filter((name) => !names.includes(name));
+  return [...names, ...Array.from(new Set(otherNames))].map((name) => ({
+    position: name,
+    positionData: positions.find((position) => position.position === name),
+    candidates: candidates.filter((candidate) => candidate.position === name)
+  }));
+}
+
 /** Which parts of the ballot are still open to this member. */
 export function ballotOffer({
   windows,
