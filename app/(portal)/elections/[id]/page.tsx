@@ -443,7 +443,7 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         </Banner>
       )}
 
-      {!showBallot && candidates && candidates.length > 0 && (
+      {!showBallot && positionOrder.length > 0 && (
         <Candidates
           candidates={candidates}
           election={election}

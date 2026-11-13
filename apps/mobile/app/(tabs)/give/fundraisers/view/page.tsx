@@ -12,6 +12,7 @@ import { StatePanel } from '@/components/ui/state-panel';
 import { formatDate, formatMoney } from '@/utils/format';
 import { categoryLabel, isOpen } from '@/utils/giving';
 import { ListGroup } from '@/components/portal/list-row';
+import { FormattedText } from '@/components/ui/formatted-text';
 import { Loaded, Screen, Section } from '~/components/screen';
 import { must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
@@ -82,7 +83,7 @@ export default function FundraiserView() {
                   This fundraiser is no longer accepting donations.
                 </p>
               )}
-              {f.description && <p className="mt-0 whitespace-pre-line text-body text-foreground">{f.description}</p>}
+              {f.description && <FormattedText text={f.description} />}
               {updates.length > 0 && (
                 <Section label="Updates">
                   <ListGroup>

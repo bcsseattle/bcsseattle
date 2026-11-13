@@ -13,6 +13,7 @@ import { FundraiserUpdates } from './fundraiser-updates';
 import { Fundraiser } from '@/types';
 import { isOpen } from '@/utils/giving';
 import { formatDate } from '@/utils/format';
+import { FormattedText } from '@/components/ui/formatted-text';
 
 interface FundraiserDetailsProps {
   fundraiser: Fundraiser;
@@ -81,9 +82,12 @@ export function FundraiserDetails({
           goalAmount={fundraiser.goal_amount}
         />
 
-        <div className="max-w-3xl">
-          <p className="font-serif text-doc-lead text-foreground">{fundraiser.description}</p>
-        </div>
+        {fundraiser.description && (
+          <section className="max-w-3xl space-y-3" aria-labelledby="fundraiser-story">
+            <h2 id="fundraiser-story" className="text-section text-foreground">About this fundraiser</h2>
+            <FormattedText text={fundraiser.description} />
+          </section>
+        )}
 
         {open ? (
           <div className="flex justify-center">

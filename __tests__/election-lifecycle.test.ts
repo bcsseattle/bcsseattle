@@ -14,6 +14,7 @@ import {
   isPastElection,
   keyDate,
   nextAction,
+  positionCandidateGroups,
   toLocalInput,
   validateTimeline,
   type AdminContext,
@@ -339,6 +340,18 @@ describe('the ballot after the lock', () => {
   const pos = (position: string, extra: Record<string, unknown> = {}) => ({ position, description: null, display_order: 1, seats: 1, ...extra });
   const cand = (id: string, position: string, withdrawn_at: string | null = null) => ({ id, position, full_name: id, bio: null, withdrawn_at });
   const candidates = [cand('a', 'President'), cand('b', 'President'), cand('c', 'Treasurer'), cand('d', 'Director'), cand('e', 'Director')];
+
+  it('keeps positions that do not have nominees yet', () => {
+    const groups = positionCandidateGroups(
+      [pos('President'), pos('Secretary'), pos('Treasurer')],
+      candidates.slice(0, 3)
+    );
+    expect(groups.map((group) => [group.position, group.candidates.length])).toEqual([
+      ['President', 2],
+      ['Secretary', 0],
+      ['Treasurer', 1]
+    ]);
+  });
 
   it('leaves off vacant positions, uncontested ones elected unopposed, and empty ones', () => {
     expect(positionOnBallot(pos('President'), candidates)).toBe(true);
