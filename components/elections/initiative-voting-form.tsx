@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { Election, Initiative } from '@/types';
+import { initiativeResponseLabel, initiativeResponseOptions } from '@/utils/elections/initiative-options';
 import {
   Vote,
   AlertTriangle,
@@ -39,7 +40,7 @@ import {
 export const InitiativeVotingFormSchema = z.object({
   initiativeVotes: z.record(
     z.string(),
-    z.enum(['yes', 'no', 'abstain']).optional()
+    z.string().max(120).optional()
   )
 });
 
@@ -164,8 +165,8 @@ export default function InitiativeVotingForm({
             Vote on Initiatives: {election.title}
           </CardTitle>
           <CardDescription>
-            Review each ballot measure and vote Yes, No, or Abstain. You may
-            skip initiatives if you choose not to vote on them.
+            Review each question and select one response. You may skip
+            questions if you choose not to answer them.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -177,7 +178,7 @@ export default function InitiativeVotingForm({
           <div className="text-sm text-foreground">
             <strong>Important:</strong> You can only vote on initiatives once in
             this election. Please review your selections carefully before
-            submitting. For each initiative, you can vote Yes, No, or Abstain.
+            submitting.
           </div>
         </div>
       </div>
@@ -193,8 +194,7 @@ export default function InitiativeVotingForm({
                   Ballot Initiatives
                 </CardTitle>
                 <CardDescription>
-                  Vote Yes, No, or Abstain on each ballot measure, or skip if
-                  you choose not to vote.
+                  Select one response for each question, or skip it.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -255,71 +255,15 @@ export default function InitiativeVotingForm({
                                 </label>
                               </div>
 
-                              {/* Yes option */}
-                              <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-badge-green-bg border-badge-green-border">
-                                <RadioGroupItem
-                                  value="yes"
-                                  id={`yes-${initiative.id}`}
-                                />
-                                <label
-                                  htmlFor={`yes-${initiative.id}`}
-                                  className="flex-1 cursor-pointer"
-                                >
-                                  <div className="text-center">
-                                    <div className="flex items-center justify-center gap-1 text-sm font-medium text-badge-green-text">
-                                      <ThumbsUp className="w-4 h-4" />
-                                      Yes
-                                    </div>
-                                    <div className="text-xs text-badge-green-text">
-                                      Support
-                                    </div>
-                                  </div>
-                                </label>
-                              </div>
-
-                              {/* No option */}
-                              <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-badge-red-bg border-badge-red-border">
-                                <RadioGroupItem
-                                  value="no"
-                                  id={`no-${initiative.id}`}
-                                />
-                                <label
-                                  htmlFor={`no-${initiative.id}`}
-                                  className="flex-1 cursor-pointer"
-                                >
-                                  <div className="text-center">
-                                    <div className="flex items-center justify-center gap-1 text-sm font-medium text-badge-red-text">
-                                      <ThumbsDown className="w-4 h-4" />
-                                      No
-                                    </div>
-                                    <div className="text-xs text-badge-red-text">
-                                      Oppose
-                                    </div>
-                                  </div>
-                                </label>
-                              </div>
-
-                              {/* Abstain option */}
-                              <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted">
-                                <RadioGroupItem
-                                  value="abstain"
-                                  id={`abstain-${initiative.id}`}
-                                />
-                                <label
-                                  htmlFor={`abstain-${initiative.id}`}
-                                  className="flex-1 cursor-pointer"
-                                >
-                                  <div className="text-center">
-                                    <div className="flex items-center justify-center gap-1 text-sm font-medium text-foreground">
-                                      <Minus className="w-4 h-4" />
-                                      Abstain
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      No preference
-                                    </div>
-                                  </div>
-                                </label>
-                              </div>
+                              {initiativeResponseOptions(initiative.response_type, initiative.response_options).map((option) => (
+                                <div key={option.value} className="flex items-center space-x-2 rounded-lg border p-3 hover:bg-muted">
+                                  <RadioGroupItem value={option.value} id={`${option.value}-${initiative.id}`} />
+                                  <label htmlFor={`${option.value}-${initiative.id}`} className="flex-1 cursor-pointer text-center">
+                                    <span className="text-sm font-medium text-foreground">{option.label}</span>
+                                    {option.detail && <span className="block text-xs text-muted-foreground">{option.detail}</span>}
+                                  </label>
+                                </div>
+                              ))}
                             </RadioGroup>
                           </FormControl>
                           <FormMessage />
@@ -362,11 +306,7 @@ export default function InitiativeVotingForm({
                         className="flex items-center gap-1"
                       >
                         {getVoteIcon(vote!)}
-                        {vote === 'yes'
-                          ? 'Yes'
-                          : vote === 'no'
-                            ? 'No'
-                            : 'Abstain'}
+                        {initiativeResponseLabel(initiative?.response_type, initiative?.response_options, vote)}
                       </Badge>
                     </div>
                   ))

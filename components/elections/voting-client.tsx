@@ -53,7 +53,7 @@ export default function VotingClient({
         .filter(([, vote]) => vote && vote !== undefined)
         .map(([initiativeId, vote]) => ({
           initiativeId,
-          vote // 'yes' | 'no' | 'abstain', the vote_option values (BUG-052)
+          vote
         }));
 
       // Submit votes via API

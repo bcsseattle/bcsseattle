@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { formatDeadline } from '@/utils/format';
 import { BreadcrumbName } from '@/components/ui/breadcrumbs';
+import { initiativeResponseLabel } from '@/utils/elections/initiative-options';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -95,8 +96,9 @@ export default async function InitiativeVoteConfirmationPage(props: Props) {
       id,
       initiative_id,
       vote_value,
+      response_value,
       voted_at,
-      initiatives(title, ballot_order)
+      initiatives(title, ballot_order, response_type, response_options)
     `
     )
     .eq('user_id', user.id)
@@ -186,16 +188,12 @@ export default async function InitiativeVoteConfirmationPage(props: Props) {
                     </span>
                     <Badge
                       variant={getVoteBadgeVariant(
-                        vote.vote_value ?? 'abstain'
+                        vote.response_value ?? vote.vote_value ?? ''
                       )}
                       className="flex items-center gap-1"
                     >
-                      {getVoteIcon(vote.vote_value ?? 'abstain')}
-                      {vote.vote_value === 'yes'
-                        ? 'Yes'
-                        : vote.vote_value === 'no'
-                          ? 'No'
-                          : 'Abstain'}
+                      {getVoteIcon(vote.response_value ?? vote.vote_value ?? '')}
+                      {initiativeResponseLabel(vote.initiatives?.response_type, vote.initiatives?.response_options, vote.response_value ?? vote.vote_value)}
                     </Badge>
                   </div>
                 ))}

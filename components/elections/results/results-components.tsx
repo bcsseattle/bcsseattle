@@ -117,7 +117,7 @@ export function ResultsOverview({ results }: ResultsOverviewProps) {
           <CardContent>
             <div className="text-2xl font-bold">
               {electionType === 'initiative' 
-                ? results.initiativeResults.length * 3 // Yes, No, Abstain options
+                ? results.initiativeResults.reduce((total, initiative) => total + initiative.options.length, 0)
                 : results.candidateResults.length
               }
             </div>
@@ -386,51 +386,19 @@ export function InitiativeResults({ results }: InitiativeResultsProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-primary rounded"></div>
-                  <span className="font-medium">Yes</span>
+              {initiative.options.map((option) => (
+                <div key={option.value} className="space-y-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2"><div className="h-4 w-4 rounded bg-primary" /><span className="font-medium">{option.label}</span></div>
+                    <div className="text-right"><span className="font-bold">{option.count} votes</span><span className="ml-2 text-sm text-muted-foreground">({option.percentage}%)</span></div>
+                  </div>
+                  <Progress value={option.percentage} className="h-2" />
                 </div>
-                <div className="text-right">
-                  <span className="font-bold">{initiative.votes.yes} votes</span>
-                  <span className="text-sm text-muted-foreground ml-2">
-                    ({initiative.percentages.yes}%)
-                  </span>
-                </div>
-              </div>
-              <Progress value={initiative.percentages.yes} className="h-2" />
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-primary rounded"></div>
-                  <span className="font-medium">No</span>
-                </div>
-                <div className="text-right">
-                  <span className="font-bold">{initiative.votes.no} votes</span>
-                  <span className="text-sm text-muted-foreground ml-2">
-                    ({initiative.percentages.no}%)
-                  </span>
-                </div>
-              </div>
-              <Progress value={initiative.percentages.no} className="h-2" />
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-border-strong rounded"></div>
-                  <span className="font-medium">Abstain</span>
-                </div>
-                <div className="text-right">
-                  <span className="font-bold">{initiative.votes.abstain} votes</span>
-                  <span className="text-sm text-muted-foreground ml-2">
-                    ({initiative.percentages.abstain}%)
-                  </span>
-                </div>
-              </div>
-              <Progress value={initiative.percentages.abstain} className="h-2" />
+              ))}
             </div>
 
             {/* Result indicator */}
-            <div className="pt-4 border-t">
+            {initiative.responseType === 'approval' && <div className="pt-4 border-t">
               <div className="flex items-center justify-center">
                 {(() => {
                   const { word, tone } = initiativeResultWord({
@@ -443,7 +411,7 @@ export function InitiativeResults({ results }: InitiativeResultsProps) {
                   return <Badge tone={tone}>{word}</Badge>;
                 })()}
               </div>
-            </div>
+            </div>}
           </CardContent>
         </Card>
       ))}

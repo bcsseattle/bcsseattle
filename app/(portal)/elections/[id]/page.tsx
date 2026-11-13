@@ -22,6 +22,7 @@ import {
   electionPhase,
   positionOrder as orderPositions
 } from '@/utils/elections/rules';
+import { initiativeResponseLabel } from '@/utils/elections/initiative-options';
 import { BreadcrumbName } from '@/components/ui/breadcrumbs';
 
 interface ElectionPageProps {
@@ -104,10 +105,11 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           candidate_id,
           initiative_id,
           vote_value,
+          response_value,
           voted_at,
           vote_type,
           candidates(full_name, position),
-          initiatives(title)
+          initiatives(title, response_type, response_options)
         `
         )
         .eq('user_id', user.id)
@@ -217,7 +219,7 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
       .map((vote) =>
         kind === 'candidates'
           ? ([vote.candidates?.position ?? '', vote.candidates?.full_name ?? ''] as const)
-          : ([vote.initiatives?.title ?? '', vote.vote_value === 'yes' ? 'Support' : vote.vote_value === 'no' ? 'Oppose' : 'Abstain'] as const)
+          : ([vote.initiatives?.title ?? '', initiativeResponseLabel(vote.initiatives?.response_type, vote.initiatives?.response_options, vote.response_value ?? vote.vote_value)] as const)
       );
 
   const phase = { label: windows.label.member, tone: windows.label.tone };

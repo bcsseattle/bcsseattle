@@ -4,15 +4,12 @@ import * as React from 'react';
 
 import { OptionCard } from '@/components/ui/option-card';
 import { RadioGroup } from '@/components/ui/radio-group';
+import { APPROVAL_OPTIONS, type InitiativeResponseOption } from '@/utils/elections/initiative-options';
 
-export type InitiativeVote = 'yes' | 'no' | 'abstain';
+export type InitiativeVote = string;
 
 // Labels from the mock; the values are the vote_option enum (BUG-052).
-export const INITIATIVE_CHOICES: { value: InitiativeVote; label: string; detail: string }[] = [
-  { value: 'yes', label: 'Support', detail: 'Support this initiative' },
-  { value: 'no', label: 'Oppose', detail: 'Oppose this initiative' },
-  { value: 'abstain', label: 'Abstain', detail: 'No position' }
-];
+export const INITIATIVE_CHOICES = APPROVAL_OPTIONS;
 
 /**
  * BCS/Initiative card (Figma 10:1192, mobile 13:2135): an initiative and
@@ -23,6 +20,7 @@ export function InitiativeCard({
   title,
   description,
   moreInfoUrl,
+  options = INITIATIVE_CHOICES,
   value,
   onValueChange,
   optionId,
@@ -31,6 +29,7 @@ export function InitiativeCard({
   title: string;
   description?: string | null;
   moreInfoUrl?: string | null;
+  options?: InitiativeResponseOption[];
   value: InitiativeVote | undefined;
   onValueChange: (value: InitiativeVote) => void;
   optionId?: (value: InitiativeVote) => string;
@@ -61,13 +60,13 @@ export function InitiativeCard({
         onValueChange={(v) => onValueChange(v as InitiativeVote)}
         className="grid gap-2 md:grid-cols-3"
       >
-        {INITIATIVE_CHOICES.map((choice) => (
+        {options.map((choice) => (
           <OptionCard
             key={choice.value}
             id={optionId?.(choice.value)}
             value={choice.value}
             label={choice.label}
-            detail={choice.detail}
+            detail={choice.detail ?? ''}
           />
         ))}
       </RadioGroup>

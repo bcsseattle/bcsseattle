@@ -203,7 +203,7 @@ export const NominateFormSchema = z.object({
 
 export const VotingFormSchema = z.object({
   candidateVotes: z.record(z.string(), z.string().optional()),
-  initiativeVotes: z.record(z.string(), z.enum(['yes', 'no', 'abstain']).optional())
+  initiativeVotes: z.record(z.string(), z.string().max(120).optional())
 });
 
 // Separate voting schemas
@@ -212,7 +212,7 @@ export const CandidateVotingFormSchema = z.object({
 });
 
 export const InitiativeVotingFormSchema = z.object({
-  initiativeVotes: z.record(z.string(), z.enum(['yes', 'no', 'abstain']).optional())
+  initiativeVotes: z.record(z.string(), z.string().max(120).optional())
 });
 
 
