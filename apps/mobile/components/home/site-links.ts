@@ -1,6 +1,10 @@
 import { Banknote, BookOpen, FileText, Info, Mail, Palette, ScrollText, Shield, Target, type LucideIcon } from 'lucide-react';
+import { PROGRAMS as SHARED_PROGRAMS } from '@/utils/programs';
 
-export type SiteLink = { label: string; path: string; icon: LucideIcon };
+/** A website page, opened in the in-app browser; or, with `href`, one of the app's own screens. */
+export type SiteLink = { label: string; path: string; icon: LucideIcon; href?: string };
+
+const PROGRAM_ICON = { funeral: Banknote, youth: Palette, immigration: FileText };
 
 /**
  * Website pages the app opens in its in-app browser, grouped as the website
@@ -8,14 +12,16 @@ export type SiteLink = { label: string; path: string; icon: LucideIcon };
  * Organization, Get help and Legal columns. Donate, Fundraisers and
  * Become a member are left out because the app has its own screens for them.
  *
- * Programs lists every program on the website's home page. Get help is left
- * out while its page is empty (W5).
+ * Programs lists every program on the website's home page, each as the app's
+ * own screen (utils/programs.ts). Get help is left out while its page is
+ * empty (W5).
  */
-export const PROGRAMS: SiteLink[] = [
-  { label: 'Funeral & burial fund', path: '/funeral-burials', icon: Banknote },
-  { label: 'Youth programs', path: '/youth-programs', icon: Palette },
-  { label: 'Immigration & resources', path: '/resources', icon: FileText }
-];
+export const PROGRAMS: SiteLink[] = SHARED_PROGRAMS.map((p) => ({
+  label: p.title,
+  path: p.webPath,
+  icon: PROGRAM_ICON[p.key],
+  href: `/programs/view/?key=${p.key}`
+}));
 
 export const SITE_SECTIONS: { title: string; links: SiteLink[] }[] = [
   { title: 'Programs', links: PROGRAMS },

@@ -1,9 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { fetchPageBlocks, fetchPageBySlug, notion } from '@/utils/notion';
-import bookmarkPlugin from '@notion-render/bookmark-plugin';
-import { NotionRenderer } from '@notion-render/client';
-import hljsPlugin from '@notion-render/hljs-plugin';
+import { renderNotionPage } from '@/utils/notion/render';
 import { notFound } from 'next/navigation';
 import { currentUserIsActiveMember } from '@/utils/election-config';
 
@@ -25,20 +22,8 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
     return redirect('/register');
   }
 
-  const post = await fetchPageBySlug(params?.slug);
-
-  if (!post) notFound();
-
-  const blocks = await fetchPageBlocks(post.id);
-
-  const renderer = new NotionRenderer({
-    client: notion
-  });
-
-  renderer.use(hljsPlugin({}));
-  renderer.use(bookmarkPlugin(undefined));
-
-  const html = await renderer.render(...blocks);
+  const html = await renderNotionPage(params?.slug);
+  if (!html) notFound();
 
   const isMembersOnly = params.slug.includes('asylum');
 

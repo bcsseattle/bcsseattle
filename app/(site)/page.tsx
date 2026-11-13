@@ -5,30 +5,14 @@ import { ProgramSummary } from '@/components/site/program-summary';
 import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import ContactForm from '@/components/ui/ctonact-form';
+import { PROGRAMS as SHARED_PROGRAMS } from '@/utils/programs';
 
 // Home (Figma 4:58). The mock's community photo is a placeholder with no
 // image behind it, so the hero is copy only.
 
-const PROGRAMS = [
-  {
-    title: 'Funeral & burial fund',
-    href: '/funeral-burials',
-    icon: Banknote,
-    text: 'A shared community fund that helps families cover funeral and burial costs when they need it most.'
-  },
-  {
-    title: 'Youth programs',
-    href: '/youth-programs',
-    icon: Palette,
-    text: 'Language, culture and mentoring programs for Baloch young people across Greater Seattle.'
-  },
-  {
-    title: 'Immigration & resources',
-    href: '/resources',
-    icon: FileText,
-    text: 'Guides and referrals for immigration questions, citizenship prep and local services.'
-  }
-];
+// The programs and their words are shared with the app (utils/programs.ts).
+const PROGRAM_ICON = { funeral: Banknote, youth: Palette, immigration: FileText };
+const PROGRAMS = SHARED_PROGRAMS.map((p) => ({ title: p.title, href: p.webPath, icon: PROGRAM_ICON[p.key], text: p.summary }));
 
 const GET_INVOLVED = [
   {

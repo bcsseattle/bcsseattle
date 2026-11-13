@@ -55,6 +55,8 @@ jest.mock('@/utils/fundraisers/handlers', () => ({ submitDonation: jest.fn() }))
 jest.mock('@/utils/membership/handlers', () => ({ registerMember: jest.fn() }));
 jest.mock('@/utils/elections/handlers', () => ({ nominateCandidate: jest.fn() }));
 jest.mock('@/utils/elections/notify', () => ({ notifyNominated: jest.fn() }));
+jest.mock('@/utils/auth-helpers/server', () => ({ signUpFuneralBurial: jest.fn() }));
+jest.mock('@/utils/notion/render', () => ({ renderNotionPage: jest.fn() }));
 // enableElectionManagement: off unless a test turns it on.
 jest.mock('@/utils/server-feature-flags', () => ({ checkFeatureFlag: async () => mockDb.managed }));
 jest.mock('@/utils/supabase/admin', () => ({
@@ -92,6 +94,10 @@ import { GET as fundsPayments } from '@/app/api/app/community-funds/payments/rou
 import { GET as fundsSummary } from '@/app/api/app/community-funds/summary/route';
 import { GET as memberTotal } from '@/app/api/app/members/[id]/total/route';
 import { GET as contributionReceipt } from '@/app/api/app/receipts/contributions/route';
+import { POST as funeralInterest } from '@/app/api/app/funeral-interest/route';
+import { GET as guide } from '@/app/api/app/resources/[slug]/route';
+import { signUpFuneralBurial } from '@/utils/auth-helpers/server';
+import { renderNotionPage } from '@/utils/notion/render';
 import { GET as confirmEmail } from '@/app/m/auth/confirm/route';
 import { GET as aasa } from '@/app/.well-known/apple-app-site-association/route';
 import { GET as assetlinks } from '@/app/.well-known/assetlinks.json/route';
@@ -509,5 +515,63 @@ describe('GET /api/app/community-funds/summary', () => {
     mocked(getStripeRecentTransactions).mockResolvedValue([]);
     mocked(getBankBalance).mockResolvedValue(null);
     expect(await (await fundsSummary()).json()).toEqual({ bankBalance: null, bankAsOf: null, stripeBalance: 0, stripeFees: 0 });
+  });
+});
+
+describe('POST /api/app/funeral-interest', () => {
+  const values = { fullName: 'Balach Baloch', email: 'b@example.com', phoneNumber: '206-555-0100', additionalServices: 'Yes' };
+
+  it('needs a signed-in user and a valid form', async () => {
+    mockDb.user = null;
+    expect((await funeralInterest(json('/x', values))).status).toBe(401);
+    mockDb.user = USER;
+    expect((await funeralInterest(json('/x', { ...values, email: 'nope' }))).status).toBe(400);
+    expect(signUpFuneralBurial).not.toHaveBeenCalled();
+  });
+
+  it('registers interest through the website function', async () => {
+    mocked(signUpFuneralBurial).mockResolvedValue('/funeral-burials?status=Thank%20you');
+    expect(await (await funeralInterest(json('/x', values))).json()).toEqual({ ok: true });
+    expect(mocked(signUpFuneralBurial).mock.calls[0][0]).toMatchObject(values);
+  });
+
+  it('passes on the reason it was refused', async () => {
+    mocked(signUpFuneralBurial).mockResolvedValue('/funeral-burials?error=Oops&error_description=Already%20registered.');
+    const res = await funeralInterest(json('/x', values));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Already registered.' });
+  });
+});
+
+describe('GET /api/app/resources/[slug]', () => {
+  const slug = (value: string) => ({ params: Promise.resolve({ slug: value }) });
+
+  it('is for active members only, and only the listed guides', async () => {
+    mockDb.user = null;
+    expect((await guide(new Request('http://localhost/x'), slug('asylum'))).status).toBe(401);
+    mockDb.user = USER;
+    mockDb.rows.members = { isApproved: true, status: 'pending' };
+    expect((await guide(new Request('http://localhost/x'), slug('asylum'))).status).toBe(403);
+    mockDb.rows.members = ACTIVE;
+    expect((await guide(new Request('http://localhost/x'), slug('anything-else'))).status).toBe(404);
+    expect(renderNotionPage).not.toHaveBeenCalled();
+  });
+
+  it('says a guide is unavailable when Notion fails', async () => {
+    mockDb.rows.members = ACTIVE;
+    mocked(renderNotionPage).mockRejectedValue(new Error('notion down'));
+    const res = await guide(new Request('http://localhost/x'), slug('citizenship'));
+    expect(res.status).toBe(503);
+    expect((await res.json()).error).toMatch(/isn’t available/);
+  });
+
+  it('returns the guide rendered from Notion', async () => {
+    mockDb.rows.members = ACTIVE;
+    mocked(renderNotionPage).mockResolvedValue('<h1 class="notion-heading_1">Asylum</h1>');
+    expect(await (await guide(new Request('http://localhost/x'), slug('asylum'))).json()).toEqual({
+      title: 'Asylum Resources',
+      html: '<h1 class="notion-heading_1">Asylum</h1>',
+      membersOnly: true
+    });
   });
 });
