@@ -136,3 +136,24 @@ Then('no nomination should exist for {string}', async function (this: E2EWorld, 
     .eq('nominee_user_id', this.user(name).id);
   expect(count, `insert error: ${this.apiError || 'none'}`).toBe(0);
 });
+
+// The store review account (is_review_account) never goes on a voter roll.
+Given('{string} is a store review account', async function (this: E2EWorld, name: string) {
+  const { error } = await admin.from('members').update({ is_review_account: true }).eq('user_id', this.user(name).id);
+  expect(error).toBeNull();
+});
+
+Then(/^"([^"]+)" should( not)? be on the voter roll$/, async function (this: E2EWorld, name: string, not?: string) {
+  const { data } = await admin.from('election_voters').select('user_id').eq('election_id', this.election!.id).eq('user_id', this.user(name).id);
+  expect(data ?? []).toHaveLength(not ? 0 : 1);
+});
+
+When('{string} clears their review account flag through the public API', async function (this: E2EWorld, name: string) {
+  const { error } = await (await clientAs(this.user(name))).from('members').update({ is_review_account: false }).eq('user_id', this.user(name).id);
+  this.apiError = error?.message ?? '';
+});
+
+Then('{string} should still be a store review account', async function (this: E2EWorld, name: string) {
+  const { data } = await admin.from('members').select('is_review_account').eq('user_id', this.user(name).id).single();
+  expect(data?.is_review_account).toBe(true);
+});
