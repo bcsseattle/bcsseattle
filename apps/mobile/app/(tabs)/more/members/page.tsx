@@ -7,8 +7,8 @@ import { PersonRow } from '@/components/ui/person-row';
 import { StatePanel } from '@/components/ui/state-panel';
 import { StatTile } from '@/components/ui/stat-tile';
 import { Loaded, Screen } from '~/components/screen';
-import { membershipOf } from '~/components/account/labels';
 import { currentPlan, PLAN_SUBSCRIPTION_SELECT, priceLabel } from '@/utils/membership/plan';
+import { memberStats } from '@/utils/community';
 import { MemberBadge, MembersOnly } from '~/components/home/membership';
 import { must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
@@ -43,7 +43,8 @@ function Directory() {
   return (
     <Loaded state={state}>
       {({ members, subscriptions }) => {
-        const active = members.filter((m) => membershipOf(m) === 'active');
+        // The same counts as Home (utils/community.ts).
+        const stats = memberStats(members, subscriptions);
         // The same plan the website's directory shows (utils/membership/plan.ts).
         const plan = (m: (typeof members)[number]) => {
           const current = currentPlan(m.user_id, subscriptions);
@@ -54,16 +55,13 @@ function Directory() {
             <div className="grid grid-cols-2 gap-2">
               <StatTile
                 label="Registered"
-                value={active.length}
-                note="Heads of family and individuals"
+                value={stats.registered}
+                note={`${stats.people} people in members’ families`}
               />
               <StatTile
                 label="Contributing"
-                value={active.reduce(
-                  (sum, m) => sum + (m.totalMembersInFamily ?? 0),
-                  0
-                )}
-                note="Everyone in members’ families"
+                value={stats.contributing}
+                note="With a contribution plan"
               />
             </div>
             {members.length ? (

@@ -441,6 +441,7 @@ export type Database = {
           initiative_id: string | null
           no: number | null
           note: string | null
+          option_counts: Json | null
           outcome: string
           rank: number | null
           votes: number | null
@@ -457,6 +458,7 @@ export type Database = {
           initiative_id?: string | null
           no?: number | null
           note?: string | null
+          option_counts?: Json | null
           outcome: string
           rank?: number | null
           votes?: number | null
@@ -473,6 +475,7 @@ export type Database = {
           initiative_id?: string | null
           no?: number | null
           note?: string | null
+          option_counts?: Json | null
           outcome?: string
           rank?: number | null
           votes?: number | null
@@ -1064,6 +1067,8 @@ export type Database = {
           election_id: string | null
           id: string
           pass_threshold: string
+          response_options: Json
+          response_type: string
           title: string
           updated_at: string | null
         }
@@ -1075,6 +1080,8 @@ export type Database = {
           election_id?: string | null
           id?: string
           pass_threshold?: string
+          response_options?: Json
+          response_type?: string
           title: string
           updated_at?: string | null
         }
@@ -1086,6 +1093,8 @@ export type Database = {
           election_id?: string | null
           id?: string
           pass_threshold?: string
+          response_options?: Json
+          response_type?: string
           title?: string
           updated_at?: string | null
         }
@@ -1641,6 +1650,7 @@ export type Database = {
           id: string
           initiative_id: string | null
           ip_address: unknown | null
+          response_value: string | null
           session_id: string | null
           user_agent: string | null
           user_id: string | null
@@ -1655,6 +1665,7 @@ export type Database = {
           id?: string
           initiative_id?: string | null
           ip_address?: unknown | null
+          response_value?: string | null
           session_id?: string | null
           user_agent?: string | null
           user_id?: string | null
@@ -1669,6 +1680,7 @@ export type Database = {
           id?: string
           initiative_id?: string | null
           ip_address?: unknown | null
+          response_value?: string | null
           session_id?: string | null
           user_agent?: string | null
           user_id?: string | null
@@ -1942,6 +1954,13 @@ export type Database = {
           candidate_votes: number
           initiative_votes: number
           total_voters: number
+        }[]
+      }
+      initiative_choice_counts: {
+        Args: { p_election: string }
+        Returns: {
+          initiative_id: string
+          option_counts: Json
         }[]
       }
       get_table_constraints: {

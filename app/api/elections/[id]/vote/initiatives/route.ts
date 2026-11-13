@@ -5,7 +5,7 @@ import { submitInitiativeVotes, getVotingStatus } from '@/utils/elections/handle
 // Type definitions for initiative voting
 interface InitiativeVote {
   initiativeId: string;
-  vote: 'yes' | 'no' | 'abstain';
+  vote: string;
 }
 
 interface InitiativeVoteRequest {

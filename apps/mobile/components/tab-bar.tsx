@@ -7,9 +7,9 @@ import { cn } from '@/utils/cn';
 
 const TABS = [
   { href: '/home/', label: 'Home', icon: Home },
+  { href: '/funds/', label: 'Funds', icon: Wallet },
   { href: '/give/', label: 'Give', icon: Heart },
   { href: '/elections/', label: 'Elections', icon: Vote },
-  { href: '/funds/', label: 'Funds', icon: Wallet },
   // More holds Account, Members and Resources (decided 9 Nov 2026; the mock's fifth tab is Account).
   { href: '/more/', label: 'More', icon: MoreHorizontal }
 ];

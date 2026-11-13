@@ -15,12 +15,12 @@ import { Loaded } from '~/components/screen';
 import { CappedMoneyList } from '~/components/home/capped-money-list';
 import { MembersOnly } from '~/components/home/membership';
 import { MonthPayments } from '~/components/home/month-payments';
+import { fundsTotals, type FundsSummary } from '@/utils/community';
 import { api, must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
 import { useData } from '~/lib/use-data';
 
-/** The totals only the website's server can read (GET /api/app/community-funds/summary), in cents. */
-type Summary = { bankBalance: number | null; bankAsOf: number | null; stripeBalance: number; stripeFees: number };
+type Summary = FundsSummary;
 
 /**
  * Community funds (Figma 19:2389), the same data as the website's
@@ -89,18 +89,8 @@ function Funds() {
   return (
     <Loaded state={state}>
       {({ funds, expenses, donations, members, summary }) => {
-        // The website's figures (app/(portal)/community-funds): money received
-        // outside Stripe is completed Zelle, check, cash or external donations.
-        const received = funds.reduce((sum, f) => sum + f.amount, 0);
-        const offline = donations
-          .filter(
-            (d) => !['card', 'us_bank_account'].includes(d.payment_method ?? '')
-          )
-          .reduce((sum, d) => sum + d.donation_amount, 0);
-        const spent = expenses.reduce((sum, e) => sum + e.amount, 0);
-        // As /community-funds: the linked bank's balance, or the estimate until one is linked.
-        const bank = summary?.bankBalance ?? received + offline - spent;
-        const stripe = summary?.stripeBalance ?? 0;
+        // The website's figures (app/(portal)/community-funds), worked out as Home does.
+        const { received, offline, spent, bank, stripe } = fundsTotals({ funds, expenses, donations, summary });
         // members.stripe_customer_id points at customers.id; the Stripe id is on customers.
         const names = new Map(
           members.flatMap((m) =>

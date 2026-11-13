@@ -112,7 +112,7 @@ export default function BurialFundSignUp() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Should include Burial Expenss and Optional Services?
+                        Should it include burial expenses and optional services?
                       </FormLabel>
                       <FormControl>
                         <Select

@@ -19,7 +19,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     supabase.from('election_results').select('*').eq('election_id', id),
     supabase.from('ballot_positions').select('id, title, display_order').eq('election_id', id).order('display_order'),
     supabase.from('candidates').select('id, full_name').eq('election_id', id),
-    supabase.from('initiatives').select('id, title, ballot_order').eq('election_id', id).order('ballot_order')
+    supabase.from('initiatives').select('id, title, ballot_order, response_type').eq('election_id', id).order('ballot_order')
   ]);
   if (!election || !rows?.length) return new Response('No certified results', { status: 404 });
 
@@ -37,6 +37,12 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   for (const t of initiatives ?? []) {
     const r = rows.find((x) => x.initiative_id === t.id);
     if (!r) continue;
+    if (t.response_type === 'choice' && Array.isArray(r.option_counts)) {
+      for (const option of r.option_counts as { label?: unknown; count?: unknown }[]) {
+        lines.push(['Initiative response', t.title, String(option.label ?? ''), String(option.count ?? 0), '', '', '', '', '', '']);
+      }
+      continue;
+    }
     const { word } = initiativeResultWord({ outcome: r.outcome, note: r.note, yes: r.yes ?? 0, no: r.no ?? 0, votingOpen: false });
     lines.push(['Initiative', t.title, '', '', String(r.yes ?? 0), String(r.no ?? 0), String(r.abstain ?? 0), '', word, r.note ?? '']);
   }

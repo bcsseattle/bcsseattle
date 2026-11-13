@@ -35,6 +35,8 @@ interface InitiativeResult {
     no: number;
     abstain: number;
   };
+  responseType: string;
+  options: { value: string; label: string; count: number; percentage: number }[];
   outcome?: string;
   note?: string | null;
 }
@@ -278,10 +280,13 @@ export async function GET(
       .select(`
         initiative_id,
         vote_value,
+        response_value,
         initiatives!inner(
           id,
           title,
-          description
+          description,
+          response_type,
+          response_options
         )
       `)
       .eq('election_id', id)
@@ -292,7 +297,7 @@ export async function GET(
     }
 
     // Process initiative results
-    const initiativeVoteMap = new Map<string, NonNullable<typeof initiativeVotes>[number]['initiatives'] & { votes: { yes: number; no: number; abstain: number } }>();
+    const initiativeVoteMap = new Map<string, NonNullable<typeof initiativeVotes>[number]['initiatives'] & { counts: Map<string, number> }>();
     initiativeVotes?.forEach((vote) => {
       const initiative = vote.initiatives;
       if (initiative && initiative.id) {
@@ -300,13 +305,14 @@ export async function GET(
         if (!initiativeVoteMap.has(key)) {
           initiativeVoteMap.set(key, {
             ...initiative,
-            votes: { yes: 0, no: 0, abstain: 0 }
+            counts: new Map()
           });
         }
         
-        const voteValue = vote.vote_value;
-        if (voteValue === 'yes' || voteValue === 'no' || voteValue === 'abstain') {
-          initiativeVoteMap.get(key)!.votes[voteValue]++;
+        const voteValue = vote.response_value ?? vote.vote_value;
+        if (voteValue) {
+          const counts = initiativeVoteMap.get(key)!.counts;
+          counts.set(voteValue, (counts.get(voteValue) ?? 0) + 1);
         }
       }
     });
@@ -314,7 +320,7 @@ export async function GET(
     // Get all initiatives for this election (including those with 0 votes)
     const { data: allInitiatives, error: allInitiativesError } = await supabase
       .from('initiatives')
-      .select('id, title, description')
+      .select('id, title, description, response_type, response_options')
       .eq('election_id', id);
 
     if (allInitiativesError) {
@@ -326,8 +332,16 @@ export async function GET(
 
     allInitiatives?.forEach((initiative) => {
       const voteData = initiativeVoteMap.get(initiative.id);
-      const votes = voteData?.votes || { yes: 0, no: 0, abstain: 0 };
-      const totalVotes = votes.yes + votes.no + votes.abstain;
+      const counts = voteData?.counts ?? new Map<string, number>();
+      const configured = Array.isArray(initiative.response_options) ? initiative.response_options as { value?: unknown; label?: unknown }[] : [];
+      const totalVotes = Array.from(counts.values()).reduce((sum, count) => sum + count, 0);
+      const options = configured.flatMap((option) => typeof option.value === 'string' && typeof option.label === 'string' ? [{
+        value: option.value,
+        label: option.label,
+        count: counts.get(option.value) ?? 0,
+        percentage: totalVotes > 0 ? Math.round(((counts.get(option.value) ?? 0) / totalVotes) * 10_000) / 100 : 0
+      }] : []);
+      const votes = { yes: counts.get('yes') ?? 0, no: counts.get('no') ?? 0, abstain: counts.get('abstain') ?? 0 };
       
       initiativeResults.push({
         id: initiative.id,
@@ -340,6 +354,8 @@ export async function GET(
           no: totalVotes > 0 ? Math.round((votes.no / totalVotes) * 100 * 100) / 100 : 0,
           abstain: totalVotes > 0 ? Math.round((votes.abstain / totalVotes) * 100 * 100) / 100 : 0
         },
+        responseType: initiative.response_type,
+        options,
         ...outcomeOf('initiative_id', initiative.id)
       });
     });

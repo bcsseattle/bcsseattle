@@ -174,6 +174,19 @@ describe('submitCombinedVotes', () => {
     expect((await vote([], [{ initiativeId: 'i1', vote: true }])).error).toMatch(/yes, no or abstain/);
   });
 
+  it('accepts a configured custom initiative response and stores its stable value', async () => {
+    results.initiatives = { data: [{ id: 'i1', response_options: [{ value: 'amount_10', label: '$10' }, { value: 'amount_20', label: '$20' }] }], error: null };
+    const result = await vote([], [{ initiativeId: 'i1', vote: 'amount_20' }]);
+    expect(result.success).toBe(true);
+    const [rows] = inserts.votes as any[][];
+    expect(rows).toEqual([expect.objectContaining({ initiative_id: 'i1', response_value: 'amount_20', vote_value: null })]);
+  });
+
+  it('rejects a response that is not configured for the initiative', async () => {
+    results.initiatives = { data: [{ id: 'i1', response_options: [{ value: 'amount_10', label: '$10' }, { value: 'amount_20', label: '$20' }] }], error: null };
+    expect((await vote([], [{ initiativeId: 'i1', vote: 'amount_100' }])).error).toMatch(/Invalid response/);
+  });
+
   it('rejects two votes on the same initiative', async () => {
     expect((await vote([], [yes, { initiativeId: 'i1', vote: 'no' }])).error).toMatch(/same initiative twice/);
   });

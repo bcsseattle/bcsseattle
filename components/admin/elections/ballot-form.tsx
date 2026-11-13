@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { FormState } from '@/app/(portal)/admin/elections/actions';
 import { Field } from './field';
 import { FormFooter } from './steps';
+import { APPROVAL_OPTIONS, type InitiativeResponseOption, type InitiativeResponseType } from '@/utils/elections/initiative-options';
 
 export type PositionDraft = { id?: string; title: string; description: string; seats: number };
 export type InitiativeDraft = {
@@ -18,6 +19,8 @@ export type InitiativeDraft = {
   description: string;
   additional_info_url: string;
   pass_threshold: 'majority' | 'two_thirds';
+  response_type: InitiativeResponseType;
+  response_options: InitiativeResponseOption[];
 };
 type Ballot = { positions: PositionDraft[]; initiatives: InitiativeDraft[] };
 
@@ -116,7 +119,7 @@ function BallotEditor({
         />
       </Panel>
 
-      <Panel title="Initiatives" subtitle="Yes/No questions, in ballot order. Abstentions never count toward passing.">
+      <Panel title="Initiatives" subtitle="Approval votes or multiple-choice questions, in ballot order.">
         <OrderedList
           items={initiatives}
           onChange={setInitiatives}
@@ -132,6 +135,37 @@ function BallotEditor({
                   <Textarea {...a} rows={3} value={t.description} maxLength={4000} onChange={(e) => update({ description: e.target.value })} />
                 )}
               </Field>
+              <Field id={`initiative-${i}-response-type`} label="Response type">
+                {(a) => (
+                  <select {...a} className="h-10 rounded-md border border-input bg-card px-3 text-sm" value={t.response_type}
+                    onChange={(e) => {
+                      const response_type = e.target.value as InitiativeResponseType;
+                      update({ response_type, response_options: response_type === 'approval' ? APPROVAL_OPTIONS : t.response_type === 'choice' ? t.response_options : [newOption(), newOption()] });
+                    }}>
+                    <option value="approval">Support / Oppose / Abstain</option>
+                    <option value="choice">Custom choices</option>
+                  </select>
+                )}
+              </Field>
+              {t.response_type === 'choice' && (
+                <div className="flex flex-col gap-2 rounded-md border p-3">
+                  <div><p className="mt-0 text-sm font-medium">Choices</p><p className="mt-0 text-caption text-muted-foreground">Add 2 to 10 responses. Voters may choose one.</p></div>
+                  {t.response_options.map((option, optionIndex) => (
+                    <div key={option.value} className="flex items-center gap-2">
+                      <Input aria-label={`Choice ${optionIndex + 1}`} value={option.label} maxLength={120} placeholder={`Choice ${optionIndex + 1}`}
+                        onChange={(e) => update({ response_options: t.response_options.map((item, j) => j === optionIndex ? { ...item, label: e.target.value } : item) })} />
+                      <Button type="button" variant="ghost" size="icon" disabled={t.response_options.length <= 2} aria-label={`Remove choice ${optionIndex + 1}`}
+                        onClick={() => update({ response_options: t.response_options.filter((_, j) => j !== optionIndex) })}>
+                        <Trash2 aria-hidden className="size-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" className="self-start" disabled={t.response_options.length >= 10}
+                    onClick={() => update({ response_options: [...t.response_options, newOption()] })}>
+                    <Plus aria-hidden className="size-4" /> Add choice
+                  </Button>
+                </div>
+              )}
               <Field id={`initiative-${i}-link`} label="Link to more information" helper="Optional, starting with https://">
                 {(a) => (
                   <Input
@@ -143,7 +177,7 @@ function BallotEditor({
                   />
                 )}
               </Field>
-              <Field
+              {t.response_type === 'approval' && <Field
                 id={`initiative-${i}-threshold`}
                 label="To pass"
                 helper="Two-thirds is for bylaw amendments (Art. XII)."
@@ -159,16 +193,20 @@ function BallotEditor({
                     <option value="two_thirds">Two-thirds of Yes and No</option>
                   </select>
                 )}
-              </Field>
+              </Field>}
             </div>
           )}
-          blank={{ title: '', description: '', additional_info_url: '', pass_threshold: 'majority' }}
+          blank={{ title: '', description: '', additional_info_url: '', pass_threshold: 'majority', response_type: 'approval', response_options: APPROVAL_OPTIONS }}
         />
       </Panel>
 
       <FormFooter error={state.error} />
     </form>
   );
+}
+
+function newOption(): InitiativeResponseOption {
+  return { value: `option_${crypto.randomUUID()}`, label: '' };
 }
 
 /** A list of cards, each with move up, move down and remove, and an Add button below. */

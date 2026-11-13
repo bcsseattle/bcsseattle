@@ -126,7 +126,15 @@ const BallotSchema = z.object({
         .trim()
         .transform((v) => v || null)
         .refine((v) => v === null || /^https?:\/\/\S+$/.test(v), 'Links start with https://'),
-      pass_threshold: z.enum(['majority', 'two_thirds'])
+      pass_threshold: z.enum(['majority', 'two_thirds']),
+      response_type: z.enum(['approval', 'choice']),
+      response_options: z.array(z.object({
+        value: z.string().trim().min(1).max(80),
+        label: z.string().trim().min(1, 'Every custom choice needs a label.').max(120, 'Keep choices under 120 characters.'),
+        detail: z.string().trim().max(200).optional()
+      })).min(2, 'Add at least two choices.').max(10, 'Use no more than ten choices.')
+        .refine((options) => new Set(options.map((option) => option.value)).size === options.length, 'Custom choice values must be unique.')
+        .refine((options) => new Set(options.map((option) => option.label.toLowerCase())).size === options.length, 'Custom choice labels must be unique.')
     })
   )
 });
@@ -195,6 +203,10 @@ export async function saveBallot(id: string, _: FormState, formData: FormData): 
         description: t.description,
         additional_info_url: t.additional_info_url,
         pass_threshold: t.pass_threshold,
+        response_type: t.response_type,
+        response_options: t.response_type === 'approval'
+          ? [{ value: 'yes', label: 'Support', detail: 'Support this initiative' }, { value: 'no', label: 'Oppose', detail: 'Oppose this initiative' }, { value: 'abstain', label: 'Abstain', detail: 'No position' }]
+          : t.response_options,
         ballot_order: i + 1
       };
       return isUuid(t.id)
