@@ -12,7 +12,8 @@ import { AppHeader } from '~/components/app-header';
 import { Loaded } from '~/components/screen';
 import { membershipOf, priceLabel } from '~/components/account/labels';
 import { AppFundraiserCard, fundraiserHref } from '~/components/give/fundraiser-card';
-import { AtAGlance } from '~/components/home/at-a-glance';
+import { AtAGlance, AtAGlanceSkeleton, useAtAGlance } from '~/components/home/at-a-glance';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ClosedPanel } from '~/components/home/membership';
 import { SiteLinkRows } from '~/components/home/site-link-rows';
 import { PROGRAMS } from '~/components/home/site-links';
@@ -38,7 +39,20 @@ export default function HomeTab() {
         subtitle="Baloch Community Services of Seattle"
       />
       <div className="flex flex-col gap-6 px-4 pb-6 pt-2">
-        <Loaded state={me}>{(data) => <Summary me={data} />}</Loaded>
+        <Loaded
+          state={me}
+          skeleton={
+            <div className="flex flex-col gap-6">
+              <div aria-hidden className="flex h-13 items-center gap-4 rounded-lg border bg-card px-4">
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="ml-auto h-3 w-24" />
+              </div>
+              <SectionsSkeleton active />
+            </div>
+          }
+        >
+          {(data) => <Summary me={data} />}
+        </Loaded>
       </div>
     </>
   );
@@ -54,6 +68,8 @@ const INTERVAL: Record<string, string> = {
 function Summary({ me }: { me: Me }) {
   const membership = membershipOf(me.member);
   const active = membership === 'active';
+  // Started now, alongside the loader below, so neither waits for the other.
+  const glance = useAtAGlance(active);
 
   const state = useData(async () => {
     const [plans, fundraisers, elections] = await Promise.all([
@@ -179,7 +195,7 @@ function Summary({ me }: { me: Me }) {
           <ClosedPanel membership={membership} />
         </div>
       )}
-      <Loaded state={state}>
+      <Loaded state={state} skeleton={<SectionsSkeleton active={active} />}>
         {({ plan, fundraiser, toVote }) => (
           <>
             {toVote.length > 0 && (
@@ -217,7 +233,7 @@ function Summary({ me }: { me: Me }) {
             )}
 
             {/* Funds and member counts are for active members, as on Funds and Members. */}
-            {active && <AtAGlance />}
+            {active && <AtAGlance state={glance} />}
 
             {(plan || active) && (
               <HomeSection
@@ -289,5 +305,39 @@ function HomeSection({
       </div>
       {children}
     </section>
+  );
+}
+
+/**
+ * Home's sections while they load (BCS at a glance, your contribution, the
+ * featured fundraiser), at roughly their real size, so the page fills in
+ * place instead of jumping as each part arrives.
+ */
+function SectionsSkeleton({ active }: { active: boolean }) {
+  const heading = <Skeleton className="h-5 w-40 bg-border" />;
+  // Silent: Loaded wraps it in the Loading region that announces the wait.
+  return (
+    <div className="flex flex-col gap-6">
+      {active && <AtAGlanceSkeleton />}
+      <div className="flex flex-col gap-3">
+        {heading}
+        <div aria-hidden className="flex flex-col gap-2 rounded-lg border bg-card p-4">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-7 w-40" />
+          <Skeleton className="h-3 w-32" />
+        </div>
+      </div>
+      <div className="flex flex-col gap-3">
+        {heading}
+        <div aria-hidden className="overflow-hidden rounded-lg border bg-card">
+          <Skeleton className="aspect-video w-full rounded-none" />
+          <div className="flex flex-col gap-2 p-4">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-2/3" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
