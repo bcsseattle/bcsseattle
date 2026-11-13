@@ -1,4 +1,4 @@
-import { Banknote, BookOpen, Info, Mail, ScrollText, Shield, Target, type LucideIcon } from 'lucide-react';
+import { Banknote, BookOpen, FileText, Info, Mail, Palette, ScrollText, Shield, Target, type LucideIcon } from 'lucide-react';
 
 export type SiteLink = { label: string; path: string; icon: LucideIcon };
 
@@ -8,11 +8,13 @@ export type SiteLink = { label: string; path: string; icon: LucideIcon };
  * Organization, Get help and Legal columns. Donate, Fundraisers and
  * Become a member are left out because the app has its own screens for them.
  *
- * Youth programs, Immigration & resources and Get help are left out while
- * their website pages are placeholders (W5); add them back once they have content.
+ * Programs lists every program on the website's home page. Get help is left
+ * out while its page is empty (W5).
  */
 export const PROGRAMS: SiteLink[] = [
   { label: 'Funeral & burial fund', path: '/funeral-burials', icon: Banknote },
+  { label: 'Youth programs', path: '/youth-programs', icon: Palette },
+  { label: 'Immigration & resources', path: '/resources', icon: FileText }
 ];
 
 export const SITE_SECTIONS: { title: string; links: SiteLink[] }[] = [
