@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { IMMIGRATION_GUIDES, IMMIGRATION_INTRO } from '@/utils/programs';
 
 export interface Resource {
   name: string;
@@ -9,23 +10,12 @@ export interface Resource {
   image: string;
 }
 
-const resources: Resource[] = [
-  {
-    name: 'Asylum Resources',
-    href: '/resources/immigration/asylum',
-    image: '/asylum-officer.jpeg'
-  },
-  {
-    name: 'Citizenship Preparation',
-    href: '/resources/immigration/citizenship',
-    image: '/citizenship-prep.jpeg'
-  },
-  {
-    name: 'Support Organizations',
-    href: '/resources/immigration/support-organizations',
-    image: '/immigation-support-organizations.jpeg'
-  }
-];
+// The guides are shared with the app (utils/programs.ts).
+const resources: Resource[] = IMMIGRATION_GUIDES.map((g) => ({
+  name: g.title,
+  href: `/resources/immigration/${g.slug}`,
+  image: g.image
+}));
 
 export default async function Page() {
   const supabase = await createClient();
@@ -41,11 +31,7 @@ export default async function Page() {
     <div className="pb-8 pt-8 lg:pt-16">
       <h1 className="text-display text-foreground">Immigration Resources</h1>
       <p className="mt-3 max-w-3xl font-serif text-doc-lead text-foreground">
-        The U.S. immigration process can be incredibly complex and difficult to
-        navigate. With numerous rules, regulations, and procedures, it’s easy to
-        feel overwhelmed. While each person’s journey is unique, the following
-        resources might be helpful in addressing some of the common challenges
-        faced during the process.
+        {IMMIGRATION_INTRO}
       </p>
       <p>
         Here are some resources that could assist at various stages of the

@@ -71,7 +71,7 @@ This is a draft to paste into App Store Connect and Play Console once the BCS Se
 >
 > **Payments:** membership contributions and donations are paid on our website in Safari (Stripe Checkout), not in the app. Contributions are dues for a real-world community membership (3.1.3(e)). Donations go to a nonprofit and are collected outside the app (3.2.2(iv)). On the US storefront, linking out to pay is also allowed (3.1.1(a)). There are no in-app purchases.
 >
-> **Where things are:** Home, Give, Elections, Funds, and More (Account, Members, Resources). Account deletion: More › Account › Delete account. Deleting removes the account and personal data. Vote and donation records are kept without the link to the person, as the screen explains.
+> **Where things are:** Home, Funds, Give, Elections, and More (Account, Members, Resources). Account deletion: More › Account › Delete account. Deleting removes the account and personal data. Vote and donation records are kept without the link to the person, as the screen explains.
 >
 > **Elections are seasonal.** If none is open during review, the attached screen recording shows nominating, voting (both confirmation codes) and results from our staging site. We didn't create a fake election in production, because every member would see it.
 
