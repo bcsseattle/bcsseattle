@@ -102,7 +102,9 @@ export default async function EditElectionPage(props: {
             title: t.title,
             description: t.description ?? '',
             additional_info_url: t.additional_info_url ?? '',
-            pass_threshold: t.pass_threshold as 'majority' | 'two_thirds'
+            pass_threshold: t.pass_threshold as 'majority' | 'two_thirds',
+            response_type: t.response_type as 'approval' | 'choice',
+            response_options: Array.isArray(t.response_options) ? (t.response_options as { value: string; label: string; detail?: string }[]) : []
           }))
         }}
       />

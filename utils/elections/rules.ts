@@ -9,6 +9,7 @@
  * which decide when nominations and voting are open. electionPhase combines them.
  */
 import type { Tables } from '@/types_db';
+import { initiativeResponseOptions } from '@/utils/elections/initiative-options';
 import type { ElectionType } from '@/types';
 import { ELECTION_TYPE_CONFIGS } from '@/utils/election-types';
 
@@ -184,7 +185,7 @@ export function ballotQuestions({
   offerInitiatives: boolean;
   positions: Position[];
   candidates: (Pick<Tables<'candidates'>, 'id' | 'position' | 'full_name' | 'bio'> & { withdrawn_at?: string | null })[];
-  initiatives: Pick<Tables<'initiatives'>, 'id' | 'title' | 'description' | 'additional_info_url'>[];
+  initiatives: Pick<Tables<'initiatives'>, 'id' | 'title' | 'description' | 'additional_info_url' | 'response_type' | 'response_options'>[];
 }) {
   return {
     // Positions members vote on, each with its seats: vacant and
@@ -202,7 +203,7 @@ export function ballotQuestions({
           }))
       : [],
     initiatives: offerInitiatives
-      ? initiatives.map((i) => ({ id: i.id, title: i.title, description: i.description, url: i.additional_info_url }))
+      ? initiatives.map((i) => ({ id: i.id, title: i.title, description: i.description, url: i.additional_info_url, options: initiativeResponseOptions(i.response_type, i.response_options) }))
       : []
   };
 }

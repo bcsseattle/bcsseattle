@@ -12,11 +12,11 @@ import {
   NominateFormSchema,
   VoteInsert,
   VoteConfirmationInsert,
-  VoteOption,
   VoteSessionType
 } from '@/types';
 import { createCandidate } from '@/utils/supabase/admin';
 import crypto from 'crypto';
+import { APPROVAL_OPTIONS } from '@/utils/elections/initiative-options';
 
 // Helper function to generate confirmation code
 function generateConfirmationCode(): string {
@@ -40,7 +40,7 @@ interface CandidateVote {
 
 interface InitiativeVote {
   initiativeId: string;
-  vote: VoteOption;
+  vote: string;
 }
 
 interface VotingResult {
@@ -50,6 +50,14 @@ interface VotingResult {
   sessionId?: string;
   error?: string;
 }
+
+const initiativeAccepts = (initiative: { response_options?: unknown } | undefined, response: unknown) => {
+  if (typeof response !== 'string') return false;
+  const options = Array.isArray(initiative?.response_options) ? initiative.response_options : APPROVAL_OPTIONS;
+  return (options as { value?: unknown }[]).some((option) => option?.value === response);
+};
+
+const invalidInitiativeResponse = 'Invalid response for initiative; choose yes, no or abstain, or one of its configured choices';
 
 /**
  * Whether the user already has votes of this kind in the election, cast through
@@ -268,7 +276,7 @@ export async function submitInitiativeVotes(
       const initiativeIds = initiativeVotes.map(v => v.initiativeId);
       const { data: validInitiatives } = await supabase
         .from('initiatives')
-        .select('id, title')
+        .select('id, title, response_options')
         .eq('election_id', electionId)
         .in('id', initiativeIds);
 
@@ -283,6 +291,9 @@ export async function submitInitiativeVotes(
       const uniqueInitiatives = new Set(initiativeIds);
       if (initiativeIds.length !== uniqueInitiatives.size) {
         return { success: false, error: 'Cannot vote multiple times for the same initiative' };
+      }
+      if (initiativeVotes.some((vote) => !initiativeAccepts(validInitiatives?.find((item) => item.id === vote.initiativeId), vote.vote))) {
+        return { success: false, error: invalidInitiativeResponse };
       }
     }
 
@@ -337,7 +348,8 @@ export async function submitInitiativeVotes(
         user_id: user.id,
         election_id: electionId,
         initiative_id: vote.initiativeId,
-        vote_value: vote.vote,
+        response_value: vote.vote,
+        vote_value: ['yes', 'no', 'abstain'].includes(vote.vote) ? vote.vote as 'yes' | 'no' | 'abstain' : null,
         session_id: sessionId,
         vote_type: 'initiatives' as VoteSessionType,
         voted_at: new Date().toISOString(),
@@ -403,10 +415,7 @@ export async function submitCombinedVotes(
       return { success: false, error: candidateError };
     }
 
-    // Initiative votes: yes/no/abstain, once each, on this election's initiatives (BUG-052).
-    if (initiativeVotes.some((v) => !['yes', 'no', 'abstain'].includes(v.vote as string))) {
-      return { success: false, error: 'Each initiative vote must be yes, no or abstain' };
-    }
+    // Initiative responses are validated against each question's configured choices.
     const initiativeIds = initiativeVotes.map((v) => v.initiativeId);
     if (new Set(initiativeIds).size !== initiativeIds.length) {
       return { success: false, error: 'Cannot vote on the same initiative twice' };
@@ -414,11 +423,14 @@ export async function submitCombinedVotes(
     if (initiativeIds.length > 0) {
       const { data: found } = await supabase
         .from('initiatives')
-        .select('id')
+        .select('id, response_options')
         .eq('election_id', electionId)
         .in('id', initiativeIds);
       if ((found?.length ?? 0) !== initiativeIds.length) {
         return { success: false, error: 'Invalid initiative for this election' };
+      }
+      if (initiativeVotes.some((vote) => !initiativeAccepts(found?.find((item) => item.id === vote.initiativeId), vote.vote))) {
+        return { success: false, error: invalidInitiativeResponse };
       }
     }
 
@@ -449,7 +461,8 @@ export async function submitCombinedVotes(
         user_id: user.id,
         election_id: electionId,
         initiative_id: vote.initiativeId,
-        vote_value: vote.vote,
+        response_value: vote.vote,
+        vote_value: ['yes', 'no', 'abstain'].includes(vote.vote) ? vote.vote as 'yes' | 'no' | 'abstain' : null,
         vote_type: 'combined' as VoteSessionType,
         voted_at: new Date().toISOString(),
         ip_address: clientIP,

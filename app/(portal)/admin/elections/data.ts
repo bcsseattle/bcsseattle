@@ -54,6 +54,9 @@ export async function loadAdminElection(id: string) {
     election.status === 'ballot_locked' && phase.votingOver
       ? ((await supabase.rpc('election_outcomes', { p_election: id })).data ?? [])
       : [];
+  const choiceOutcomes = election.status === 'ballot_locked' && phase.votingOver
+    ? ((await supabase.rpc('initiative_choice_counts', { p_election: id })).data ?? [])
+    : [];
   ctx.unresolvedTies = new Set(outcomes.filter((o) => o.outcome === 'runoff').map((o) => o.ballot_position_id)).size;
   const actions = adminActions(election, ctx);
   const next = nextAction(phase.phase, {
@@ -71,6 +74,7 @@ export async function loadAdminElection(id: string) {
     nominations: nominations ?? [],
     ctx,
     outcomes,
+    choiceOutcomes,
     phase,
     actions,
     next

@@ -30,6 +30,8 @@ interface InitiativeResult {
     no: number;
     abstain: number;
   };
+  responseType: string;
+  options: { value: string; label: string; count: number; percentage: number }[];
   outcome?: string;
   note?: string | null;
 }
