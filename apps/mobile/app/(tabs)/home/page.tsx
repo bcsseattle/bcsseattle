@@ -12,6 +12,7 @@ import { AppHeader } from '~/components/app-header';
 import { Loaded } from '~/components/screen';
 import { membershipOf, priceLabel } from '~/components/account/labels';
 import { AppFundraiserCard, fundraiserHref } from '~/components/give/fundraiser-card';
+import { AtAGlance } from '~/components/home/at-a-glance';
 import { ClosedPanel } from '~/components/home/membership';
 import { SiteLinkRows } from '~/components/home/site-link-rows';
 import { PROGRAMS } from '~/components/home/site-links';
@@ -214,6 +215,9 @@ function Summary({ me }: { me: Me }) {
                 ))}
               </HomeSection>
             )}
+
+            {/* Funds and member counts are for active members, as on Funds and Members. */}
+            {active && <AtAGlance />}
 
             {(plan || active) && (
               <HomeSection
