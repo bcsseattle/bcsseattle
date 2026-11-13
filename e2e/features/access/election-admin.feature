@@ -94,3 +94,19 @@ Feature: Only admins run elections, and a locked ballot stays locked
     And there is an approved member named "Bilal"
     When "Bilal" reads the election's activity through the public API
     Then no record should be returned
+
+  @P0 @api
+  Scenario: The store review account is never on a voter roll
+    Given there is an approved member named "Rev"
+    And "Rev" is a store review account
+    And there is an approved member named "Bilal"
+    And there is an open election with candidates "Hani" and "Nazir" for "President"
+    Then "Rev" should not be on the voter roll
+    And "Bilal" should be on the voter roll
+
+  @P1 @api
+  Scenario: A review account can't clear its own flag
+    Given there is an approved member named "Rev"
+    And "Rev" is a store review account
+    When "Rev" clears their review account flag through the public API
+    Then "Rev" should still be a store review account

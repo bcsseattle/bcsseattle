@@ -1133,6 +1133,7 @@ export type Database = {
           created_at: string
           fullName: string | null
           id: string
+          is_review_account: boolean
           isApproved: boolean
           membershipType: Database["public"]["Enums"]["membershiptypes"] | null
           phone: string | null
@@ -1152,6 +1153,7 @@ export type Database = {
           created_at?: string
           fullName?: string | null
           id?: string
+          is_review_account?: boolean
           isApproved?: boolean
           membershipType?: Database["public"]["Enums"]["membershiptypes"] | null
           phone?: string | null
@@ -1171,6 +1173,7 @@ export type Database = {
           created_at?: string
           fullName?: string | null
           id?: string
+          is_review_account?: boolean
           isApproved?: boolean
           membershipType?: Database["public"]["Enums"]["membershiptypes"] | null
           phone?: string | null
