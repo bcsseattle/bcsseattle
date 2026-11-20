@@ -19,6 +19,26 @@ Feature: Admins record the organisation's expenses
     Then the expense should be recorded as private
 
   @P1
+  Scenario: An admin adds an event expense with a breakdown
+    Given I am signed in as an admin
+    When I add an "Eid dinner" expense broken down as:
+      | Venue Rental Room 1 | $575.00   |
+      | Kabob Korner        | $1,500.00 |
+      | Deposit refund      | -$200     |
+    Then I should see the message "Expense added."
+    And the expense should be listed on the expenses page
+    And opening the expense should show "Kabob Korner" at "USD 1,500.00"
+
+  @P1
+  Scenario: An admin edits an expense
+    Given I am signed in as an admin
+    When I add a $42.50 "Supplies" expense paid to "Costco"
+    And I edit the expense, changing the amount to $50 and adding income "Ticket sales  120.00"
+    Then I should see the message "Expense updated."
+    And the expense should be recorded as public
+    And opening the expense should show "Ticket sales" at "USD 120.00"
+
+  @P1
   Scenario: A member who isn't an admin is turned away from expenses
     Given I am signed in as an approved member
     When I go to "/admin/expenses"
