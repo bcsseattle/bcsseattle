@@ -18,15 +18,42 @@ import { MonthPayments } from '~/components/home/month-payments';
 import { fundsTotals, type FundsSummary } from '@/utils/community';
 import { api, must } from '~/lib/api';
 import { supabase } from '~/lib/supabase';
-import { useData } from '~/lib/use-data';
+import { useData, type DataState } from '~/lib/use-data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Summary = FundsSummary;
+
+/** The records the screen lists, read under RLS (members see the public ones). */
+async function loadRecords() {
+  const [funds, expenses, donations, members] = await Promise.all([
+    must(supabase.from('funds').select('amount').neq('status', 'cancelled').neq('status', 'failed').neq('is_private', true)),
+    must(supabase.from('expenses').select('*').eq('is_private', false).order('date', { ascending: false })),
+    must(
+      supabase
+        .from('donations')
+        .select('id, donation_amount, donation_date, payment_method, purpose, is_anonymous, donors(full_name, organization_name)')
+        .eq('is_private', false)
+        .eq('donation_status', 'completed')
+        .order('donation_date', { ascending: false })
+    ),
+    must(supabase.from('members').select('fullName, customers(stripe_customer_id)'))
+  ]);
+  return { funds: funds ?? [], expenses: expenses ?? [], donations: donations ?? [], members: members ?? [] };
+}
 
 /**
  * Community funds (Figma 19:2389), the same data as the website's
  * /community-funds. Approved active members only.
+ *
+ * Both loads start as the screen opens, without waiting for the membership
+ * check (for anyone else, RLS returns nothing and the summary refuses). The
+ * records show as soon as they arrive; only the Stripe figures wait for the
+ * summary, which the website keeps for a few minutes (utils/funds-cache.ts).
  */
 export default function FundsTab() {
+  const records = useData(loadRecords);
+  // Not fatal: without it the bank is estimated from records, as the website does before a bank is linked.
+  const summary = useData(() => api<Summary>('/api/app/community-funds/summary').catch(() => null));
   return (
     <>
       <AppHeader
@@ -34,61 +61,28 @@ export default function FundsTab() {
         subtitle="Where BCS Seattle’s money is and where it goes."
       />
       <div className="flex flex-col gap-6 px-4 pb-6 pt-2">
-        <MembersOnly>{() => <Funds />}</MembersOnly>
+        <MembersOnly>{() => <Funds records={records} summary={summary} />}</MembersOnly>
       </div>
     </>
   );
 }
 
-function Funds() {
+function Funds({
+  records,
+  summary: summaryState
+}: {
+  records: DataState<Awaited<ReturnType<typeof loadRecords>>>;
+  summary: DataState<Summary | null>;
+}) {
   const [tab, setTab] = useState('contributions');
-  const state = useData(async () => {
-    const [funds, expenses, donations, members, summary] = await Promise.all([
-      must(
-        supabase
-          .from('funds')
-          .select('amount')
-          .neq('status', 'cancelled')
-          .neq('status', 'failed')
-          .neq('is_private', true)
-      ),
-      must(
-        supabase
-          .from('expenses')
-          .select('*')
-          .eq('is_private', false)
-          .order('date', { ascending: false })
-      ),
-      must(
-        supabase
-          .from('donations')
-          .select(
-            'id, donation_amount, donation_date, payment_method, purpose, is_anonymous, donors(full_name, organization_name)'
-          )
-          .eq('is_private', false)
-          .eq('donation_status', 'completed')
-          .order('donation_date', { ascending: false })
-      ),
-      must(
-        supabase
-          .from('members')
-          .select('fullName, customers(stripe_customer_id)')
-      ),
-      // Not fatal: without it the screen shows the estimate, as the website does before a bank is linked.
-      api<Summary>('/api/app/community-funds/summary').catch(() => null)
-    ]);
-    return {
-      funds: funds ?? [],
-      expenses: expenses ?? [],
-      donations: donations ?? [],
-      members: members ?? [],
-      summary
-    };
-  });
+  // Until the summary answers, its figures show as placeholders, not the estimate (which would then jump).
+  const waiting = summaryState.data === undefined;
+  const summary = summaryState.data ?? null;
+  const figure = (value: string, width = 'w-24') => (waiting ? <Skeleton className={`inline-block h-4 ${width} align-middle`} /> : value);
 
   return (
-    <Loaded state={state}>
-      {({ funds, expenses, donations, members, summary }) => {
+    <Loaded state={records}>
+      {({ funds, expenses, donations, members }) => {
         // The website's figures (app/(portal)/community-funds), worked out as Home does.
         const { received, offline, spent, bank, stripe } = fundsTotals({ funds, expenses, donations, summary });
         // members.stripe_customer_id points at customers.id; the Stripe id is on customers.
@@ -105,17 +99,19 @@ function Funds() {
             <section aria-label="Overview" className="flex flex-col gap-2">
               <StatTile
                 label="Available funds"
-                value={formatMoney(bank + stripe)}
-                note={`Bank + ${formatMoney(stripe)} in Stripe`}
+                value={figure(formatMoney(bank + stripe), 'w-40 h-7')}
+                note={waiting ? 'Bank + Stripe' : `Bank + ${formatMoney(stripe)} in Stripe`}
               />
               <ListGroup>
-                <ListRow label="Bank balance" value={formatMoney(bank)} />
-                <ListRow label="In Stripe" value={formatMoney(stripe)} />
+                <ListRow label="Bank balance" value={figure(formatMoney(bank))} />
+                <ListRow label="In Stripe" value={figure(formatMoney(stripe))} />
                 <ListRow label="Expenses" value={formatMoney(-spent)} />
-                {summary && <ListRow label="Processing fees" value={formatMoney(-summary.stripeFees)} />}
+                {(waiting || summary) && <ListRow label="Processing fees" value={figure(formatMoney(-(summary?.stripeFees ?? 0)))} />}
               </ListGroup>
               <p className="px-1 text-caption text-muted-foreground">
-                {summary?.bankAsOf
+                {waiting
+                  ? 'Getting the latest balances…'
+                  : summary?.bankAsOf
                   ? `Bank balance as of ${formatDate(summary.bankAsOf * 1000)}.`
                   : `Bank balance estimated from records: funds received (${formatMoney(received)}) plus Zelle, check and cash donations (${formatMoney(offline)}), less expenses.`}{' '}
                 Private expenses are not shown.

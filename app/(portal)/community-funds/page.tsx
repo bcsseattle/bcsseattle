@@ -3,12 +3,8 @@ import { columns } from '@/components/payments/columns';
 import RecentDonations from '@/components/recent-donations';
 import RecentFunds from '@/components/recent-funds';
 import { formatDate, formatMoney } from '@/utils/format';
-import {
-  getBankBalance,
-  getDonations,
-  getStripeAvailableBalance,
-  getStripeRecentTransactions
-} from '@/utils/supabase/admin';
+import { getDonations } from '@/utils/supabase/admin';
+import { getFundsSummary } from '@/utils/funds-cache';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -94,28 +90,19 @@ export default async function CommunityFunds(props: {
     0
   );
 
-  const [{ available, pending }, transactions, bank] = await Promise.all([
-    getStripeAvailableBalance(),
-    getStripeRecentTransactions(),
-    getBankBalance()
-  ]);
-
-  const stripeAmount =
-    (available?.[0]?.amount ?? 0) + (pending?.[0]?.amount ?? 0);
+  // Kept a few minutes rather than asked of Stripe on every visit (utils/funds-cache.ts).
+  const summary = await getFundsSummary();
+  const stripeAmount = summary.stripeBalance;
   const totalExpenses =
     expenses?.reduce((acc: number, expense) => acc + expense.amount, 0) ??
     0;
 
-  const totalStripeFees =
-    transactions?.reduce(
-      (acc: number, transaction) => acc + transaction.fee,
-      0
-    ) ?? 0;
+  const totalStripeFees = summary.stripeFees;
 
   // Real bank balance once linked (scripts/link-bank-account.mjs); until then, estimate from records.
   const bankAmount =
-    bank?.amount ?? (fundsInBank || 0) + (totalDonations || 0) - totalExpenses;
-  const bankAsOf = bank ? `As of ${formatDate(bank.asOf * 1000)}` : 'Estimated from records';
+    summary.bankBalance ?? (fundsInBank || 0) + (totalDonations || 0) - totalExpenses;
+  const bankAsOf = summary.bankAsOf ? `As of ${formatDate(summary.bankAsOf * 1000)}` : 'Estimated from records';
 
   // Community funds (Figma 12:1281): the four totals, then contributions,
   // donations and public expenses in panels. The data and the tables'

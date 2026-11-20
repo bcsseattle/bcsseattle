@@ -59,6 +59,9 @@ jest.mock('@/utils/auth-helpers/server', () => ({ signUpFuneralBurial: jest.fn()
 jest.mock('@/utils/notion/render', () => ({ renderNotionPage: jest.fn() }));
 // enableElectionManagement: off unless a test turns it on.
 jest.mock('@/utils/server-feature-flags', () => ({ checkFeatureFlag: async () => mockDb.managed }));
+// The funds routes cache Stripe reads (utils/funds-cache.ts); tests read straight through.
+jest.mock('next/cache', () => ({ ...jest.requireActual('next/cache'), unstable_cache: (fn: unknown) => fn }));
+jest.mock('server-only', () => ({}));
 jest.mock('@/utils/supabase/admin', () => ({
   getStripePayments: jest.fn(),
   getTotalCustomerSpent: jest.fn(),
