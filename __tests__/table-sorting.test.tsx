@@ -28,6 +28,8 @@ test('expense amounts sort numerically in both directions, then restore the orig
     currency: 'usd',
     description: null,
     is_private: false,
+    items: null,
+    income: null,
     payment_method: null,
     ...expense
   }));
@@ -45,6 +47,34 @@ test('expense amounts sort numerically in both directions, then restore the orig
   await user.click(screen.getByRole('button', { name: /^Date/ }));
   expect(names(2)).toEqual(['Largest', 'Smallest', 'Middle']);
   expect(expenses.map((e) => e.id)).toEqual(['1', '2', '3']);
+});
+
+test('an expense with a breakdown opens to show subtotals, income and the net', async () => {
+  const user = userEvent.setup();
+  const expense = {
+    id: '1', date: '2026-10-01', category: 'Eid dinner', payee: null, amount: 207500, created_at: null, currency: 'usd',
+    description: null, is_private: false, payment_method: null,
+    items: [
+      { label: 'Venue Rental Room 1', amount: 50000, group: 'Venue' },
+      { label: 'Venue Kitchen', amount: 7500, group: 'Venue' },
+      { label: 'Kabob Korner', amount: 150000, group: 'Catering' }
+    ],
+    income: [{ label: 'Ticket Tailor, 31 tickets', amount: 242000 }]
+  };
+  render(<Expenses expenses={[expense]} editable />);
+  expect(screen.getByRole('link', { name: /Edit/ })).toHaveAttribute('href', '/admin/expenses?edit=1#expense-form');
+  expect(screen.queryByText('Kabob Korner')).not.toBeInTheDocument();
+  const toggle = screen.getByRole('button', { name: /Eid dinner/ });
+  await user.click(toggle);
+  expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  const costs = screen.getByRole('table', { name: 'Costs' });
+  expect(within(costs).getByRole('row', { name: /^Venue USD/ })).toHaveTextContent('575.00');
+  expect(within(costs).getByRole('row', { name: /Kabob Korner/ })).toHaveTextContent('1,500.00');
+  expect(within(costs).getByRole('row', { name: /Total/ })).toHaveTextContent('2,075.00');
+  expect(within(screen.getByRole('table', { name: 'Income' })).getByRole('row', { name: /Total/ })).toHaveTextContent('2,420.00');
+  expect(screen.getByText(/^Net/).parentElement).toHaveTextContent('345.00');
+  await user.click(toggle);
+  expect(screen.queryByText('Kabob Korner')).not.toBeInTheDocument();
 });
 
 test('donation sorting applies to all pages and headers work from the keyboard', async () => {
