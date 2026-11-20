@@ -1,4 +1,4 @@
-import { Given, Then, When } from '@cucumber/cucumber';
+import { DataTable, Given, Then, When } from '@cucumber/cucumber';
 import { admin, getMember } from '../support/db';
 import { expect } from '../support/expect';
 import { arrange } from './common.steps';
@@ -97,9 +97,43 @@ When(
   }
 );
 
+When('I add an {string} expense broken down as:', async function (this: E2EWorld, category: string, table: DataTable) {
+  const description = `E2E expense ${Math.random().toString(36).slice(2, 10)}`;
+  const rows = table.raw();
+  this.data.expenseDescription = description;
+  // The amount is left blank: the breakdown's total becomes the expense's amount.
+  this.data.expenseAmount = String(rows.reduce((sum, [, amount]) => sum + Number(amount.replace(/[$,]/g, '')), 0));
+  this.cleanup.push(async () => admin.from('expenses').delete().eq('description', description));
+
+  await this.page.goto('/admin/expenses');
+  await this.page.getByLabel('Category').fill(category);
+  await this.page.getByLabel('Description').fill(description);
+  // Tab-separated, as two columns copied from a spreadsheet paste.
+  await this.page.getByLabel(/^Cost breakdown/).fill(rows.map((r) => r.join('\t')).join('\n'));
+  await this.page.getByRole('button', { name: 'Add Expense' }).click();
+});
+
+When(
+  /^I edit the expense, changing the amount to \$([\d.]+) and adding income "([^"]+)"$/,
+  async function (this: E2EWorld, amount: string, income: string) {
+    this.data.expenseAmount = amount;
+    await this.page.getByRole('row').filter({ hasText: this.data.expenseDescription }).getByRole('link', { name: /^Edit/ }).click();
+    // The form is loaded with the expense: its description is how we know it's ready.
+    await expect(this.page.getByLabel('Description')).toHaveValue(this.data.expenseDescription);
+    await this.page.getByLabel('Amount (USD)').fill(amount);
+    await this.page.getByLabel(/^Event income/).fill(income);
+    await this.page.getByRole('button', { name: 'Save changes' }).click();
+  }
+);
+
+Then('opening the expense should show {string} at {string}', async function (this: E2EWorld, item: string, amount: string) {
+  await this.page.getByRole('row').filter({ hasText: this.data.expenseDescription }).click();
+  await expect(this.page.locator('[data-breakdown] tr').filter({ hasText: item })).toContainText(amount);
+});
+
 Then('the expense should be listed on the expenses page', async function (this: E2EWorld) {
   await expect(this.page.getByRole('row').filter({ hasText: this.data.expenseDescription })).toContainText(
-    `USD ${Number(this.data.expenseAmount).toFixed(2)}`
+    `USD ${Number(this.data.expenseAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
   );
 });
 

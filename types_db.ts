@@ -654,7 +654,9 @@ export type Database = {
           date: string
           description: string | null
           id: string
+          income: Json | null
           is_private: boolean
+          items: Json | null
           payee: string | null
           payment_method: string | null
         }
@@ -666,7 +668,9 @@ export type Database = {
           date: string
           description?: string | null
           id?: string
+          income?: Json | null
           is_private?: boolean
+          items?: Json | null
           payee?: string | null
           payment_method?: string | null
         }
@@ -678,7 +682,9 @@ export type Database = {
           date?: string
           description?: string | null
           id?: string
+          income?: Json | null
           is_private?: boolean
+          items?: Json | null
           payee?: string | null
           payment_method?: string | null
         }
