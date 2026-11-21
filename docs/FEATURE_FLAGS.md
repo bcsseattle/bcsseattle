@@ -32,6 +32,11 @@ This application uses a comprehensive feature flag system that follows industry 
 - **Default**: `false`. The e2e suite turns it on.
 - The database rules behind it (statuses, the frozen ballot, the admin functions) apply whether the flag is on or off.
 
+### `enableEventVoting`
+- **Purpose**: Voting at an in-person event. Admins open it per election (Voting tab) and show a QR code for `/vote/<election>`. Members enter their email, get a sign-in code and go straight to their ballot. Only people on the voter roll get a code, and the page says the same thing either way.
+- **Turn on**: a row in `feature_flags` with `feature_name = 'enableEventVoting'`, `enabled = true`, `environment = 'production'` and no `user_id` or `user_role`. It must be environment-wide: the voting page's visitors are signed out, so user and role rows don't reach them. `FF_ENABLE_EVENT_VOTING=true` also works, as a fallback.
+- **Default**: `false`. The e2e scenarios add the row.
+
 ### `enableDebugMode`
 - **Purpose**: Shows debug information and logs feature flag context
 - **Default**: `true` in development, `false` in production

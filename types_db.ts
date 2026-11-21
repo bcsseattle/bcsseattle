@@ -545,6 +545,7 @@ export type Database = {
           description: string | null
           eligibility_cutoff: string | null
           enable_separate_voting_periods: boolean | null
+          event_voting: boolean
           end_date: string
           id: string
           is_active: boolean | null
@@ -570,6 +571,7 @@ export type Database = {
           description?: string | null
           eligibility_cutoff?: string | null
           enable_separate_voting_periods?: boolean | null
+          event_voting?: boolean
           end_date: string
           id?: string
           is_active?: boolean | null
@@ -595,6 +597,7 @@ export type Database = {
           description?: string | null
           eligibility_cutoff?: string | null
           enable_separate_voting_periods?: boolean | null
+          event_voting?: boolean
           end_date?: string
           id?: string
           is_active?: boolean | null
@@ -1880,6 +1883,10 @@ export type Database = {
       election_start_runoff: {
         Args: { p_election: string; p_position: string }
         Returns: string
+      }
+      event_voter_on_roll: {
+        Args: { p_election: string; p_email: string }
+        Returns: boolean
       }
       election_turnout: {
         Args: { p_election: string }
