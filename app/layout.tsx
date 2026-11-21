@@ -8,6 +8,7 @@ import { cn } from '@/utils/cn';
 import '@/styles/main.css';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
 import { Analytics } from '@vercel/analytics/react';
+import PostHog from '@/components/PostHog';
 
 // Inter for UI; Source Serif 4 for editorial and display headings only.
 // tailwind.config.js maps font-sans and font-serif to these variables.
@@ -78,6 +79,7 @@ export default async function RootLayout({ children }: PropsWithChildren) {
         {/* The site and portal shells live in app/(site) and app/(portal). */}
         {children}
         <Analytics />
+        <PostHog />
         <Suspense>
           <Toaster />
         </Suspense>
