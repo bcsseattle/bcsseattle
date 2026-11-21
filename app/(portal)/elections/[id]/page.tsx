@@ -13,7 +13,7 @@ import { VotedCard } from '@/components/elections/voted-card';
 import { supportsUnopposedCandidates } from '@/utils/election-types';
 import { ElectionType } from '@/types';
 import { formatDeadline } from '@/utils/format';
-import { currentUserIsActiveMember } from '@/utils/election-config';
+import { rollStanding } from '@/utils/elections/access';
 import { checkFeatureFlag } from '@/utils/server-feature-flags';
 import {
   ballotOffer,
@@ -183,15 +183,12 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
 
   // The ballot is offered only to approved, active members (BUG-007), the same
   // check the vote pages and endpoints make.
-  const activeMember = !!user && (await currentUserIsActiveMember());
   // The voter roll is taken when the ballot is locked (B11): members who joined
-  // after the cutoff, or after the lock, can't vote in this election.
-  const { data: rollRow } =
-    activeMember && isVotingOpen
-      ? await supabase.from('election_voters').select('user_id').eq('election_id', id).eq('user_id', user!.id).maybeSingle()
-      : { data: null };
-  const offRoll = activeMember && isVotingOpen && !rollRow;
-  const canVote = activeMember && !offRoll;
+  // after the cutoff, or after the lock, can't vote in this election, unless
+  // they signed in at the event while event voting is open (rollStanding).
+  const standing = user && isVotingOpen ? await rollStanding(supabase, id, user.id, election.event_voting) : null;
+  const canVote = !!standing?.eligible;
+  const offRoll = !!standing?.active && !standing.onRoll;
 
   // What is still open to this member.
   const { offerCandidates, offerInitiatives } = ballotOffer({
@@ -364,7 +361,7 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           The ballot is final. You’ll be able to vote here then.
         </Banner>
       )}
-      {isVotingOpen && user && !activeMember && (
+      {isVotingOpen && user && !standing?.active && !canVote && (
         <Banner tone="attention" title="Only approved members with active membership can vote">
           If you think this is wrong, contact BCS Seattle.
         </Banner>

@@ -7,7 +7,9 @@ import { Banner } from '@/components/ui/banner';
 import { buttonVariants } from '@/components/ui/button';
 import { TransactionStep, TransactionSteps, type StepState } from '@/components/ui/transaction-step';
 import { ActivityList } from '@/components/admin/elections/activity-list';
-import { CancelElectionButton, DeleteDraftButton, PublishButton } from '@/components/admin/elections/transition-buttons';
+import { CancelElectionButton, ConfirmAction, DeleteDraftButton, PublishButton } from '@/components/admin/elections/transition-buttons';
+import { checkFeatureFlag } from '@/utils/server-feature-flags';
+import { eventVoteQr, eventVoteUrl } from '@/utils/elections/event-qr';
 import { createClient } from '@/utils/supabase/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { formatDeadline } from '@/utils/format';
@@ -42,6 +44,7 @@ import {
   rejectNomination,
   rejectProposal,
   reopenCertification,
+  setEventVoting,
   startRunoff,
   withdrawCandidate
 } from '../actions';
@@ -653,6 +656,9 @@ async function VotingTab({ data }: { data: AdminElection }) {
           <StatTile label="Voted on initiatives" value={`${t?.voted_initiatives ?? 0} (${percent(t?.voted_initiatives ?? 0)})`} />
         </div>
       </Panel>
+      {election.status === 'ballot_locked' && !phase.votingOver && (await checkFeatureFlag('allowGuestVoting')) && (
+        <EventVoting id={id} open={election.event_voting} votingOpen={phase.votingOpen} />
+      )}
       {actions.extend_voting === true && election.status === 'ballot_locked' && (
         <Panel title="Extend voting" subtitle={`Voting ${phase.votingOpen ? 'closes' : 'runs to'} ${formatDeadline(election.end_date)}.`}>
           <div className="flex flex-col gap-6 p-4">
@@ -676,6 +682,69 @@ async function VotingTab({ data }: { data: AdminElection }) {
         </Panel>
       )}
     </div>
+  );
+}
+
+/**
+ * Voting at an event: a QR code for /vote/<election>, where anyone at the
+ * event, member or not, signs in with an email code and goes to their ballot.
+ */
+async function EventVoting({ id, open, votingOpen }: { id: string; open: boolean; votingOpen: boolean }) {
+  const url = eventVoteUrl(id);
+  const qr = open ? await eventVoteQr(id) : '';
+  return (
+    <Panel
+      title="Voting at an event"
+      subtitle={open ? 'Open. Members can scan the code and vote.' : 'Closed. Open it when the event starts and close it after.'}
+    >
+      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">
+        {open && (
+          <div
+            className="w-full max-w-[240px] shrink-0 rounded-md border bg-white p-2"
+            role="img"
+            aria-label={`QR code for ${url}`}
+            dangerouslySetInnerHTML={{ __html: qr }}
+          />
+        )}
+        <div className="flex flex-col gap-3 text-sm">
+          {!votingOpen && <p className="text-muted-foreground">Voting hasn’t started yet. The code works once it does.</p>}
+          {open && (
+            <>
+              <p className="break-all font-medium">{url}</p>
+              <p className="text-muted-foreground">
+                Anyone who scans it can vote, member or not: they enter their email and get a code. Each account votes
+                once, so someone who already voted online can’t vote again.
+              </p>
+              <Link href={`/admin/elections/${id}/qr.svg`} target="_blank" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                Show full screen
+              </Link>
+            </>
+          )}
+          <div>
+            {open ? (
+              <ConfirmAction
+                trigger="Close event voting"
+                title="Close event voting?"
+                description="The QR code stops opening a ballot. Members can still sign in and vote online until voting closes."
+                confirmLabel="Close event voting"
+                variant="outline"
+                size="sm"
+                run={setEventVoting.bind(null, id, false)}
+              />
+            ) : (
+              <ConfirmAction
+                trigger="Open event voting"
+                title="Open event voting?"
+                description="Anyone with the QR code can vote, member or not, by signing in with an email code. An account is made for anyone who has none. Close it when the event ends."
+                confirmLabel="Open event voting"
+                size="sm"
+                run={setEventVoting.bind(null, id, true)}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </Panel>
   );
 }
 

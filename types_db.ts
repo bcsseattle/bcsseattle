@@ -514,14 +514,17 @@ export type Database = {
       }
       election_voters: {
         Row: {
+          at_event: boolean
           election_id: string
           user_id: string
         }
         Insert: {
+          at_event?: boolean
           election_id: string
           user_id: string
         }
         Update: {
+          at_event?: boolean
           election_id?: string
           user_id?: string
         }
@@ -545,6 +548,7 @@ export type Database = {
           description: string | null
           eligibility_cutoff: string | null
           enable_separate_voting_periods: boolean | null
+          event_voting: boolean
           end_date: string
           id: string
           is_active: boolean | null
@@ -570,6 +574,7 @@ export type Database = {
           description?: string | null
           eligibility_cutoff?: string | null
           enable_separate_voting_periods?: boolean | null
+          event_voting?: boolean
           end_date: string
           id?: string
           is_active?: boolean | null
@@ -595,6 +600,7 @@ export type Database = {
           description?: string | null
           eligibility_cutoff?: string | null
           enable_separate_voting_periods?: boolean | null
+          event_voting?: boolean
           end_date?: string
           id?: string
           is_active?: boolean | null
