@@ -52,7 +52,7 @@ export function BallotCodeForm({ electionId }: { electionId: string }) {
         <Banner tone="error" title={state.error} />
       ) : (
         <Banner tone="info" title="Check your email">
-          If {email} is on the voter list, a code is on its way. It can take a minute.
+          We sent a code to {email}. It can take a minute.
         </Banner>
       )}
       <input type="hidden" name="email" value={email} />

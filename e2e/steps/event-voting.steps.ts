@@ -1,5 +1,7 @@
 import { Given, Then, When } from '@cucumber/cucumber';
-import { admin } from '../support/db';
+import { randomUUID } from 'node:crypto';
+import { admin, castCandidateVotes, deleteUserByEmail, findAuthUserId } from '../support/db';
+import { candidate } from './elections.steps';
 import { env } from '../support/env';
 import { expect } from '../support/expect';
 import type { E2EWorld } from '../support/world';
@@ -12,7 +14,7 @@ async function inbox(email: string) {
 }
 
 /**
- * Turns enableEventVoting on with a row in feature_flags, as an admin would in
+ * Turns allowGuestVoting on with a row in feature_flags, as an admin would in
  * production: environment-wide, so signed-out visitors get it. Left in place,
  * since scenarios run in parallel and all want it on.
  */
@@ -20,19 +22,35 @@ Given('event voting is turned on', async function () {
   const { data } = await admin
     .from('feature_flags')
     .select('id')
-    .eq('feature_name', 'enableEventVoting')
+    .eq('feature_name', 'allowGuestVoting')
     .eq('environment', 'production')
     .is('user_id', null)
     .is('user_role', null);
   const { error } = data?.length
     ? await admin.from('feature_flags').update({ enabled: true }).in('id', data.map((r) => r.id))
-    : await admin.from('feature_flags').insert({ feature_name: 'enableEventVoting', environment: 'production', enabled: true });
+    : await admin.from('feature_flags').insert({ feature_name: 'allowGuestVoting', environment: 'production', enabled: true });
   if (error) throw error;
 });
 
 Given('event voting is open for the election', async function (this: E2EWorld) {
   const { error } = await admin.from('elections').update({ event_voting: true }).eq('id', this.election!.id);
   if (error) throw error;
+});
+
+Given('event voting is closed for the election', async function (this: E2EWorld) {
+  const { error } = await admin.from('elections').update({ event_voting: false }).eq('id', this.election!.id);
+  if (error) throw error;
+});
+
+Given('{string} has no BCS account', async function (this: E2EWorld, name: string) {
+  const email = `e2e-guest-${randomUUID().slice(0, 8)}@example.test`;
+  // The page makes the account; its id is filled in once they sign in.
+  this.users[name] = { id: '', email, password: '', fullName: name };
+  this.cleanup.push(() => deleteUserByEmail(email));
+});
+
+Given('{string} has already voted for {string}', async function (this: E2EWorld, name: string, choice: string) {
+  await castCandidateVotes(this.user(name).id, this.election!.id, [candidate(this, choice).id]);
 });
 
 When('I open the event voting page', async function (this: E2EWorld) {
@@ -63,13 +81,9 @@ When('{string} enters the code from the email', async function (this: E2EWorld, 
   await this.page.getByLabel('Code').fill(code);
   await this.page.getByRole('button', { name: 'Open my ballot' }).click();
   await expect(this.page).toHaveURL(new RegExp(`/elections/${this.election!.id}`));
-  this.me = this.user(name);
-});
-
-Then('{string} should not have been sent a code', async function (this: E2EWorld, name: string) {
-  // The send happens before the page answers, so nothing arriving in a few seconds means none was sent.
-  await new Promise((r) => setTimeout(r, 3000));
-  expect(await inbox(this.user(name).email)).toHaveLength(0);
+  const me = this.user(name);
+  if (!me.id) me.id = (await findAuthUserId(email))!;
+  this.me = me;
 });
 
 When("I open event voting from the election's Voting tab", async function (this: E2EWorld) {

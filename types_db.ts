@@ -514,14 +514,17 @@ export type Database = {
       }
       election_voters: {
         Row: {
+          at_event: boolean
           election_id: string
           user_id: string
         }
         Insert: {
+          at_event?: boolean
           election_id: string
           user_id: string
         }
         Update: {
+          at_event?: boolean
           election_id?: string
           user_id?: string
         }
@@ -1883,10 +1886,6 @@ export type Database = {
       election_start_runoff: {
         Args: { p_election: string; p_position: string }
         Returns: string
-      }
-      event_voter_on_roll: {
-        Args: { p_election: string; p_email: string }
-        Returns: boolean
       }
       election_turnout: {
         Args: { p_election: string }

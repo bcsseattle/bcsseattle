@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Vote', robots: { index: false } };
 /** Voting at an event: the page the QR code opens (actions.ts). */
 export default async function EventVotePage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  if (!(await checkFeatureFlag('enableEventVoting'))) notFound();
+  if (!(await checkFeatureFlag('allowGuestVoting'))) notFound();
 
   const election = await eventVotingOpen(id);
   const {
@@ -28,7 +28,7 @@ export default async function EventVotePage(props: { params: Promise<{ id: strin
           <CardHeader>
             <CardTitle as="h1">{election ? election.title : 'Vote'}</CardTitle>
             {election && (
-              <CardDescription>Enter the email you registered with. We’ll send you a code to open your ballot.</CardDescription>
+              <CardDescription>Enter your email. We’ll send you a code to open your ballot. You don’t need to be a member.</CardDescription>
             )}
           </CardHeader>
           <CardContent>

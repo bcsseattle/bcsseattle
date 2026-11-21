@@ -21,9 +21,6 @@ export const FEATURE_FLAGS = {
 
   // Admin › Elections lifecycle (docs/election-management-plan.md)
   ENABLE_ELECTION_MANAGEMENT: 'enableElectionManagement',
-
-  // Voting at an event by QR code (/vote/<election>)
-  ENABLE_EVENT_VOTING: 'enableEventVoting',
 } as const;
 
 // Type for feature flag keys
@@ -42,7 +39,6 @@ export const FEATURE_FLAG_DEFAULTS: Record<FeatureFlagKey, boolean> = {
   [FEATURE_FLAGS.ENABLE_NEW_UI]: false,
   [FEATURE_FLAGS.ALLOW_ANONYMOUS_FEEDBACK]: false,
   [FEATURE_FLAGS.ENABLE_ELECTION_MANAGEMENT]: false,
-  [FEATURE_FLAGS.ENABLE_EVENT_VOTING]: false,
 };
 
 // Helper type for feature flag results

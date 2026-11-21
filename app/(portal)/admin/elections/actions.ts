@@ -504,10 +504,10 @@ export async function lockBallot(id: string): Promise<FormState> {
   redirect(getStatusRedirect(tab(id, 'ballot'), 'Ballot locked.', 'Voting opens at the time set. The voter roll is taken.'));
 }
 
-/** Voting at an event (enableEventVoting): opens or closes /vote/<election> for this election. */
+/** Voting at an event (allowGuestVoting): opens or closes /vote/<election> for this election. */
 export async function setEventVoting(id: string, open: boolean): Promise<FormState> {
   const { supabase } = await guard();
-  if (!(await checkFeatureFlag('enableEventVoting'))) return { error: 'Voting at an event isn’t turned on.' };
+  if (!(await checkFeatureFlag('allowGuestVoting'))) return { error: 'Voting at an event isn’t turned on.' };
   const { error } = await supabase.from('elections').update({ event_voting: open }).eq('id', id);
   if (error) return { error: dbMessage(error) };
   revalidatePath(`/admin/elections/${id}`);
@@ -515,7 +515,7 @@ export async function setEventVoting(id: string, open: boolean): Promise<FormSta
     getStatusRedirect(
       tab(id, 'voting'),
       open ? 'Event voting is open.' : 'Event voting is closed.',
-      open ? 'Show the QR code. Members on the voter roll can sign in with an email code.' : 'The QR code no longer opens a ballot.'
+      open ? 'Show the QR code. Anyone who scans it can vote.' : 'The QR code no longer opens a ballot.'
     )
   );
 }

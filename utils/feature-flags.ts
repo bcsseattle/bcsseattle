@@ -13,7 +13,6 @@ export interface FeatureFlags {
   enableNewUI: boolean;
   allowAnonymousFeedback: boolean;
   enableElectionManagement: boolean;
-  enableEventVoting: boolean;
 }
 
 export interface FeatureFlagContext {
@@ -42,7 +41,6 @@ function getEnvironmentFeatures(): Partial<FeatureFlags> {
     enableNewUI: process.env.FF_ENABLE_NEW_UI === 'true',
     allowAnonymousFeedback: process.env.FF_ALLOW_ANONYMOUS_FEEDBACK === 'true',
     enableElectionManagement: process.env.FF_ENABLE_ELECTION_MANAGEMENT === 'true',
-    enableEventVoting: process.env.FF_ENABLE_EVENT_VOTING === 'true',
   };
 }
 
@@ -125,7 +123,6 @@ function processFeatureFlagData(data: Array<{ feature_name: string; enabled: boo
     [FEATURE_FLAGS.SHOW_FEATURE_FLAGS]: 'showFeatureFlags',
     [FEATURE_FLAGS.ENABLE_NEW_UI]: 'enableNewUI',
     [FEATURE_FLAGS.ALLOW_ANONYMOUS_FEEDBACK]: 'allowAnonymousFeedback',
-    [FEATURE_FLAGS.ENABLE_EVENT_VOTING]: 'enableEventVoting',
   };
 
   // Process database results (database function now handles priority/deduplication)
@@ -144,7 +141,8 @@ function processFeatureFlagData(data: Array<{ feature_name: string; enabled: boo
  * Uses the get_user_feature_flags database function for efficient querying
  */
 async function getDatabaseFeatures(context: FeatureFlagContext): Promise<Partial<FeatureFlags>> {
-  // The RPC needs a user; signed-out visitors (the event voting page) get the
+  // The RPC needs a user; signed-out visitors (the event voting page, behind
+  // allowGuestVoting) get the
   // environment-wide rows, which anyone may read.
   if (!context.userId) return getDatabaseFeaturesTableQuery(context);
   try {

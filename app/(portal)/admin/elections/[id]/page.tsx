@@ -656,7 +656,7 @@ async function VotingTab({ data }: { data: AdminElection }) {
           <StatTile label="Voted on initiatives" value={`${t?.voted_initiatives ?? 0} (${percent(t?.voted_initiatives ?? 0)})`} />
         </div>
       </Panel>
-      {election.status === 'ballot_locked' && !phase.votingOver && (await checkFeatureFlag('enableEventVoting')) && (
+      {election.status === 'ballot_locked' && !phase.votingOver && (await checkFeatureFlag('allowGuestVoting')) && (
         <EventVoting id={id} open={election.event_voting} votingOpen={phase.votingOpen} />
       )}
       {actions.extend_voting === true && election.status === 'ballot_locked' && (
@@ -686,8 +686,8 @@ async function VotingTab({ data }: { data: AdminElection }) {
 }
 
 /**
- * Voting at an event: a QR code for /vote/<election>, where members on the
- * voter roll sign in with an email code and go to their ballot.
+ * Voting at an event: a QR code for /vote/<election>, where anyone at the
+ * event, member or not, signs in with an email code and goes to their ballot.
  */
 async function EventVoting({ id, open, votingOpen }: { id: string; open: boolean; votingOpen: boolean }) {
   const url = eventVoteUrl(id);
@@ -712,8 +712,8 @@ async function EventVoting({ id, open, votingOpen }: { id: string; open: boolean
             <>
               <p className="break-all font-medium">{url}</p>
               <p className="text-muted-foreground">
-                Members enter the email they registered with and get a code. Only people on the voter roll get one, and
-                each can vote once, at the event or online.
+                Anyone who scans it can vote, member or not: they enter their email and get a code. Each account votes
+                once, so someone who already voted online can’t vote again.
               </p>
               <Link href={`/admin/elections/${id}/qr.svg`} target="_blank" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
                 Show full screen
@@ -735,7 +735,7 @@ async function EventVoting({ id, open, votingOpen }: { id: string; open: boolean
               <ConfirmAction
                 trigger="Open event voting"
                 title="Open event voting?"
-                description="Anyone with the QR code can ask for a sign-in code. Only members on the voter roll get one."
+                description="Anyone with the QR code can vote, member or not, by signing in with an email code. An account is made for anyone who has none. Close it when the event ends."
                 confirmLabel="Open event voting"
                 size="sm"
                 run={setEventVoting.bind(null, id, true)}
