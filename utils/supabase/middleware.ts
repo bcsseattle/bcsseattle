@@ -55,6 +55,8 @@ export async function updateSession(request: NextRequest) {
     pathname === '/signin' ||
     pathname.startsWith('/signin/') ||
     pathname === '/terms' ||
+    // Voting at an event: the page itself signs the member in with an email code.
+    pathname.startsWith('/vote/') ||
     pathname === '/what-we-do' ||
     pathname === '/youth-programs';
 

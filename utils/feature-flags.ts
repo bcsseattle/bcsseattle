@@ -141,8 +141,10 @@ function processFeatureFlagData(data: Array<{ feature_name: string; enabled: boo
  * Uses the get_user_feature_flags database function for efficient querying
  */
 async function getDatabaseFeatures(context: FeatureFlagContext): Promise<Partial<FeatureFlags>> {
-  // The RPC requires a user UUID; anonymous contexts use the default flags.
-  if (!context.userId) return {};
+  // The RPC needs a user; signed-out visitors (the event voting page, behind
+  // allowGuestVoting) get the
+  // environment-wide rows, which anyone may read.
+  if (!context.userId) return getDatabaseFeaturesTableQuery(context);
   try {
     // Import here to avoid circular dependencies
     const { createClient } = await import('@/utils/supabase/server');
